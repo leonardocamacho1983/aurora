@@ -1,0 +1,261 @@
+import styles from "./Landing.module.css";
+
+const eyebrow = {
+  font: "600 12px var(--font-sans)",
+  letterSpacing: "2.4px",
+  textTransform: "uppercase" as const,
+  color: "#948FA8",
+  display: "flex",
+  alignItems: "center",
+  gap: 9,
+};
+const dot = { width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" };
+const sectionPad = "clamp(72px,9vw,100px) clamp(20px,5vw,32px)";
+
+/* ============ PRIVACIDADE ============ */
+export function Privacidade() {
+  const rows = [
+    {
+      title: "Criptografado",
+      body: "Suas entradas são criptografadas. Só você consegue abrir.",
+      icon: (
+        <>
+          <rect width="18" height="11" x="3" y="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </>
+      ),
+    },
+    {
+      title: "Nunca vendido",
+      body: "Seus desabafos não são produto. Não vendemos nada disso a ninguém.",
+      icon: <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />,
+    },
+    {
+      title: "Você apaga",
+      body: "Apague qualquer entrada — ou tudo de uma vez — quando quiser.",
+      icon: (
+        <>
+          <path d="M3 6h18" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </>
+      ),
+    },
+  ];
+  return (
+    <section id="privacidade" style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.twoCol} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+        <div>
+          <div style={eyebrow}>
+            <span style={dot} />
+            Privacidade
+          </div>
+          <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", textWrap: "balance" }}>
+            Seu diário é só <span style={{ fontStyle: "italic", color: "var(--accent)" }}>seu</span>.
+          </h2>
+          <p style={{ margin: "22px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 440, textWrap: "pretty" }}>
+            O que você confia à Aurora não vira produto. Sem anúncios, sem revenda, sem letras miúdas.
+          </p>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {rows.map((r, n) => (
+            <div key={r.title} style={{ display: "flex", gap: 16, padding: "22px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: n === rows.length - 1 ? "1px solid rgba(255,255,255,.08)" : undefined }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true">
+                {r.icon}
+              </svg>
+              <div>
+                <div style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>{r.title}</div>
+                <p style={{ margin: "5px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>{r.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ COMO FUNCIONA ============ */
+export function ComoFunciona() {
+  const steps = [
+    { n: "01", title: "Toque e fale", body: "A Aurora propõe por onde começar; você toca no orb e fala o que vier. Sem digitar, sem campo em branco, sem julgamento." },
+    { n: "02", title: "A Aurora reflete", body: "Ela transcreve o que você falou e devolve uma pergunta gentil — não um conselho pronto — pra você enxergar o que estava por trás." },
+    { n: "03", title: "Acompanhe", body: "Cada dia vira um ponto na sua linha do tempo. Com o passar das semanas, o padrão aparece sozinho — e você começa a se entender melhor." },
+  ];
+  return (
+    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+        <div style={eyebrow}>
+          <span style={dot} />
+          Como funciona
+        </div>
+        <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 620, textWrap: "balance" }}>
+          Três minutos. Nenhuma tela em branco.
+        </h2>
+        <div style={{ marginTop: 56, display: "flex", flexDirection: "column" }}>
+          {steps.map((st, n) => (
+            <div key={st.n} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 32, padding: "32px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: n === steps.length - 1 ? "1px solid rgba(255,255,255,.08)" : undefined, alignItems: "start" }}>
+              <div style={{ font: "600 15px var(--font-sans)", letterSpacing: ".5px", color: "var(--accent)" }}>{st.n}</div>
+              <div>
+                <div className="font-serif" style={{ fontSize: 26, fontWeight: 450, letterSpacing: "-0.01em", color: "#F0ECF7" }}>{st.title}</div>
+                <p style={{ margin: "12px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 560, textWrap: "pretty" }}>{st.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FEATURES ============ */
+export function Features() {
+  const cells = [
+    { title: "Aprende a sua fase", body: "Propõe a pergunta certa pro momento que você vive — e muda com você.", stroke: "var(--accent)", icon: (<><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></>) },
+    { title: "Tudo por voz", body: "Sem digitar. Toque no orb e fale por dois minutos, do jeito que vier.", stroke: "#C9C4D8", icon: (<><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></>) },
+    { title: "Vira texto sozinho", body: "A Aurora transcreve e organiza o que você falou, pra você reler depois com calma.", stroke: "#C9C4D8", icon: (<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>) },
+    { title: "Reflexão, não conselho", body: "Em vez de respostas prontas, ela devolve uma pergunta que te faz pensar.", stroke: "var(--accent)", icon: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" /> },
+    { title: "Sua linha do tempo", body: "Cada dia vira um ponto. Você vê padrões que sozinho passariam batido.", stroke: "#C9C4D8", icon: (<><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.8" /></>) },
+    { title: "Modo Crepúsculo", body: "Uma interface escura e silenciosa, pensada para os minutos antes de dormir.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
+  ];
+  return (
+    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+        <div style={eyebrow}>
+          <span style={dot} />
+          O que o Aurora faz
+        </div>
+        <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 660, textWrap: "balance" }}>
+          Quieto por fora. <span style={{ fontStyle: "italic", color: "var(--accent)" }}>Atento</span> por dentro.
+        </h2>
+        <div className={styles.featGrid} style={{ marginTop: 54 }}>
+          {cells.map((c) => (
+            <div key={c.title} style={{ padding: "34px 30px", borderRight: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c.stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {c.icon}
+              </svg>
+              <div style={{ marginTop: 18, font: "600 17px var(--font-sans)", color: "#F0ECF7" }}>{c.title}</div>
+              <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>{c.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ PARA TERAPEUTAS ============ */
+export function ParaTerapeutas() {
+  return (
+    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
+        <div style={eyebrow}>
+          <span style={dot} />
+          Para terapeutas e psicólogos
+        </div>
+        <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(1.9rem,4.6vw,36px)", fontWeight: 450, lineHeight: 1.14, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 700, textWrap: "balance" }}>
+          Uma ferramenta entre as sessões — e, no horizonte, dentro do seu <span style={{ fontStyle: "italic", color: "var(--accent)" }}>consultório</span>.
+        </h2>
+        <div className={styles.threeCards} style={{ marginTop: 40 }}>
+          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+            <div style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Usar</div>
+            <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>Reflita você também, do seu jeito.</p>
+          </div>
+          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+            <div style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Recomendar</div>
+            <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>Uma prática gentil pros seus pacientes entre os encontros.</p>
+          </div>
+          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Integrar</span>
+              <span style={{ font: "600 10px var(--font-sans)", letterSpacing: ".8px", textTransform: "uppercase", color: "#1B1730", background: "var(--accent)", padding: "3px 8px", borderRadius: 999 }}>Em breve</span>
+            </div>
+            <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>A Aurora dentro do seu consultório, no fluxo do acompanhamento.</p>
+          </div>
+        </div>
+        <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 32, height: 48, padding: "0 24px" }}>
+          Quero saber como
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+        </a>
+      </div>
+    </section>
+  );
+}
+
+/* ============ CONVIDE ============ */
+export function Convide() {
+  return (
+    <section id="convide" style={{ background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
+        <div style={{ ...eyebrow, display: "inline-flex" }}>
+          <span style={dot} />
+          Convide
+        </div>
+        <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(1.9rem,4.8vw,38px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>
+          Conhece alguém que precisa se <span style={{ fontStyle: "italic", color: "var(--accent)" }}>ouvir</span>?
+        </h2>
+        <p style={{ margin: "18px auto 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 520, textWrap: "pretty" }}>
+          Convide — inclusive seu terapeuta — pra conhecer a Aurora. A cada convite, você sobe na fila.
+        </p>
+        <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 30, height: 50, padding: "0 26px", font: "600 15px var(--font-sans)" }}>
+          Convidar e subir na fila
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+        </a>
+        <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Convidar é só mostrar o app. Seu diário continua só seu.</div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ MANIFESTO ============ */
+export function Manifesto() {
+  return (
+    <section id="manifesto" style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.twoColManifesto} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
+        <div>
+          <div style={eyebrow}>
+            <span style={dot} />
+            A ideia por trás
+          </div>
+          <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(1.9rem,4.6vw,36px)", fontWeight: 450, lineHeight: 1.14, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 540, textWrap: "balance" }}>
+            Por que falar em voz alta muda o que você <span style={{ fontStyle: "italic", color: "var(--accent)" }}>sente</span>.
+          </h2>
+          <p style={{ margin: "20px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 460, textWrap: "pretty" }}>
+            O ensaio que deu origem à Aurora — e, dentro dele, o white paper com o método e a ciência por trás.
+          </p>
+          <a href="#" className={styles.outlineBtn} style={{ marginTop: 28, height: 48, padding: "0 24px" }}>
+            Ler o manifesto
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+          </a>
+        </div>
+        <div style={{ borderLeft: "2px solid rgba(236,182,210,.4)", padding: "6px 0 6px 28px" }}>
+          <div className="font-serif" style={{ fontStyle: "italic", fontSize: "clamp(20px,3vw,24px)", fontWeight: 400, lineHeight: 1.45, color: "#E7E2F0", textWrap: "pretty" }}>
+            &ldquo;O que a gente diz em voz alta para de morar só na cabeça — e começa a fazer sentido.&rdquo;
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FOOTER ============ */
+export function Footer() {
+  const link = { font: "500 13px var(--font-sans)", color: "#6F6987", textDecoration: "none" };
+  return (
+    <footer style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px clamp(20px,5vw,32px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--aurora)" }} />
+          <span className="font-serif" style={{ fontSize: 18, fontWeight: 450, letterSpacing: "-0.02em", color: "#B3ADC4" }}>Aurora</span>
+          <span style={{ font: "400 13px var(--font-sans)", color: "#56506B", marginLeft: 4 }}>· diário por voz</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap" }}>
+          <a href="#manifesto" style={link}>Manifesto</a>
+          <a href="#privacidade" style={link}>Privacidade</a>
+          <a href="#" style={link}>Contato</a>
+          <span style={{ font: "400 13px var(--font-sans)", color: "#56506B" }}>© 2026 Aurora</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
