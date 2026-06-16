@@ -1,0 +1,169 @@
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.kicker {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Botão "Nova entrada" aludindo ao orb (gradiente aurora + glow) */
+.orbButton {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--aurora);
+  border: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: 0 0 42px -8px rgba(169, 155, 217, 0.6);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.orbButton::after {
+  content: "+";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #1b1830;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.orbButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 56px -6px rgba(169, 155, 217, 0.75);
+}
+
+/* Hero — entrada mais recente, iluminada pelo orb */
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: rgba(34, 30, 51, 0.82);
+  border-radius: var(--r-lg);
+  padding: var(--space-7) var(--space-6);
+  box-shadow:
+    -50px -30px 140px -60px rgba(169, 155, 217, 0.5),
+    0 2px 60px rgba(0, 0, 0, 0.4);
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 60%;
+  height: 120%;
+  background: radial-gradient(ellipse at top right, rgba(201, 162, 212, 0.16), transparent 70%);
+  pointer-events: none;
+}
+.heroBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.heroText {
+  font-size: 1.35rem;
+  line-height: 1.55;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Insight principal — card grande, tom aurora */
+.mainInsight {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  padding: var(--space-6);
+  background: linear-gradient(135deg, rgba(169, 155, 217, 0.16), rgba(127, 208, 196, 0.1));
+  border: 1px solid var(--hairline);
+}
+.mainInsightText {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Board — insights secundários + histórico, misturados */
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+.card {
+  border-radius: var(--r-md);
+  padding: var(--space-5);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.insightCard {
+  background: linear-gradient(140deg, rgba(169, 155, 217, 0.12), transparent);
+  border: 1px solid var(--hairline);
+}
+.insightCard .insightText {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+}
+.entryHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.date {
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+.trecho {
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.label {
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.skeleton {
+  border-radius: var(--r-lg);
+  padding: var(--space-6);
+  background: var(--surface);
+  color: var(--ink-faint);
+}
+
+@media (max-width: 640px) {
+  .heroText {
+    font-size: 1.2rem;
+  }
+}

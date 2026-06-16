@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
-import { generateWeeklyPattern } from "@/lib/ai/weekly-pattern";
+import { generateInsights, type InsightSource } from "@/lib/ai/insights";
+import { renderProse } from "@/lib/render-prose";
+import styles from "./Timeline.module.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +18,14 @@ const MOOD_COLOR: Record<string, string> = {
   pesado: "var(--mood-pesado)",
   sensível: "var(--mood-sensivel)",
   ansioso: "var(--mood-ansioso)",
+};
+
+type Row = {
+  id: string;
+  transcript: string | null;
+  reflection: string | null;
+  mood: string | null;
+  createdAt: Date;
 };
 
 function formatDate(d: Date): string {
@@ -29,7 +40,45 @@ function formatDate(d: Date): string {
 
 function trecho(reflection: string | null, transcript: string | null): string {
   const raw = (reflection ?? transcript ?? "").replace(/\s+/g, " ").trim();
-  return raw.length > 110 ? `${raw.slice(0, 110)}…` : raw;
+  return raw.length > 120 ? `${raw.slice(0, 120)}…` : raw;
+}
+
+function moodColor(mood: string | null): string {
+  return mood ? (MOOD_COLOR[mood] ?? "var(--ink-faint)") : "var(--hairline)";
+}
+
+// Bloco de insights — assíncrono (chama a IA). Vem por streaming via Suspense,
+// então a página (hero + histórico) aparece na hora.
+async function InsightsBlock({ week }: { week: InsightSource[] }) {
+  let main = "Um passo de cada vez. Toque no orb quando quiser falar.";
+  let secondary: string[] = [];
+  try {
+    const data = await generateInsights(week);
+    main = data.main;
+    secondary = data.secondary;
+  } catch {
+    // mantém o fallback
+  }
+
+  return (
+    <>
+      <section className={styles.mainInsight}>
+        <span className={styles.label}>padrão da semana</span>
+        <div className={`font-serif ${styles.mainInsightText}`}>{renderProse(main)}</div>
+      </section>
+
+      {secondary.length > 0 && (
+        <div className={styles.board}>
+          {secondary.map((s, i) => (
+            <article key={i} className={`${styles.card} ${styles.insightCard}`}>
+              <span className={styles.label}>insight</span>
+              <div className={`font-serif ${styles.insightText}`}>{renderProse(s)}</div>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 export default async function TimelinePage() {
@@ -41,7 +90,7 @@ export default async function TimelinePage() {
     redirect("/login");
   }
 
-  const rows = await db
+  const rows: Row[] = await db
     .select({
       id: entries.id,
       transcript: entries.transcript,
@@ -54,83 +103,71 @@ export default async function TimelinePage() {
     .orderBy(desc(entries.createdAt))
     .limit(60);
 
-  // Padrão da semana: entradas dos últimos 7 dias.
+  const latest = rows[0];
+  const rest = rows.slice(1);
   const weekAgo = Date.now() - 7 * 86_400_000;
-  const week = rows.filter((r) => r.createdAt.getTime() >= weekAgo);
-  let pattern: string;
-  try {
-    pattern = await generateWeeklyPattern(week);
-  } catch {
-    pattern = "Um passo de cada vez. Toque no orb quando quiser falar.";
-  }
+  const week: InsightSource[] = rows
+    .filter((r) => r.createdAt.getTime() >= weekAgo)
+    .map((r) => ({ transcript: r.transcript, reflection: r.reflection, mood: r.mood }));
 
   return (
-    <main
-      style={{
-        minHeight: "100dvh",
-        maxWidth: 620,
-        margin: "0 auto",
-        padding: "var(--space-7) var(--space-5)",
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--space-6)",
-      }}
-    >
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-        <p
-          className="font-serif"
-          style={{ fontSize: "1.4rem", lineHeight: 1.4, color: "var(--ink)", margin: 0 }}
-        >
-          {pattern}
-        </p>
-        <Link
-          href="/diario"
-          style={{ color: "var(--accent)", fontSize: "0.95rem", textDecoration: "none" }}
-        >
-          ＋ Nova entrada
-        </Link>
-      </header>
+    <main className={styles.page}>
+      <div className={styles.top}>
+        <p className={styles.kicker}>Linha do tempo</p>
+        <Link href="/diario" className={styles.orbButton} aria-label="Nova entrada" />
+      </div>
 
       {rows.length === 0 ? (
         <p style={{ color: "var(--ink-soft)" }}>
           Ainda não há entradas. Toque no orb pra começar.
         </p>
       ) : (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
-          {rows.map((e) => (
-            <li
-              key={e.id}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "var(--space-3)",
-                padding: "var(--space-4) 0",
-                borderTop: "1px solid var(--hairline)",
-              }}
-            >
-              <span
-                aria-hidden="true"
-                title={e.mood ?? undefined}
-                style={{
-                  flex: "0 0 auto",
-                  width: 10,
-                  height: 10,
-                  marginTop: 7,
-                  borderRadius: "50%",
-                  background: e.mood ? (MOOD_COLOR[e.mood] ?? "var(--ink-faint)") : "var(--hairline)",
-                }}
-              />
-              <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                <span style={{ color: "var(--ink-faint)", fontSize: "0.8rem" }}>
-                  {formatDate(e.createdAt)}
+        <>
+          {/* Hero — entrada mais recente, iluminada pelo orb */}
+          {latest && (
+            <section className={styles.hero}>
+              <div className={styles.heroBody}>
+                <span className={styles.label}>
+                  {formatDate(latest.createdAt)} · sua última reflexão
                 </span>
-                <span style={{ color: "var(--ink-soft)" }}>
-                  {trecho(e.reflection, e.transcript)}
-                </span>
+                <div className={`font-serif ${styles.heroText}`}>
+                  {renderProse(latest.reflection ?? latest.transcript ?? "")}
+                </div>
+                {latest.mood && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2)", color: "var(--ink-soft)", fontSize: "0.9rem" }}>
+                    <span className={styles.dot} style={{ background: moodColor(latest.mood) }} />
+                    {latest.mood}
+                  </span>
+                )}
               </div>
-            </li>
-          ))}
-        </ul>
+            </section>
+          )}
+
+          {/* Insights (streaming) */}
+          <Suspense
+            fallback={<div className={styles.skeleton}>Lendo os fios da sua semana…</div>}
+          >
+            <InsightsBlock week={week} />
+          </Suspense>
+
+          {/* Histórico */}
+          {rest.length > 0 && (
+            <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+              <span className={styles.label}>histórico</span>
+              <div className={styles.board}>
+                {rest.map((e) => (
+                  <article key={e.id} className={styles.card}>
+                    <div className={styles.entryHead}>
+                      <span className={styles.dot} style={{ background: moodColor(e.mood) }} />
+                      <span className={styles.date}>{formatDate(e.createdAt)}</span>
+                    </div>
+                    <p className={styles.trecho}>{trecho(e.reflection, e.transcript)}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </main>
   );
