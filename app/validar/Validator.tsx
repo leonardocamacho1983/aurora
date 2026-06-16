@@ -56,6 +56,8 @@ type EnvStatus = {
   OPENAI_API_KEY: boolean;
   DATABASE_URL: boolean;
   DIRECT_URL: boolean;
+  POSTGRES_URL: boolean;
+  POSTGRES_URL_NON_POOLING: boolean;
   NEXT_PUBLIC_SUPABASE_URL: boolean;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: boolean;
   SUPABASE_SERVICE_ROLE_KEY: boolean;
@@ -186,8 +188,10 @@ export function Validator({ email, env }: { email: string; env: EnvStatus }) {
           0) Ambiente do servidor — variáveis presentes?
         </h2>
         <p style={{ color: "var(--ink-faint)", fontSize: "0.85rem", marginTop: 0 }}>
-          Ambiente: <strong>{env.VERCEL_ENV}</strong>. Se algo aqui estiver ❌, o
-          /api/reflect falha (precisa de Anthropic + banco).
+          Ambiente: <strong>{env.VERCEL_ENV}</strong>. O banco aceita{" "}
+          <code>DATABASE_URL</code> OU <code>POSTGRES_URL</code> (e{" "}
+          <code>DIRECT_URL</code> OU <code>POSTGRES_URL_NON_POOLING</code>) — basta
+          uma de cada par estar ✅.
         </p>
         <ul style={{ margin: 0, paddingLeft: "1.2em" }}>
           {(
@@ -195,7 +199,9 @@ export function Validator({ email, env }: { email: string; env: EnvStatus }) {
               ["ANTHROPIC_API_KEY", env.ANTHROPIC_API_KEY],
               ["OPENAI_API_KEY", env.OPENAI_API_KEY],
               ["DATABASE_URL", env.DATABASE_URL],
+              ["POSTGRES_URL (fallback)", env.POSTGRES_URL],
               ["DIRECT_URL", env.DIRECT_URL],
+              ["POSTGRES_URL_NON_POOLING (fallback)", env.POSTGRES_URL_NON_POOLING],
               ["NEXT_PUBLIC_SUPABASE_URL", env.NEXT_PUBLIC_SUPABASE_URL],
               ["NEXT_PUBLIC_SUPABASE_ANON_KEY", env.NEXT_PUBLIC_SUPABASE_ANON_KEY],
               ["SUPABASE_SERVICE_ROLE_KEY", env.SUPABASE_SERVICE_ROLE_KEY],
