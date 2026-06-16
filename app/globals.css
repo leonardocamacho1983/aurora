@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────
+   Aurora — Design System v0.1 (tokens). Fonte da verdade.
+   Crepúsculo = tema padrão (dark). Amanhecer = [data-theme="dawn"].
+   ─────────────────────────────────────────────────────────── */
+:root {
+  /* Crepúsculo (padrão) */
+  --bg: #181527;
+  --surface: #221e33;
+  --raised: #2a2540;
+  --ink: #f0ecf7;
+  --ink-soft: #b3adc4;
+  --ink-faint: #928ca8; /* v0.1: clareado p/ passar AA (≥4.5:1) */
+  --accent: #a99bd9;
+  --focus: #a99bd9;
+  --hairline: #2e2944;
+
+  /* Humor */
+  --mood-leve: #8fb89c;
+  --mood-calmo: #9bb0d4;
+  --mood-pesado: #8c8aa6;
+  --mood-sensivel: #d6a48c;
+  --mood-ansioso: #d9b36b;
+
+  /* Sistema */
+  --success: #7fa88a;
+  --alert: #c58468;
+
+  /* Espaçamento (escala travada — não usar valores fora dela) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Raios */
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-pill: 999px;
+
+  /* Orb (gradiente aurora) */
+  --aurora: radial-gradient(circle at 32% 26%, #f4b6a0 0%, transparent 52%),
+    radial-gradient(circle at 72% 30%, #c9a2d4 0%, transparent 56%),
+    radial-gradient(circle at 74% 74%, #8fa4d6 0%, transparent 56%),
+    radial-gradient(circle at 28% 76%, #7fd0c4 0%, transparent 56%),
+    linear-gradient(140deg, #c9a2d4, #8fa4d6 55%, #7fd0c4);
+
+  /* Fontes (Inter no geral; Fraunces só no falado/reflexão) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+[data-theme="dawn"] {
+  /* Amanhecer */
+  --bg: #e9e6ee;
+  --surface: #ffffff;
+  --raised: #f6f3fb;
+  --ink: #26233a;
+  --ink-soft: #5e5872;
+  --ink-faint: #655f78; /* v0.1: escurecido p/ AA */
+  --accent: #7c6bb0;
+  --focus: #7c6bb0;
+  --hairline: #e0dcea;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* Fraunces só no falado/reflexão. */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Foco visível obrigatório em todo interativo (v0.1 §2). */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Respeita prefers-reduced-motion (v0.1 §5). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
