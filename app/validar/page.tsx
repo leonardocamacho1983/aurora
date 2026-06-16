@@ -6,13 +6,19 @@ export const dynamic = "force-dynamic";
 
 /**
  * Tela de validação (smoke test) — FERRAMENTA DE DEBUG, não é produto.
- * Tem botão de disparar crise, então NÃO pode aparecer em produção pública:
- *  - bloqueada quando VERCEL_ENV === "production" (404);
- *  - exige sessão Supabase.
- * Para remover depois: basta apagar a pasta app/validar/.
+ * Tem botão de disparar crise, então NÃO pode aparecer em produção pública.
+ * Proteção POR DESIGN (não depende da branch):
+ *  - negar por padrão: só renderiza em Preview ou local/development;
+ *    produção (ou qualquer VERCEL_ENV inesperado) → 404, mesmo se mergeada;
+ *  - além disso, exige sessão Supabase.
+ * Para remover de vez: apague a pasta app/validar/.
  */
 export default async function ValidarPage() {
-  if (process.env.VERCEL_ENV === "production") {
+  // VERCEL_ENV: "production" | "preview" | "development" | undefined (local).
+  const vercelEnv = process.env.VERCEL_ENV;
+  const allowed =
+    vercelEnv === undefined || vercelEnv === "preview" || vercelEnv === "development";
+  if (!allowed) {
     notFound();
   }
 
