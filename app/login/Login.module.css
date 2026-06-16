@@ -1,0 +1,175 @@
+/* Amanhecer: o orb como sol nascente, luz quente subindo do horizonte */
+.stage {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) var(--space-5);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    var(--temp-dusk) 0%,
+    var(--temp-mid) 52%,
+    var(--temp-dawn) 100%
+  );
+}
+/* halo do sol nascente atrás do conteúdo */
+.stage::before {
+  content: "";
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, 130vw);
+  height: min(680px, 130vw);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(244, 182, 160, 0.22),
+    rgba(201, 162, 212, 0.1) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.sun {
+  --orb-size: 176px;
+}
+
+.brand {
+  font-size: var(--fraunces-display);
+  color: var(--ink);
+  margin: 0;
+  line-height: 1;
+}
+.tagline {
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 0;
+  max-width: 28ch;
+}
+
+.card {
+  width: 100%;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.label {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+  font-size: 1rem;
+}
+.input::placeholder {
+  color: var(--ink-faint);
+}
+.pwWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pwWrap .input {
+  padding-right: 92px;
+}
+.pwToggle {
+  position: absolute;
+  right: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.hint {
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+
+.submit {
+  min-height: 48px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: var(--accent);
+  color: #1b1830;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.submit:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.toggle {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.toggleBtn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: var(--space-2);
+  min-height: 44px;
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--glass-border);
+  background: rgba(127, 168, 138, 0.16);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.error {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--glass-border);
+  background: rgba(197, 132, 104, 0.16);
+  color: var(--ink);
+  font-size: 0.9rem;
+}

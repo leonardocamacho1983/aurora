@@ -21,6 +21,8 @@ export interface OrbProps {
   ariaLabel?: string;
   /** 13 níveis 0..1 reativos ao áudio (estado "recording"). Opcional. */
   audioLevels?: number[];
+  /** Sol puramente decorativo: sem botão, sem foco, sem ação. */
+  decorative?: boolean;
 }
 
 /**
@@ -29,20 +31,13 @@ export interface OrbProps {
  * Botão real, focável, aria-label por estado. Respeita prefers-reduced-motion.
  * NÃO está ligado às rotas — só o componente.
  */
-export function Orb({ state = "idle", onClick, ariaLabel, audioLevels }: OrbProps) {
+export function Orb({ state = "idle", onClick, ariaLabel, audioLevels, decorative }: OrbProps) {
   const grainId = useId();
   const interactive = state === "idle" || state === "recording";
   const label = ariaLabel ?? DEFAULT_LABEL[state];
 
-  return (
-    <button
-      type="button"
-      className={`${styles.orb} ${styles[state]}`}
-      onClick={onClick}
-      disabled={!interactive}
-      aria-label={label}
-      aria-busy={state === "reflecting"}
-    >
+  const inner = (
+    <>
       <span className={styles.halo} aria-hidden="true" />
 
       {/* anéis do "floresce" (gravando) — vendem o tamanho */}
@@ -79,6 +74,27 @@ export function Orb({ state = "idle", onClick, ariaLabel, audioLevels }: OrbProp
           />
         ))}
       </span>
+    </>
+  );
+
+  if (decorative) {
+    return (
+      <span className={`${styles.orb} ${styles[state]}`} aria-hidden="true" style={{ pointerEvents: "none" }}>
+        {inner}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={`${styles.orb} ${styles[state]}`}
+      onClick={onClick}
+      disabled={!interactive}
+      aria-label={label}
+      aria-busy={state === "reflecting"}
+    >
+      {inner}
     </button>
   );
 }
