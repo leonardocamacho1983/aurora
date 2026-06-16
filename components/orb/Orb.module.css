@@ -42,18 +42,19 @@
   transition: transform 300ms ease, filter 300ms ease;
 }
 
-/* camada cônica que gira por dentro (refletindo) */
+/* facho de luz que gira por dentro (refletindo) — um arco claro percorrendo
+   o orb deixa a rotação inequívoca, sem virar spinner ansioso */
 .conic {
   position: absolute;
-  inset: -25%;
+  inset: -30%;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    #c9a2d4,
-    #8fa4d6,
-    #7fd0c4,
-    #f4b6a0,
-    #c9a2d4
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0.04) 130deg,
+    rgba(255, 255, 255, 0.55) 250deg,
+    rgba(244, 182, 160, 0.4) 300deg,
+    rgba(255, 255, 255, 0) 360deg
   );
   opacity: 0;
   mix-blend-mode: screen;
@@ -136,15 +137,18 @@
   animation: dance 0.9s ease-in-out infinite alternate;
 }
 
-/* ── gira (reflecting) — orb parado, gradiente girando por dentro ── */
+/* ── gira (reflecting) — orb parado, facho girando por dentro ── */
 .reflecting .conic {
-  opacity: 0.85;
-  animation: spin 8s linear infinite;
+  opacity: 1;
+  animation: spin 6s linear infinite;
 }
 
-/* ── exala (saved) — um respiro único ── */
+/* ── exala (saved) — uma respiração calma e tranquila ── */
 .saved .core {
-  animation: exhale 700ms ease-out 1;
+  animation: exhale 1.8s ease-in-out 1;
+}
+.saved .halo {
+  animation: exhaleGlow 1.8s ease-in-out 1;
 }
 
 /* ── desabilitado — dessaturado, sem movimento ── */
@@ -177,8 +181,13 @@
 }
 @keyframes exhale {
   0% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  45% { transform: scale(1.05); }
   100% { transform: scale(1); }
+}
+@keyframes exhaleGlow {
+  0% { opacity: 0.8; }
+  45% { opacity: 1; }
+  100% { opacity: 0.8; }
 }
 @keyframes dance {
   from { transform: scaleY(0.2); }
