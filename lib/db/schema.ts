@@ -121,3 +121,10 @@ export const crisisEvents = pgTable(
     userIdx: index("crisis_events_user_id_idx").on(t.userId),
   }),
 );
+
+// waitlist — emails da lista de espera da landing page (público; sem dados sensíveis).
+export const waitlist = pgTable("waitlist", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

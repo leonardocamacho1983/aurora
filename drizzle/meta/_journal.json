@@ -15,6 +15,13 @@
       "when": 1781616339948,
       "tag": "0001_cynical_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781649904443,
+      "tag": "0002_lonely_true_believers",
+      "breakpoints": true
     }
   ]
 }
