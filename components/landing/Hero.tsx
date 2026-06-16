@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WaitlistForm } from "./WaitlistForm";
 import { drawHero, makeDawnField, HSET, HEND, smooth } from "@/lib/landing/dawn";
 import styles from "./Landing.module.css";
@@ -22,16 +22,28 @@ export function Hero() {
   const kineticRef = useRef<HTMLDivElement>(null);
   const logoWrapRef = useRef<HTMLDivElement>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const startFnRef = useRef<(withSound: boolean) => void>(() => {});
   const skipFnRef = useRef<() => void>(() => {});
+  const toggleFnRef = useRef<() => void>(() => {});
+  const soundOnRef = useRef(true);
+
+  const [showVeil, setShowVeil] = useState(false);
+  const [introActive, setIntroActive] = useState(true);
+  const [soundOn, setSoundOn] = useState(true);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d") ?? null;
+    const audio = audioRef.current;
     const { stars, particles } = makeDawnField();
     let heroT = 0;
-    let playing = true;
+    let playing = false;
+    let started = false;
     let raf = 0;
     let hlast: number | null = null;
     let revealTimer = 0;
+    let fallbackTimer = 0;
     let curBeat = "";
 
     const revealHero = (v: number) => {
@@ -60,6 +72,20 @@ export function Hero() {
         s.style.opacity = "0";
         s.style.pointerEvents = "none";
       }
+    };
+
+    const fadeOutAudio = () => {
+      if (!audio) return;
+      const step = () => {
+        if (audio.volume > 0.06) {
+          audio.volume = Math.max(0, audio.volume - 0.12);
+          window.setTimeout(step, 35);
+        } else {
+          audio.pause();
+          audio.volume = 1;
+        }
+      };
+      step();
     };
 
     const updateHero = (t: number) => {
@@ -105,6 +131,8 @@ export function Hero() {
       if (raf) cancelAnimationFrame(raf);
       settleIntro();
       hideSkip();
+      setIntroActive(false);
+      fadeOutAudio();
       try {
         sessionStorage.setItem("aurora_hero_seen", "1");
       } catch {
@@ -131,12 +159,50 @@ export function Hero() {
       raf = requestAnimationFrame(tick);
     };
 
+    startFnRef.current = (withSound: boolean) => {
+      if (started) return;
+      started = true;
+      clearTimeout(fallbackTimer);
+      setShowVeil(false);
+      heroT = 0;
+      playing = true;
+      hlast = null;
+      if (withSound && soundOnRef.current && audio) {
+        audio.muted = false;
+        audio.volume = 1;
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
     skipFnRef.current = () => {
       heroT = HEND;
       playing = false;
       if (ctx) drawHero(ctx, heroT, stars, particles);
       updateHero(heroT);
       finishIntro();
+    };
+
+    // Liga/desliga o som; durante a intro sincroniza o áudio com o relógio (sem reiniciar).
+    toggleFnRef.current = () => {
+      const next = !soundOnRef.current;
+      soundOnRef.current = next;
+      setSoundOn(next);
+      try {
+        localStorage.setItem("aurora_sound", next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      if (!audio) return;
+      if (next && playing) {
+        audio.muted = false;
+        audio.volume = 1;
+        audio.currentTime = Math.min(heroT, audio.duration || HEND);
+        audio.play().catch(() => {});
+      } else if (!next) {
+        audio.pause();
+      }
     };
 
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -146,8 +212,16 @@ export function Hero() {
     } catch {
       /* ignore */
     }
+    try {
+      if (localStorage.getItem("aurora_sound") === "0") {
+        soundOnRef.current = false;
+        setSoundOn(false);
+      }
+    } catch {
+      /* ignore */
+    }
 
-    // Failsafe: se o motor nunca avançar, força o estado final (conteúdo nunca preso).
+    // Failsafe: se o motor nunca avançar, força o estado final.
     revealTimer = window.setTimeout(() => {
       const el = heroContentRef.current;
       if (el && parseFloat(getComputedStyle(el).opacity) < 0.95) {
@@ -155,6 +229,7 @@ export function Hero() {
         if (raf) cancelAnimationFrame(raf);
         settleIntro();
         hideSkip();
+        setIntroActive(false);
       }
     }, 14000);
 
@@ -164,21 +239,26 @@ export function Hero() {
       if (ctx) drawHero(ctx, heroT, stars, particles);
       settleIntro();
       hideSkip();
+      setIntroActive(false);
     } else {
-      heroT = 0;
-      playing = true;
-      hlast = null;
-      raf = requestAnimationFrame(tick);
+      // Desenha o céu inicial atrás do veil; espera o toque (ou auto-toca mudo em 3s).
+      if (ctx) drawHero(ctx, 0, stars, particles);
+      setShowVeil(true);
+      fallbackTimer = window.setTimeout(() => startFnRef.current(false), 3000);
     }
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
       clearTimeout(revealTimer);
+      clearTimeout(fallbackTimer);
+      if (audio) audio.pause();
     };
   }, []);
 
   return (
     <>
+      <audio ref={audioRef} src="/audio/aurora-intro.mp3" preload="auto" playsInline />
+
       {/* ===== Nav (escondida durante a intro; aparece no settle) ===== */}
       <div
         ref={headerRef}
@@ -213,6 +293,62 @@ export function Hero() {
       {/* ===== Hero · O Amanhecer ===== */}
       <div style={{ position: "relative", overflow: "hidden", background: "#08060f", height: "100vh", minHeight: 720, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <canvas ref={canvasRef} width={1920} height={1080} aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block", pointerEvents: "none" }} />
+
+        {/* ===== Veil de entrada "1 toque" ===== */}
+        {showVeil && (
+          <div
+            onClick={() => startFnRef.current(true)}
+            style={{ position: "absolute", inset: 0, zIndex: 7, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26, padding: 24, background: "rgba(8,6,15,.42)", cursor: "pointer", textAlign: "center" }}
+          >
+            <div className="font-serif" style={{ fontSize: "clamp(3rem,13vw,96px)", fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1, color: "#F8F6FC", textShadow: "0 0 80px rgba(236,182,210,.5),0 2px 40px rgba(0,0,0,.5)" }}>Aurora</div>
+            <div style={{ font: "600 clamp(11px,2.4vw,14px) var(--font-sans)", letterSpacing: 6, textTransform: "uppercase", color: "#C9C4D8" }}>diário por voz · em breve</div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); startFnRef.current(true); }}
+              className={styles.veilBtn}
+              style={{ marginTop: 8 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+              Toque para começar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); skipFnRef.current(); }}
+              className={styles.veilSkip}
+            >
+              entrar direto, sem a intro
+            </button>
+          </div>
+        )}
+
+        {/* ===== Botão de som (durante a intro) ===== */}
+        {introActive && !showVeil && (
+          <button
+            type="button"
+            onClick={() => toggleFnRef.current()}
+            aria-label={soundOn ? "Desligar som" : "Ligar som"}
+            className={styles.skip}
+            style={{ position: "absolute", right: 24, bottom: 70, zIndex: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: 999, background: "rgba(10,8,20,.4)", border: "1px solid rgba(255,255,255,.14)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", color: "#C3BED4", cursor: "pointer" }}
+          >
+            {soundOn ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="22" x2="16" y1="9" y2="15" />
+                <line x1="16" x2="22" y1="9" y2="15" />
+              </svg>
+            )}
+          </button>
+        )}
 
         <button
           ref={skipRef}

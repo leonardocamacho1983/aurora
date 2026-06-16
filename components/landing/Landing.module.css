@@ -88,6 +88,41 @@
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+/* entrada "1 toque" (veil) */
+.veilBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  height: 56px;
+  padding: 0 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f8f6fc;
+  font: 600 16px var(--font-sans);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.veilBtn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(236, 182, 210, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+.veilSkip {
+  background: none;
+  border: none;
+  color: #8e89a6;
+  font: 500 13px var(--font-sans);
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.veilSkip:hover {
+  color: #c3bed4;
+}
+
 .outlineBtn {
   display: inline-flex;
   align-items: center;
