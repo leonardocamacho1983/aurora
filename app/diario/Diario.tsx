@@ -42,6 +42,44 @@ const HELPER: Record<Phase, string> = {
   error: "Algo deu errado",
 };
 
+// Converte ênfase em markdown (*x* / _x_ / **x**) em itálico/negrito — para a
+// reflexão nunca mostrar asteriscos crus. Sem HTML perigoso: monta nós React.
+function renderInline(text: string, kp: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const re = /\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_/g;
+  let last = 0;
+  let i = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    const isStrong = m[1] != null;
+    const content = m[1] ?? m[2] ?? m[3] ?? "";
+    nodes.push(
+      isStrong ? (
+        <strong key={`${kp}-${i}`}>{content}</strong>
+      ) : (
+        <em key={`${kp}-${i}`}>{content}</em>
+      ),
+    );
+    last = m.index + m[0].length;
+    i++;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
+function renderProse(text: string): React.ReactNode {
+  return text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p, idx) => (
+      <p key={idx} style={{ margin: 0 }}>
+        {renderInline(p.replace(/\n/g, " "), `p${idx}`)}
+      </p>
+    ));
+}
+
 export function Diario() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
@@ -186,23 +224,42 @@ export function Diario() {
       {phase === "reflection" && reflection && (
         <section
           style={{
-            maxWidth: 460,
+            maxWidth: 520,
             background: "var(--surface)",
-            border: "1px solid var(--hairline)",
             borderRadius: "var(--r-lg)",
-            padding: "var(--space-5)",
+            padding: "var(--space-6) var(--space-5)",
             display: "flex",
             flexDirection: "column",
-            gap: "var(--space-4)",
+            gap: "var(--space-5)",
             textAlign: "left",
+            boxShadow: "0 1px 48px rgba(0, 0, 0, 0.28)",
           }}
         >
-          <p
+          {/* glifo do orb */}
+          <span
+            aria-hidden="true"
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: "var(--aurora)",
+              alignSelf: "flex-start",
+            }}
+          />
+
+          <div
             className="font-serif"
-            style={{ margin: 0, fontSize: "1.15rem", lineHeight: 1.5, whiteSpace: "pre-line" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--space-4)",
+              fontSize: "1.2rem",
+              lineHeight: 1.6,
+              color: "var(--ink)",
+            }}
           >
-            {reflection}
-          </p>
+            {renderProse(reflection)}
+          </div>
 
           {mood && (
             <span
