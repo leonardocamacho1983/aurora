@@ -6,6 +6,7 @@ import {
   CrisisResources,
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
+import styles from "./Diario.module.css";
 
 type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
 
@@ -15,9 +16,6 @@ type ReflectResponse =
   | { error: string };
 
 const PROMPT_DO_DIA = "O que está vivo em você agora?";
-
-const MOODS = ["leve", "calmo", "pesado", "sensível", "ansioso"] as const;
-type Mood = (typeof MOODS)[number];
 
 const MOOD_COLOR: Record<string, string> = {
   leve: "var(--mood-leve)",
@@ -31,7 +29,7 @@ const ORB_STATE: Record<Phase, OrbState> = {
   idle: "idle",
   recording: "recording",
   reflecting: "reflecting",
-  reflection: "saved",
+  reflection: "idle", // sol calmo atrás do card
   crisis: "disabled",
   error: "idle",
 };
@@ -45,8 +43,8 @@ const HELPER: Record<Phase, string> = {
   error: "Algo deu errado",
 };
 
-// Converte ênfase em markdown (*x* / _x_ / **x**) em itálico/negrito — para a
-// reflexão nunca mostrar asteriscos crus. Sem HTML perigoso: monta nós React.
+// Converte ênfase em markdown (*x* / _x_ / **x**) em itálico/negrito — a reflexão
+// nunca mostra asteriscos crus. Sem HTML perigoso: monta nós React.
 function renderInline(text: string, kp: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   const re = /\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_/g;
@@ -83,27 +81,12 @@ function renderProse(text: string): React.ReactNode {
     ));
 }
 
-const pillButton: React.CSSProperties = {
-  minHeight: 44,
-  padding: "var(--space-3) var(--space-5)",
-  borderRadius: "var(--r-pill)",
-  border: "1px solid var(--hairline)",
-  fontSize: "1rem",
-  cursor: "pointer",
-};
-
 export function Diario() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
+  const [mood, setMood] = useState<string | null>(null);
   const [crisis, setCrisis] = useState<CrisisResourcesData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Edição inline (Parte 2)
-  const [entryId, setEntryId] = useState<string | null>(null);
-  const [draftText, setDraftText] = useState("");
-  const [mood, setMood] = useState<Mood | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -111,12 +94,9 @@ export function Diario() {
   function resetToIdle() {
     setPhase("idle");
     setReflection(null);
+    setMood(null);
     setCrisis(null);
     setErrorMsg(null);
-    setEntryId(null);
-    setDraftText("");
-    setMood(null);
-    setSaved(false);
   }
 
   function fail(message: string) {
@@ -125,11 +105,12 @@ export function Diario() {
   }
 
   async function onOrbClick() {
-    if (phase === "idle" || phase === "error") {
-      await startRecording();
-    } else if (phase === "recording") {
+    if (phase === "recording") {
       stopRecording();
+      return;
     }
+    if (phase === "reflecting") return; // ocupado
+    await startRecording(); // idle | error | reflection (gravar mais)
   }
 
   async function startRecording() {
@@ -171,11 +152,7 @@ export function Diario() {
       const form = new FormData();
       form.append("audio", new File([blob], "audio.webm", { type: blob.type || "audio/webm" }));
       const tRes = await fetch("/api/transcribe", { method: "POST", body: form });
-      const tData = (await tRes.json()) as {
-        transcript?: string;
-        language?: string | null;
-        error?: string;
-      };
+      const tData = (await tRes.json()) as { transcript?: string; language?: string | null };
       if (!tRes.ok || !tData.transcript) {
         fail("Não consegui transcrever o áudio. Tente de novo.");
         return;
@@ -204,203 +181,117 @@ export function Diario() {
         return;
       }
       setReflection(data.reflection);
-      setEntryId(data.entryId);
-      setDraftText(transcript);
-      setMood((data.mood as Mood | null) ?? null);
-      setSaved(false);
+      setMood(data.mood);
       setPhase("reflection");
     } catch {
       fail("Falha de conexão ao refletir.");
     }
   }
 
-  async function save() {
-    if (!entryId) return;
-    setSaving(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch(`/api/entries/${entryId}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ transcript: draftText, mood }),
-      });
-      if (!res.ok) {
-        fail("Não consegui salvar suas alterações. Tente de novo.");
-        return;
-      }
-      setSaved(true);
-    } catch {
-      fail("Falha de conexão ao salvar.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
-    <main
-      style={{
-        minHeight: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "var(--space-6)",
-        padding: "var(--space-5)",
-        textAlign: "center",
-      }}
-    >
-      {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
-        <p
-          className="font-serif"
-          style={{ fontSize: "1.35rem", color: "var(--ink)", maxWidth: "24ch", margin: 0 }}
-        >
-          {PROMPT_DO_DIA}
-        </p>
-      )}
+    <main className={styles.stage}>
+      {phase !== "reflection" ? (
+        <div className={styles.center}>
+          {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
+            <p
+              className="font-serif"
+              style={{ fontSize: "1.35rem", color: "var(--ink)", maxWidth: "24ch", margin: 0 }}
+            >
+              {PROMPT_DO_DIA}
+            </p>
+          )}
 
-      <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
+          <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
 
-      {HELPER[phase] && (
-        <p style={{ color: "var(--ink-soft)", margin: 0 }}>{HELPER[phase]}</p>
-      )}
+          {HELPER[phase] && <p style={{ color: "var(--ink-soft)", margin: 0 }}>{HELPER[phase]}</p>}
 
-      {phase === "error" && errorMsg && (
-        <p role="alert" style={{ color: "var(--alert)", margin: 0 }}>
-          {errorMsg}
-        </p>
-      )}
+          {phase === "error" && errorMsg && (
+            <p role="alert" style={{ color: "var(--alert)", margin: 0 }}>
+              {errorMsg}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className={styles.composition}>
+          <div className={styles.inner}>
+            <div className={styles.sun}>
+              <Orb state="idle" onClick={onOrbClick} ariaLabel="Toque para continuar falando" />
+            </div>
 
-      {/* Reflexão + edição inline */}
-      {phase === "reflection" && reflection && (
-        <section
-          style={{
-            maxWidth: 520,
-            width: "100%",
-            background: "var(--surface)",
-            borderRadius: "var(--r-lg)",
-            padding: "var(--space-6) var(--space-5)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--space-5)",
-            textAlign: "left",
-            boxShadow: "0 1px 48px rgba(0, 0, 0, 0.28)",
-          }}
-        >
-          {/* glifo do orb */}
-          <span
-            aria-hidden="true"
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              background: "var(--aurora)",
-              alignSelf: "flex-start",
-            }}
-          />
+            <div className={styles.card}>
+              <div className={styles.cardContent}>
+                <div
+                  className="font-serif"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--space-4)",
+                    fontSize: "1.2rem",
+                    lineHeight: 1.6,
+                    color: "var(--ink)",
+                  }}
+                >
+                  {reflection && renderProse(reflection)}
+                </div>
 
-          <div
-            className="font-serif"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-4)",
-              fontSize: "1.2rem",
-              lineHeight: 1.6,
-              color: "var(--ink)",
-            }}
-          >
-            {renderProse(reflection)}
-          </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "var(--space-3)",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {mood ? (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "var(--space-2)",
+                        color: "var(--ink-soft)",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          background: MOOD_COLOR[mood] ?? "var(--ink-faint)",
+                        }}
+                      />
+                      {mood}
+                    </span>
+                  ) : (
+                    <span />
+                  )}
 
-          <hr style={{ width: "100%", border: "none", borderTop: "1px solid var(--hairline)", margin: 0 }} />
-
-          {/* transcrição editável */}
-          <label style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-            <span style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>Sua entrada</span>
-            <textarea
-              value={draftText}
-              onChange={(e) => {
-                setDraftText(e.target.value);
-                setSaved(false);
-              }}
-              rows={3}
-              style={{
-                width: "100%",
-                padding: "var(--space-3)",
-                borderRadius: "var(--r-sm)",
-                border: "1px solid var(--hairline)",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "1rem",
-                resize: "vertical",
-              }}
-            />
-          </label>
-
-          {/* humor (chips) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-            <span style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>Como você nomearia isso?</span>
-            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-              {MOODS.map((m) => {
-                const active = mood === m;
-                return (
                   <button
-                    key={m}
                     type="button"
-                    aria-pressed={active}
-                    onClick={() => {
-                      setMood(active ? null : m);
-                      setSaved(false);
-                    }}
+                    onClick={resetToIdle}
                     style={{
-                      ...pillButton,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "var(--space-2)",
-                      background: active ? MOOD_COLOR[m] : "var(--raised)",
-                      color: active ? "#1b1830" : "var(--ink)",
-                      borderColor: active ? MOOD_COLOR[m] : "var(--hairline)",
+                      minHeight: 44,
+                      padding: "var(--space-2) var(--space-3)",
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--ink-faint)",
+                      fontSize: "0.9rem",
+                      cursor: "pointer",
                     }}
                   >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: active ? "#1b1830" : MOOD_COLOR[m],
-                      }}
-                    />
-                    {m}
+                    Concluir
                   </button>
-                );
-              })}
+                </div>
+
+                <p style={{ color: "var(--ink-faint)", fontSize: "0.85rem", margin: 0 }}>
+                  Toque no orb para continuar falando.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={save}
-              disabled={saving}
-              style={{
-                ...pillButton,
-                background: "var(--accent)",
-                color: "#1b1830",
-                borderColor: "var(--accent)",
-              }}
-            >
-              {saving ? "Salvando…" : saved ? "Salvo ✓" : "Salvar"}
-            </button>
-            <button
-              type="button"
-              onClick={resetToIdle}
-              style={{ ...pillButton, background: "var(--raised)", color: "var(--ink)" }}
-            >
-              Concluir
-            </button>
-          </div>
-        </section>
+        </div>
       )}
 
       {phase === "crisis" && crisis && (

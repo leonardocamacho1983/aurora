@@ -1,7 +1,7 @@
 .orb {
   position: relative;
-  width: 260px;
-  height: 260px;
+  width: var(--orb-size, 260px);
+  height: var(--orb-size, 260px);
   min-width: 44px;
   min-height: 44px;
   padding: 0;

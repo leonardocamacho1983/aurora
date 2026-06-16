@@ -1,0 +1,114 @@
+.stage {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Início / gravando / refletindo: orb centralizado, "sobe" pra cena */
+.center {
+  --orb-size: 300px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-5);
+  text-align: center;
+}
+
+/* Resultado: orb como SOL atrás do card */
+.composition {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+}
+.inner {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  align-items: center;
+}
+
+/* o sol escorrega pra esquerda; metade fica atrás do card */
+.sun {
+  --orb-size: 440px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* card entra da metade do orb até a direita, sobressaindo e iluminado */
+.card {
+  position: relative;
+  z-index: 2;
+  margin-left: clamp(170px, 30%, 340px);
+  width: min(560px, 72%);
+  background: rgba(34, 30, 51, 0.82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: var(--r-lg);
+  padding: var(--space-7) var(--space-6);
+  overflow: hidden;
+  box-shadow:
+    -60px 0 150px -50px rgba(169, 155, 217, 0.5),
+    0 2px 60px rgba(0, 0, 0, 0.45);
+}
+/* a luz do orb lavando a borda esquerda do card */
+.card::before {
+  content: "";
+  position: absolute;
+  left: -8%;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  background: radial-gradient(
+    ellipse at left center,
+    rgba(201, 162, 212, 0.16),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+.cardContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (max-width: 760px) {
+  .sun {
+    --orb-size: 280px;
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin-bottom: -16%;
+  }
+  .inner {
+    flex-direction: column;
+  }
+  .card {
+    margin-left: 0;
+    width: 100%;
+    max-width: 540px;
+  }
+  .card::before {
+    left: 0;
+    top: -8%;
+    bottom: auto;
+    width: 100%;
+    height: 45%;
+    background: radial-gradient(
+      ellipse at center top,
+      rgba(201, 162, 212, 0.16),
+      transparent 72%
+    );
+  }
+}
