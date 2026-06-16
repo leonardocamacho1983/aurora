@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,14 +27,18 @@ export const viewport: Viewport = {
   themeColor: "#181527",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${fraunces.variable}`}>
-      <body>{children}</body>
+    <html lang={locale} className={`${inter.variable} ${fraunces.variable}`}>
+      <body>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      </body>
     </html>
   );
 }

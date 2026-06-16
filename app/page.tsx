@@ -1,4 +1,8 @@
+import { useTranslations } from "next-intl";
+
 export default function Home() {
+  const t = useTranslations("Home");
+
   return (
     <main
       style={{
@@ -16,10 +20,10 @@ export default function Home() {
         className="font-serif"
         style={{ fontSize: "1.75rem", color: "var(--ink)", margin: 0 }}
       >
-        Aurora
+        {t("title")}
       </h1>
       <p style={{ color: "var(--ink-soft)", maxWidth: "32ch", margin: 0 }}>
-        Fundação (Fase 1) pronta. O orb e o loop de fala chegam na Fase 2.
+        {t("subtitle")}
       </p>
     </main>
   );
