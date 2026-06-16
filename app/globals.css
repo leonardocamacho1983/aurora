@@ -50,6 +50,33 @@
     radial-gradient(circle at 28% 76%, #7fd0c4 0%, transparent 56%),
     linear-gradient(140deg, #c9a2d4, #8fa4d6 55%, #7fd0c4);
 
+  /* ── LUZ como material: rampa de temperatura (quente→frio) ──
+     quente = agora / amanhecer (falar, refletir)
+     frio  = memória / entardecer (a lembrança que assenta)
+     Superfícies "quentes" são escuras-mornas (não claras) p/ manter AA. */
+  --temp-dawn: #2a2032; /* topo: agora, morno */
+  --temp-mid: #1d1a2d; /* transição */
+  --temp-dusk: #131426; /* fundo: memória antiga, azul profundo */
+
+  /* Glow (luz, não sombra digital): profundidade vem de luz + contraste */
+  --glow-warm: radial-gradient(ellipse at top, rgba(244, 182, 160, 0.12), transparent 62%);
+  --glow-warm-strong: radial-gradient(
+    ellipse at top right,
+    rgba(201, 162, 212, 0.18),
+    transparent 70%
+  );
+
+  /* Vidro fosco (superfície luminosa translúcida) */
+  --glass-bg: rgba(34, 30, 51, 0.66);
+  --glass-bg-warm: rgba(42, 32, 50, 0.6);
+  --glass-border: rgba(240, 236, 247, 0.08);
+  --glass-blur: 14px;
+
+  /* Escala editorial do Fraunces (só no falado/reflexão) */
+  --fraunces-display: clamp(1.9rem, 1.3rem + 2vw, 2.6rem);
+  --fraunces-lead: clamp(1.35rem, 1.05rem + 1vw, 1.7rem);
+  --fraunces-body: clamp(1.1rem, 1rem + 0.4vw, 1.25rem);
+
   /* Fontes (Inter no geral; Fraunces só no falado/reflexão) */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
@@ -66,6 +93,14 @@
   --accent: #7c6bb0;
   --focus: #7c6bb0;
   --hairline: #e0dcea;
+
+  /* Luz (Amanhecer): morno claro → frio claro */
+  --temp-dawn: #fbf3ec;
+  --temp-mid: #f1eef6;
+  --temp-dusk: #e6e7f0;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-warm: rgba(255, 250, 245, 0.7);
+  --glass-border: rgba(38, 35, 58, 0.08);
 }
 
 html {

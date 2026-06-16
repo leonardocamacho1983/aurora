@@ -49,9 +49,9 @@
   z-index: 2;
   margin-left: clamp(170px, 30%, 340px);
   width: min(560px, 72%);
-  background: rgba(34, 30, 51, 0.82);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg-warm);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
   border-radius: var(--r-lg);
   padding: var(--space-7) var(--space-6);
   overflow: hidden;
