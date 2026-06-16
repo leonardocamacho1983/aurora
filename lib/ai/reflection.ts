@@ -29,7 +29,9 @@ function buildPrompt(text: string, context: RagSnippet[]): string {
 
 /**
  * Gera a reflexão da Aurora. Contexto = trechos do RAG (não o histórico inteiro).
- * TODO(§5): mover system+persona para prompt caching (90% off no input repetido).
+ * Prompt caching (§5): system+persona marcados como `ephemeral` para reaproveitar
+ * o prefixo entre requisições (90% off no input cacheado). O contexto do RAG e a
+ * entrada ficam na mensagem do usuário (parte volátil), depois do prefixo cacheável.
  */
 export async function generateReflection(
   text: string,
@@ -37,8 +39,15 @@ export async function generateReflection(
 ): Promise<string> {
   const { text: reflection } = await generateText({
     model: anthropic(REFLECTION_MODEL),
-    system: REFLECTION_SYSTEM_PROMPT,
-    prompt: buildPrompt(text, context),
+    messages: [
+      {
+        role: "system",
+        content: REFLECTION_SYSTEM_PROMPT,
+        providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+      },
+      { role: "user", content: buildPrompt(text, context) },
+    ],
   });
   return reflection.trim();
 }
+
