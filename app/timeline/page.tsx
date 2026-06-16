@@ -38,8 +38,9 @@ function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
 }
 
-function trecho(reflection: string | null, transcript: string | null): string {
-  const raw = (reflection ?? transcript ?? "").replace(/\s+/g, " ").trim();
+// Histórico = palavra do usuário (transcrição primeiro).
+function trecho(transcript: string | null, reflection: string | null): string {
+  const raw = (transcript ?? reflection ?? "").replace(/\s+/g, " ").trim();
   return raw.length > 120 ? `${raw.slice(0, 120)}…` : raw;
 }
 
@@ -47,8 +48,12 @@ function moodColor(mood: string | null): string {
   return mood ? (MOOD_COLOR[mood] ?? "var(--ink-faint)") : "var(--hairline)";
 }
 
-// Bloco de insights — assíncrono (chama a IA). Vem por streaming via Suspense,
-// então a página (hero + histórico) aparece na hora.
+function countWords(text: string | null): number {
+  const t = (text ?? "").trim();
+  return t ? t.split(/\s+/).length : 0;
+}
+
+// Insights (voz da Aurora) — assíncrono, chega por streaming via Suspense.
 async function InsightsBlock({ week }: { week: InsightSource[] }) {
   let main = "Um passo de cada vez. Toque no orb quando quiser falar.";
   let secondary: string[] = [];
@@ -106,69 +111,84 @@ export default async function TimelinePage() {
   const latest = rows[0];
   const rest = rows.slice(1);
   const weekAgo = Date.now() - 7 * 86_400_000;
-  const week: InsightSource[] = rows
-    .filter((r) => r.createdAt.getTime() >= weekAgo)
-    .map((r) => ({ transcript: r.transcript, reflection: r.reflection, mood: r.mood }));
+  const weekRows = rows.filter((r) => r.createdAt.getTime() >= weekAgo);
+  const week: InsightSource[] = weekRows.map((r) => ({
+    transcript: r.transcript,
+    reflection: r.reflection,
+    mood: r.mood,
+  }));
+  const wordsThisWeek = weekRows.reduce((sum, r) => sum + countWords(r.transcript), 0);
 
   return (
-    <main className={styles.page}>
-      <div className={styles.top}>
-        <p className={styles.kicker}>Linha do tempo</p>
-        <Link href="/diario" className={styles.orbButton} aria-label="Nova entrada" />
-      </div>
+    <main className={styles.stage}>
+      <div className={styles.inner}>
+        <div className={styles.top}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <p className={styles.kicker}>Linha do tempo</p>
+            {weekRows.length > 0 && (
+              <p className={styles.usage}>
+                {weekRows.length}{" "}
+                {weekRows.length === 1 ? "entrada" : "entradas"} · {wordsThisWeek}{" "}
+                {wordsThisWeek === 1 ? "palavra" : "palavras"} esta semana
+              </p>
+            )}
+          </div>
+          <Link href="/diario" className={styles.orbButton} aria-label="Nova entrada" />
+        </div>
 
-      {rows.length === 0 ? (
-        <p style={{ color: "var(--ink-soft)" }}>
-          Ainda não há entradas. Toque no orb pra começar.
-        </p>
-      ) : (
-        <>
-          {/* Hero — entrada mais recente, iluminada pelo orb */}
-          {latest && (
-            <section className={styles.hero}>
-              <div className={styles.heroBody}>
-                <span className={styles.label}>
-                  {formatDate(latest.createdAt)} · sua última reflexão
-                </span>
-                <div className={`font-serif ${styles.heroText}`}>
-                  {renderProse(latest.reflection ?? latest.transcript ?? "")}
+        {rows.length === 0 ? (
+          <p style={{ color: "var(--ink-soft)" }}>
+            Ainda não há entradas. Toque no orb pra começar.
+          </p>
+        ) : (
+          <>
+            {/* Hero — palavra mais recente, ainda quente */}
+            {latest && (
+              <section className={styles.hero}>
+                <div className={styles.heroBody}>
+                  <span className={styles.label}>{formatDate(latest.createdAt)} · você disse</span>
+                  <div className={`font-serif ${styles.heroText}`}>
+                    {renderProse(latest.transcript ?? latest.reflection ?? "")}
+                  </div>
+                  {latest.mood && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2)", color: "var(--ink-soft)", fontSize: "0.9rem" }}>
+                      <span className={styles.dot} style={{ background: moodColor(latest.mood) }} />
+                      {latest.mood}
+                    </span>
+                  )}
                 </div>
-                {latest.mood && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2)", color: "var(--ink-soft)", fontSize: "0.9rem" }}>
-                    <span className={styles.dot} style={{ background: moodColor(latest.mood) }} />
-                    {latest.mood}
-                  </span>
-                )}
-              </div>
-            </section>
-          )}
+              </section>
+            )}
 
-          {/* Insights (streaming) */}
-          <Suspense
-            fallback={<div className={styles.skeleton}>Lendo os fios da sua semana…</div>}
-          >
-            <InsightsBlock week={week} />
-          </Suspense>
+            {/* Insights (voz da Aurora, streaming) */}
+            <Suspense
+              fallback={<div className={styles.skeleton}>Lendo os fios da sua semana…</div>}
+            >
+              <InsightsBlock week={week} />
+            </Suspense>
 
-          {/* Histórico */}
-          {rest.length > 0 && (
-            <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-              <span className={styles.label}>histórico</span>
-              <div className={styles.board}>
-                {rest.map((e) => (
-                  <article key={e.id} className={styles.card}>
-                    <div className={styles.entryHead}>
-                      <span className={styles.dot} style={{ background: moodColor(e.mood) }} />
-                      <span className={styles.date}>{formatDate(e.createdAt)}</span>
-                    </div>
-                    <p className={styles.trecho}>{trecho(e.reflection, e.transcript)}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
+            {/* Histórico — palavra do usuário, esfriando */}
+            {rest.length > 0 && (
+              <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+                <span className={styles.label}>histórico</span>
+                <div className={styles.board}>
+                  {rest.map((e) => (
+                    <article key={e.id} className={styles.card}>
+                      <div className={styles.entryHead}>
+                        <span className={styles.dot} style={{ background: moodColor(e.mood) }} />
+                        <span className={styles.date}>{formatDate(e.createdAt)}</span>
+                      </div>
+                      <p className={`font-serif ${styles.trecho}`}>
+                        {trecho(e.transcript, e.reflection)}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+      </div>
     </main>
   );
 }
