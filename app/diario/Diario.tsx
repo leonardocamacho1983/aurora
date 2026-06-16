@@ -16,6 +16,9 @@ type ReflectResponse =
 
 const PROMPT_DO_DIA = "O que está vivo em você agora?";
 
+const MOODS = ["leve", "calmo", "pesado", "sensível", "ansioso"] as const;
+type Mood = (typeof MOODS)[number];
+
 const MOOD_COLOR: Record<string, string> = {
   leve: "var(--mood-leve)",
   calmo: "var(--mood-calmo)",
@@ -80,12 +83,27 @@ function renderProse(text: string): React.ReactNode {
     ));
 }
 
+const pillButton: React.CSSProperties = {
+  minHeight: 44,
+  padding: "var(--space-3) var(--space-5)",
+  borderRadius: "var(--r-pill)",
+  border: "1px solid var(--hairline)",
+  fontSize: "1rem",
+  cursor: "pointer",
+};
+
 export function Diario() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
-  const [mood, setMood] = useState<string | null>(null);
   const [crisis, setCrisis] = useState<CrisisResourcesData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Edição inline (Parte 2)
+  const [entryId, setEntryId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState("");
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -93,9 +111,12 @@ export function Diario() {
   function resetToIdle() {
     setPhase("idle");
     setReflection(null);
-    setMood(null);
     setCrisis(null);
     setErrorMsg(null);
+    setEntryId(null);
+    setDraftText("");
+    setMood(null);
+    setSaved(false);
   }
 
   function fail(message: string) {
@@ -150,7 +171,11 @@ export function Diario() {
       const form = new FormData();
       form.append("audio", new File([blob], "audio.webm", { type: blob.type || "audio/webm" }));
       const tRes = await fetch("/api/transcribe", { method: "POST", body: form });
-      const tData = (await tRes.json()) as { transcript?: string; language?: string | null; error?: string };
+      const tData = (await tRes.json()) as {
+        transcript?: string;
+        language?: string | null;
+        error?: string;
+      };
       if (!tRes.ok || !tData.transcript) {
         fail("Não consegui transcrever o áudio. Tente de novo.");
         return;
@@ -179,10 +204,35 @@ export function Diario() {
         return;
       }
       setReflection(data.reflection);
-      setMood(data.mood);
+      setEntryId(data.entryId);
+      setDraftText(transcript);
+      setMood((data.mood as Mood | null) ?? null);
+      setSaved(false);
       setPhase("reflection");
     } catch {
       fail("Falha de conexão ao refletir.");
+    }
+  }
+
+  async function save() {
+    if (!entryId) return;
+    setSaving(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/entries/${entryId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ transcript: draftText, mood }),
+      });
+      if (!res.ok) {
+        fail("Não consegui salvar suas alterações. Tente de novo.");
+        return;
+      }
+      setSaved(true);
+    } catch {
+      fail("Falha de conexão ao salvar.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -220,11 +270,12 @@ export function Diario() {
         </p>
       )}
 
-      {/* Reflexão (cartão) — Fraunces, glifo de orb, sem "IA:" */}
+      {/* Reflexão + edição inline */}
       {phase === "reflection" && reflection && (
         <section
           style={{
             maxWidth: 520,
+            width: "100%",
             background: "var(--surface)",
             borderRadius: "var(--r-lg)",
             padding: "var(--space-6) var(--space-5)",
@@ -261,47 +312,94 @@ export function Diario() {
             {renderProse(reflection)}
           </div>
 
-          {mood && (
-            <span
+          <hr style={{ width: "100%", border: "none", borderTop: "1px solid var(--hairline)", margin: 0 }} />
+
+          {/* transcrição editável */}
+          <label style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <span style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>Sua entrada</span>
+            <textarea
+              value={draftText}
+              onChange={(e) => {
+                setDraftText(e.target.value);
+                setSaved(false);
+              }}
+              rows={3}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "var(--space-2)",
-                alignSelf: "flex-start",
-                color: "var(--ink-soft)",
-                fontSize: "0.9rem",
+                width: "100%",
+                padding: "var(--space-3)",
+                borderRadius: "var(--r-sm)",
+                border: "1px solid var(--hairline)",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "1rem",
+                resize: "vertical",
+              }}
+            />
+          </label>
+
+          {/* humor (chips) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <span style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>Como você nomearia isso?</span>
+            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+              {MOODS.map((m) => {
+                const active = mood === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setMood(active ? null : m);
+                      setSaved(false);
+                    }}
+                    style={{
+                      ...pillButton,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "var(--space-2)",
+                      background: active ? MOOD_COLOR[m] : "var(--raised)",
+                      color: active ? "#1b1830" : "var(--ink)",
+                      borderColor: active ? MOOD_COLOR[m] : "var(--hairline)",
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: active ? "#1b1830" : MOOD_COLOR[m],
+                      }}
+                    />
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              style={{
+                ...pillButton,
+                background: "var(--accent)",
+                color: "#1b1830",
+                borderColor: "var(--accent)",
               }}
             >
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  background: MOOD_COLOR[mood] ?? "var(--ink-faint)",
-                }}
-              />
-              {mood}
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={resetToIdle}
-            style={{
-              minHeight: 44,
-              padding: "var(--space-3) var(--space-5)",
-              borderRadius: "var(--r-pill)",
-              border: "1px solid var(--hairline)",
-              background: "var(--raised)",
-              color: "var(--ink)",
-              fontSize: "1rem",
-              cursor: "pointer",
-              alignSelf: "center",
-            }}
-          >
-            Concluir
-          </button>
+              {saving ? "Salvando…" : saved ? "Salvo ✓" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={resetToIdle}
+              style={{ ...pillButton, background: "var(--raised)", color: "var(--ink)" }}
+            >
+              Concluir
+            </button>
+          </div>
         </section>
       )}
 
