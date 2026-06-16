@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+
+# Environment variables — never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# Drizzle
+drizzle/.snapshot/
