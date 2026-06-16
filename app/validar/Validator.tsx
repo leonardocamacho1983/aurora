@@ -50,7 +50,18 @@ const pre: React.CSSProperties = {
   margin: 0,
 };
 
-export function Validator({ email }: { email: string }) {
+type EnvStatus = {
+  VERCEL_ENV: string;
+  ANTHROPIC_API_KEY: boolean;
+  OPENAI_API_KEY: boolean;
+  DATABASE_URL: boolean;
+  DIRECT_URL: boolean;
+  NEXT_PUBLIC_SUPABASE_URL: boolean;
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: boolean;
+  SUPABASE_SERVICE_ROLE_KEY: boolean;
+};
+
+export function Validator({ email, env }: { email: string; env: EnvStatus }) {
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState("");
@@ -168,6 +179,34 @@ export function Validator({ email }: { email: string }) {
       <p style={{ color: "var(--ink-soft)", marginTop: "var(--space-2)" }}>
         Ferramenta de teste — não é o app. Logado como {email}.
       </p>
+
+      {/* DIAGNÓSTICO DE AMBIENTE — o que o servidor enxerga (só presença) */}
+      <section style={box} aria-labelledby="env">
+        <h2 id="env" style={{ fontSize: "1rem", marginTop: 0 }}>
+          0) Ambiente do servidor — variáveis presentes?
+        </h2>
+        <p style={{ color: "var(--ink-faint)", fontSize: "0.85rem", marginTop: 0 }}>
+          Ambiente: <strong>{env.VERCEL_ENV}</strong>. Se algo aqui estiver ❌, o
+          /api/reflect falha (precisa de Anthropic + banco).
+        </p>
+        <ul style={{ margin: 0, paddingLeft: "1.2em" }}>
+          {(
+            [
+              ["ANTHROPIC_API_KEY", env.ANTHROPIC_API_KEY],
+              ["OPENAI_API_KEY", env.OPENAI_API_KEY],
+              ["DATABASE_URL", env.DATABASE_URL],
+              ["DIRECT_URL", env.DIRECT_URL],
+              ["NEXT_PUBLIC_SUPABASE_URL", env.NEXT_PUBLIC_SUPABASE_URL],
+              ["NEXT_PUBLIC_SUPABASE_ANON_KEY", env.NEXT_PUBLIC_SUPABASE_ANON_KEY],
+              ["SUPABASE_SERVICE_ROLE_KEY", env.SUPABASE_SERVICE_ROLE_KEY],
+            ] as [string, boolean][]
+          ).map(([name, present]) => (
+            <li key={name} style={{ fontFamily: "ui-monospace, monospace", fontSize: "0.85rem" }}>
+              {present ? "✅" : "❌"} {name}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* CAMINHO DE VOZ */}
       <section style={box} aria-labelledby="voz">

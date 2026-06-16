@@ -24,5 +24,18 @@ export default async function ValidarPage() {
     redirect("/login");
   }
 
-  return <Validator email={user.email ?? ""} />;
+  // Diagnóstico: o servidor (onde as rotas rodam) enxerga estas variáveis?
+  // Só presença (✅/❌) — nunca o valor.
+  const env = {
+    VERCEL_ENV: process.env.VERCEL_ENV ?? "(local)",
+    ANTHROPIC_API_KEY: Boolean(process.env.ANTHROPIC_API_KEY),
+    OPENAI_API_KEY: Boolean(process.env.OPENAI_API_KEY),
+    DATABASE_URL: Boolean(process.env.DATABASE_URL),
+    DIRECT_URL: Boolean(process.env.DIRECT_URL),
+    NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+  };
+
+  return <Validator email={user.email ?? ""} env={env} />;
 }
