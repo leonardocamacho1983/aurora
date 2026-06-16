@@ -9,9 +9,14 @@ let instance: DB | null = null;
 function getDb(): DB {
   if (instance) return instance;
 
-  const connectionString = process.env.DATABASE_URL;
+  // Aceita o nome convencional (DATABASE_URL) OU o que a integração
+  // Supabase↔Vercel cria (POSTGRES_URL, pooler 6543). Evita ter que duplicar
+  // uma variável Sensitive que não pode ser copiada.
+  const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL não definida. Copie .env.example para .env e preencha.");
+    throw new Error(
+      "Defina DATABASE_URL (ou POSTGRES_URL). Copie .env.example para .env e preencha.",
+    );
   }
 
   // Disable prefetch — não suportado no "Transaction" pool mode (pooler 6543).
