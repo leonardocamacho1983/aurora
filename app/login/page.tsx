@@ -28,9 +28,11 @@ export default async function LoginPage({
         <div className={styles.sun}>
           <Orb state="idle" decorative />
         </div>
-        <h1 className={`font-serif ${styles.brand}`}>Aurora</h1>
-        <p className={styles.tagline}>Um diário falado que reflete com você.</p>
-        <LoginForm error={error} message={message} />
+        <div className={styles.card}>
+          <h1 className={`font-serif ${styles.brand}`}>Aurora</h1>
+          <p className={styles.tagline}>Um diário falado que reflete com você.</p>
+          <LoginForm error={error} message={message} />
+        </div>
       </div>
     </main>
   );

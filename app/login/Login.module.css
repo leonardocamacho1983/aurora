@@ -1,4 +1,5 @@
-/* Amanhecer: o orb como sol nascente, luz quente subindo do horizonte */
+/* Amanhecer: o sol nasce e o painel de vidro emerge da sua luz (como o Diário:
+   o card sobressai por cima da metade do orb e é iluminado por ele). */
 .stage {
   min-height: 100dvh;
   display: grid;
@@ -9,25 +10,25 @@
   background: linear-gradient(
     180deg,
     var(--temp-dusk) 0%,
-    var(--temp-mid) 52%,
+    var(--temp-mid) 50%,
     var(--temp-dawn) 100%
   );
 }
-/* halo do sol nascente atrás do conteúdo */
+/* halo amplo do amanhecer preenchendo a parte de cima */
 .stage::before {
   content: "";
   position: absolute;
-  top: 4%;
+  top: -12%;
   left: 50%;
   transform: translateX(-50%);
-  width: min(680px, 130vw);
-  height: min(680px, 130vw);
+  width: min(940px, 160vw);
+  height: min(940px, 160vw);
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(244, 182, 160, 0.22),
-    rgba(201, 162, 212, 0.1) 45%,
-    transparent 70%
+    rgba(244, 182, 160, 0.2),
+    rgba(201, 162, 212, 0.1) 42%,
+    transparent 68%
   );
   pointer-events: none;
 }
@@ -35,48 +36,76 @@
 .shell {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 380px;
+  width: min(420px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-5);
 }
 
+/* o sol — metade superior cresce acima do painel */
 .sun {
-  --orb-size: 176px;
+  --orb-size: 248px;
+  position: relative;
+  z-index: 1;
+}
+
+/* painel único, iluminado pelo sol, sobressaindo por cima da metade dele */
+.card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin-top: -128px; /* sobreposição: o card cobre a metade de baixo do sol */
+  padding: 152px var(--space-6) var(--space-6);
+  border-radius: var(--r-lg);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  box-shadow: 0 -24px 120px -56px rgba(244, 182, 160, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: center;
+}
+/* a luz do sol lavando o topo do painel */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62%;
+  background: radial-gradient(
+    ellipse at top,
+    rgba(244, 182, 160, 0.18),
+    rgba(201, 162, 212, 0.06) 42%,
+    transparent 76%
+  );
+  pointer-events: none;
 }
 
 .brand {
+  position: relative;
   font-size: var(--fraunces-display);
   color: var(--ink);
   margin: 0;
   line-height: 1;
 }
 .tagline {
+  position: relative;
   color: var(--ink-soft);
-  text-align: center;
-  margin: 0;
-  max-width: 28ch;
-}
-
-.card {
-  width: 100%;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-lg);
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  margin: 0 auto;
+  max-width: 26ch;
 }
 
 .form {
+  position: relative;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  margin-top: var(--space-2);
 }
 .field {
   display: flex;
@@ -140,6 +169,7 @@
 }
 
 .toggle {
+  position: relative;
   text-align: center;
   color: var(--ink-soft);
   font-size: 0.9rem;
@@ -156,6 +186,7 @@
 }
 
 .notice {
+  position: relative;
   margin: 0;
   padding: var(--space-3);
   border-radius: var(--r-sm);
@@ -163,8 +194,10 @@
   background: rgba(127, 168, 138, 0.16);
   color: var(--ink);
   font-size: 0.9rem;
+  text-align: left;
 }
 .error {
+  position: relative;
   margin: 0;
   padding: var(--space-3);
   border-radius: var(--r-sm);
@@ -172,4 +205,5 @@
   background: rgba(197, 132, 104, 0.16);
   color: var(--ink);
   font-size: 0.9rem;
+  text-align: left;
 }

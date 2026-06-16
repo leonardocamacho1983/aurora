@@ -23,7 +23,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
   const [showPw, setShowPw] = useState(false);
 
   return (
-    <div className={styles.card}>
+    <>
       {message === "check-email" && (
         <p className={styles.notice}>
           Enviamos um link de confirmação para o seu email. Confirme para entrar.
@@ -85,6 +85,6 @@ export function LoginForm({ error, message }: { error?: string; message?: string
           {mode === "signin" ? "Criar conta" : "Entrar"}
         </button>
       </p>
-    </div>
+    </>
   );
 }
