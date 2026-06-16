@@ -8,6 +8,13 @@
       "when": 1781612343009,
       "tag": "0000_fair_thanos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781616339948,
+      "tag": "0001_cynical_blacklash",
+      "breakpoints": true
     }
   ]
 }

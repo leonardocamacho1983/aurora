@@ -18,9 +18,9 @@ import {
  *  - subscriptions usa colunas stripe_* (Stack §1 trava Stripe como provedor).
  */
 
-// users — perfil + role + plano.
+// users — perfil + role + plano. id == auth.users.id (Supabase Auth).
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey(), // = auth.uid(); populado por trigger no signup
   email: text("email"),
   name: text("name"),
   locale: text("locale").default("pt-BR").notNull(),
