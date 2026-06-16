@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
 import {
@@ -209,6 +210,15 @@ export function Diario() {
             <p role="alert" style={{ color: "var(--alert)", margin: 0 }}>
               {errorMsg}
             </p>
+          )}
+
+          {phase === "idle" && (
+            <Link
+              href="/timeline"
+              style={{ color: "var(--ink-faint)", fontSize: "0.9rem", textDecoration: "none" }}
+            >
+              Linha do tempo
+            </Link>
           )}
         </div>
       ) : (
