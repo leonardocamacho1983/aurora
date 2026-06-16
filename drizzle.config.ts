@@ -5,6 +5,8 @@ export default defineConfig({
   out: "./drizzle/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    // Migrations usam a conexão DIRETA (session mode, porta 5432).
+    // Em runtime, a app usa DATABASE_URL (transaction pooler, porta 6543).
+    url: process.env.DIRECT_URL!,
   },
 });
