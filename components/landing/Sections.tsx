@@ -1,16 +1,6 @@
 import styles from "./Landing.module.css";
 import { AuroraGlow } from "./Reveal";
 
-const eyebrow = {
-  font: "600 12px var(--font-sans)",
-  letterSpacing: "2.4px",
-  textTransform: "uppercase" as const,
-  color: "#948FA8",
-  display: "flex",
-  alignItems: "center",
-  gap: 9,
-};
-const dot = { width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" };
 const sectionPad = "clamp(56px,9vw,100px) clamp(20px,5vw,32px)";
 
 /* ============ PRIVACIDADE ============ */
@@ -44,11 +34,12 @@ export function Privacidade() {
     },
   ];
   return (
-    <section id="privacidade" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div className={styles.twoCol} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+    <section id="privacidade" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
+      <div className={styles.sectionOrb} style={{ right: "6%", top: "18%" }} aria-hidden="true" />
+      <div className={`${styles.twoCol} ${styles.sectionInner}`} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
         <div>
-          <div style={eyebrow}>
-            <span style={dot} />
+          <div className={styles.sectionEyebrow}>
             Privacidade
           </div>
           <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", textWrap: "balance" }}>
@@ -58,7 +49,7 @@ export function Privacidade() {
             O que você confia à Aurora não vira produto. Sem anúncios, sem revenda, sem letras miúdas.
           </p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div className={styles.sanctuaryList} style={{ display: "flex", flexDirection: "column" }}>
           {rows.map((r, n) => (
             <div key={r.title} style={{ display: "flex", gap: 16, padding: "22px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: n === rows.length - 1 ? "1px solid rgba(255,255,255,.08)" : undefined }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true">
@@ -84,10 +75,11 @@ export function ComoFunciona() {
     { n: "03", title: "Acompanhe", body: "Cada dia vira um ponto na sua linha do tempo. Com o passar das semanas, o padrão aparece sozinho — e você começa a se entender melhor." },
   ];
   return (
-    <section id="como-funciona" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
-        <div style={eyebrow}>
-          <span style={dot} />
+    <section id="como-funciona" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
+      <div className={styles.sectionOrb} style={{ left: "-90px", top: "10%" }} aria-hidden="true" />
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+        <div className={styles.sectionEyebrow}>
           Como funciona
         </div>
         <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 620, textWrap: "balance" }}>
@@ -120,11 +112,12 @@ export function Features() {
     { title: "Modo Crepúsculo", body: "Uma interface escura e silenciosa, pensada para os minutos antes de dormir.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
   ];
   return (
-    <section id="features" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="features" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
+      <div className={styles.constellation} aria-hidden="true" />
       <AuroraGlow style={{ top: -160, right: -140, width: 560, height: 560 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
-        <div style={eyebrow}>
-          <span style={dot} />
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+        <div className={styles.sectionEyebrow}>
           O que o Aurora faz
         </div>
         <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 660, textWrap: "balance" }}>
@@ -149,10 +142,11 @@ export function Features() {
 /* ============ PARA TERAPEUTAS ============ */
 export function ParaTerapeutas() {
   return (
-    <section id="terapeutas" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
-        <div style={eyebrow}>
-          <span style={dot} />
+    <section id="terapeutas" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
+      <div className={styles.sectionOrb} style={{ right: "-120px", bottom: "8%" }} aria-hidden="true" />
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
+        <div className={styles.sectionEyebrow}>
           Para terapeutas e psicólogos
         </div>
         <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(1.9rem,4.6vw,36px)", fontWeight: 450, lineHeight: 1.14, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 700, textWrap: "balance" }}>
@@ -187,11 +181,11 @@ export function ParaTerapeutas() {
 /* ============ CONVIDE ============ */
 export function Convide() {
   return (
-    <section id="convide" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="convide" className={`${styles.sectionAnchor} ${styles.divineSection} ${styles.inviteBand}`} style={{ background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
       <AuroraGlow style={{ top: -140, left: "28%", width: 640, height: 640 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
-        <div style={{ ...eyebrow, display: "inline-flex" }}>
-          <span style={dot} />
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
+        <div className={styles.sectionEyebrow}>
           Convide
         </div>
         <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(1.9rem,4.8vw,38px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>
@@ -213,12 +207,12 @@ export function Convide() {
 /* ============ MANIFESTO ============ */
 export function Manifesto() {
   return (
-    <section id="manifesto" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="manifesto" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
       <AuroraGlow style={{ bottom: -180, left: -120, width: 600, height: 600 }} />
-      <div className={styles.twoColManifesto} style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
+      <div className={`${styles.twoColManifesto} ${styles.sectionInner}`} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div>
-          <div style={eyebrow}>
-            <span style={dot} />
+          <div className={styles.sectionEyebrow}>
             A ideia por trás
           </div>
           <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(1.9rem,4.6vw,36px)", fontWeight: 450, lineHeight: 1.14, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 540, textWrap: "balance" }}>
@@ -232,7 +226,7 @@ export function Manifesto() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
           </a>
         </div>
-        <div style={{ borderLeft: "2px solid rgba(236,182,210,.4)", padding: "6px 0 6px 28px" }}>
+        <div className={styles.manifestoQuote} style={{ borderLeft: "2px solid rgba(236,182,210,.18)", padding: "6px 0 6px 28px" }}>
           <div className="font-serif" style={{ fontStyle: "italic", fontSize: "clamp(20px,3vw,24px)", fontWeight: 400, lineHeight: 1.45, color: "#E7E2F0", textWrap: "pretty" }}>
             &ldquo;O que a gente diz em voz alta para de morar só na cabeça — e começa a fazer sentido.&rdquo;
           </div>

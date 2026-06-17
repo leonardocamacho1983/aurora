@@ -49,11 +49,13 @@ const timeline = [
 
 export function AsTelas() {
   return (
-    <section id="telas" className={styles.sectionAnchor} style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(56px,9vw,100px) clamp(20px,5vw,32px)" }}>
+    <section id="telas" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
+      <div className={styles.divineDivider} aria-hidden="true" />
+      <div className={styles.constellation} aria-hidden="true" />
+      <div className={styles.sectionOrb} style={{ left: "50%", top: "20%", transform: "translateX(-50%)" }} aria-hidden="true" />
+      <div className={styles.sectionInner} style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(56px,9vw,100px) clamp(20px,5vw,32px)" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ font: "600 12px var(--font-sans)", letterSpacing: "2.4px", textTransform: "uppercase", color: "#948FA8", display: "inline-flex", alignItems: "center", gap: 9 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} />
+          <div className={styles.sectionEyebrow}>
             As telas
           </div>
           <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>

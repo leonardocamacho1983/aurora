@@ -381,6 +381,7 @@ export function Hero() {
 
         {/* Scrim de leitura (só atrás do texto) */}
         <div className={styles.heroScrim} aria-hidden="true" />
+        <div className={styles.heroToDemo} aria-hidden="true" />
 
         {/* ===== Veil de entrada "1 toque" ===== */}
         {showVeil && (

@@ -135,7 +135,9 @@ export function drawHero(
     R = W * 1.4,
     cy = apexY + R;
   const s = heroCam(tc);
-  const rimO = smooth(2, 5, tc);
+  const rimO = portrait
+    ? smooth(4.75, 6.45, tc) * (0.35 + 0.65 * smooth(5.3, 6.9, tc))
+    : smooth(3.7, 5.7, tc);
   const starO = smooth(1.4, 4, tc);
   const fgrow = smooth(0.4, 5.4, tc);
   const dip = 1 - 0.16 * Math.max(0, 1 - Math.abs(tc - 4.0) / 0.7);
@@ -174,7 +176,7 @@ export function drawHero(
 
   if (rimO > 0) {
     const rim = Math.min(12, Math.max(3.2, shortAxis * (portrait ? 0.006 : 0.0075)));
-    const rimAlpha = rimO * (portrait ? 0.68 : 0.9);
+    const rimAlpha = rimO * (portrait ? 0.54 : 0.9);
     ctx.save();
     ctx.globalAlpha = rimAlpha;
     ctx.globalCompositeOperation = "screen";
