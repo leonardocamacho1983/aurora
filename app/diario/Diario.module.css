@@ -118,3 +118,18 @@
     );
   }
 }
+
+@media (max-width: 480px) {
+  .composition {
+    padding: var(--space-4);
+  }
+  .card {
+    padding: var(--space-5) var(--space-4);
+  }
+  .cardContent {
+    gap: var(--space-4);
+  }
+  .sun {
+    --orb-size: 220px;
+  }
+}

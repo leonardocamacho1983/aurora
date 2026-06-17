@@ -463,21 +463,21 @@ export function Hero() {
           </div>
         </div>
 
-        <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "84px clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
-          <div style={{ font: "600 12px var(--font-sans)", letterSpacing: "2.6px", textTransform: "uppercase", color: "#B8B3CC", display: "flex", alignItems: "center", gap: 9, textShadow: "0 1px 16px rgba(0,0,0,.6)" }}>
-            <span className={styles.eyebrowDot} style={{ width: 5, height: 5, borderRadius: "50%", background: "#EBB7D2", boxShadow: "0 0 8px rgba(235,183,210,.9)" }} />
+        <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
+          <div style={{ font: "600 clamp(11px,2.6vw,12px) var(--font-sans)", letterSpacing: "2px", textTransform: "uppercase", color: "#B8B3CC", display: "flex", alignItems: "center", gap: 9, textShadow: "0 1px 16px rgba(0,0,0,.6)" }}>
+            <span className={styles.eyebrowDot} style={{ width: 5, height: 5, borderRadius: "50%", background: "#EBB7D2", boxShadow: "0 0 8px rgba(235,183,210,.9)", flexShrink: 0 }} />
             Diário por voz com IA · lista de espera aberta
           </div>
 
-          <h1 className="font-serif" style={{ margin: "24px 0 0", fontSize: "clamp(2.4rem,7vw,64px)", fontWeight: 450, lineHeight: 1.06, letterSpacing: "-0.028em", color: "#F8F6FC", maxWidth: 840, textWrap: "balance", textShadow: "0 2px 50px rgba(0,0,0,.65)" }}>
+          <h1 className="font-serif" style={{ margin: "clamp(16px,4vw,24px) 0 0", fontSize: "clamp(1.9rem,7vw,64px)", fontWeight: 450, lineHeight: 1.1, letterSpacing: "-0.028em", color: "#F8F6FC", maxWidth: 840, textWrap: "balance", textShadow: "0 2px 50px rgba(0,0,0,.65)" }}>
             Tem dias que pesam. Outros que <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>brilham</span>.
           </h1>
 
-          <p style={{ margin: "26px 0 0", font: "400 clamp(16px,2.4vw,18px)/1.62 var(--font-sans)", color: "#E8E4F2", maxWidth: 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
+          <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
             A Aurora te encontra em qualquer um deles — um diário por voz que aprende a sua fase e te pergunta a coisa certa pra hoje. Você fala; ela escuta, reflete e te ajuda a enxergar.
           </p>
 
-          <div id="lista" style={{ marginTop: 40, width: "100%", maxWidth: 460 }}>
+          <div id="lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>
             <WaitlistForm />
           </div>
         </div>

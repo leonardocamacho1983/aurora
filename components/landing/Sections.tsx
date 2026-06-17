@@ -11,7 +11,7 @@ const eyebrow = {
   gap: 9,
 };
 const dot = { width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" };
-const sectionPad = "clamp(72px,9vw,100px) clamp(20px,5vw,32px)";
+const sectionPad = "clamp(56px,9vw,100px) clamp(20px,5vw,32px)";
 
 /* ============ PRIVACIDADE ============ */
 export function Privacidade() {
@@ -150,7 +150,7 @@ export function Features() {
 export function ParaTerapeutas() {
   return (
     <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div style={eyebrow}>
           <span style={dot} />
           Para terapeutas e psicólogos
@@ -189,7 +189,7 @@ export function Convide() {
   return (
     <section id="convide" style={{ position: "relative", overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ top: -140, left: "28%", width: 640, height: 640 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
         <div style={{ ...eyebrow, display: "inline-flex" }}>
           <span style={dot} />
           Convide
@@ -215,7 +215,7 @@ export function Manifesto() {
   return (
     <section id="manifesto" style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ bottom: -180, left: -120, width: 600, height: 600 }} />
-      <div className={styles.twoColManifesto} style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
+      <div className={styles.twoColManifesto} style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div>
           <div style={eyebrow}>
             <span style={dot} />

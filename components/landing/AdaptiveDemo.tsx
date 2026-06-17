@@ -34,7 +34,7 @@ export function AdaptiveDemo() {
   return (
     <section style={{ position: "relative", zIndex: 4, overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ top: -120, right: "12%", width: 520, height: 520 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,10vw,110px) clamp(20px,5vw,32px)" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(52px,10vw,110px) clamp(20px,5vw,32px)" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ font: "600 12px var(--font-sans)", letterSpacing: "2.4px", textTransform: "uppercase", color: "#948FA8", display: "inline-flex", alignItems: "center", gap: 9 }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} />

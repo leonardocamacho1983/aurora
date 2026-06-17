@@ -103,6 +103,15 @@
   --glass-border: rgba(38, 35, 58, 0.08);
 }
 
+/* Mobile: aprofunda a rampa do Fraunces (hierarquia real: ~21 / 16 / 14px @375). */
+@media (max-width: 480px) {
+  :root {
+    --fraunces-display: clamp(1.5rem, 1.15rem + 1.6vw, 1.9rem);
+    --fraunces-lead: clamp(1.1rem, 0.98rem + 0.7vw, 1.4rem);
+    --fraunces-body: clamp(0.95rem, 0.9rem + 0.3vw, 1.1rem);
+  }
+}
+
 html {
   background: var(--bg);
 }

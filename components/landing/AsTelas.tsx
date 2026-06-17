@@ -49,7 +49,7 @@ const timeline = [
 export function AsTelas() {
   return (
     <section style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(72px,9vw,100px) clamp(20px,5vw,32px)" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(56px,9vw,100px) clamp(20px,5vw,32px)" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ font: "600 12px var(--font-sans)", letterSpacing: "2.4px", textTransform: "uppercase", color: "#948FA8", display: "inline-flex", alignItems: "center", gap: 9 }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} />

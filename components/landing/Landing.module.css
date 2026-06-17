@@ -38,10 +38,22 @@
 @media (max-width: 440px) {
   .wlRow {
     flex-direction: column;
+    gap: 12px;
   }
   .wlRow .wlBtn {
     width: 100%;
     justify-content: center;
+  }
+  .wlInput {
+    height: 46px;
+    padding: 0 16px;
+    font: 400 14px var(--font-sans);
+  }
+  .wlBtn {
+    height: 46px;
+    padding: 0 18px;
+    font: 600 14px var(--font-sans);
+    box-shadow: 0 8px 30px -10px rgba(236, 182, 210, 0.45);
   }
 }
 
@@ -308,6 +320,11 @@
 }
 .cell:hover {
   background: rgba(255, 255, 255, 0.022);
+}
+@media (max-width: 440px) {
+  .cell {
+    padding: 24px 20px !important;
+  }
 }
 
 /* Ponto do eyebrow respirando */
