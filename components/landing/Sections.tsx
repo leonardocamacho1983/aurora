@@ -192,13 +192,13 @@ export function Convide() {
           Conhece alguém que precisa se <span style={{ fontStyle: "italic", color: "var(--accent)" }}>ouvir</span>?
         </h2>
         <p style={{ margin: "18px auto 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 520, textWrap: "pretty" }}>
-          Convide alguém que também precisa se ouvir. Pode ser uma amiga, um paciente ou seu terapeuta. Cada convite aproxima você do acesso.
+          Convide alguém que também precisa se ouvir. Quando 5 pessoas confirmam pelo seu link, você ganha acesso antes da fila comum.
         </p>
         <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 30, height: 50, padding: "0 26px", font: "600 15px var(--font-sans)" }}>
-          Convidar alguém
+          Criar meu convite
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </a>
-        <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Convidar é só mostrar o app. Seu diário continua só seu.</div>
+        <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Você compartilha o link. A Aurora nunca manda convite sem sua ação.</div>
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   boolean,
+  integer,
   timestamp,
   vector,
   index,
@@ -122,9 +123,26 @@ export const crisisEvents = pgTable(
   }),
 );
 
-// waitlist — emails da lista de espera da landing page (público; sem dados sensíveis).
-export const waitlist = pgTable("waitlist", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull().unique(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+// waitlist — lista de espera pública + loop de indicações por double opt-in.
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull().unique(),
+    referralCode: text("referral_code").notNull().unique(),
+    statusToken: uuid("status_token").notNull().defaultRandom().unique(),
+    confirmToken: uuid("confirm_token").notNull().defaultRandom().unique(),
+    referredByCode: text("referred_by_code"),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true }),
+    milestoneNotified: integer("milestone_notified").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    referredByIdx: index("waitlist_referred_by_code_idx").on(t.referredByCode),
+    confirmedReferralIdx: index("waitlist_confirmed_referral_idx").on(
+      t.referredByCode,
+      t.confirmedAt,
+    ),
+  }),
+);

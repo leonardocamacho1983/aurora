@@ -22,6 +22,13 @@
       "when": 1781649904443,
       "tag": "0002_lonely_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781728724588,
+      "tag": "0003_brief_spot",
+      "breakpoints": true
     }
   ]
 }
