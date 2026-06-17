@@ -25,12 +25,13 @@ export function makeDawnField(): { stars: Star[]; particles: Particle[] } {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return seed / 0x7fffffff;
   };
+  // coords normalizadas (0..1 em x; 0..0.611 em y) → escalam p/ qualquer aspect ratio
   const stars: Star[] = [];
   for (let i = 0; i < 175; i++)
-    stars.push({ x: rnd() * 1920, y: rnd() * 660, r: rnd() * 1.7 + 0.3, a: rnd() * 0.6 + 0.12, p: rnd() });
+    stars.push({ x: rnd(), y: rnd() * 0.611, r: rnd() * 1.7 + 0.3, a: rnd() * 0.6 + 0.12, p: rnd() });
   const particles: Particle[] = [];
   for (let i = 0; i < 26; i++)
-    particles.push({ x: (rnd() - 0.5) * 960, r: rnd() * 1.6 + 0.6, sp: 0.05 + rnd() * 0.07, o: rnd() });
+    particles.push({ x: rnd() - 0.5, r: rnd() * 1.6 + 0.6, sp: 0.05 + rnd() * 0.07, o: rnd() });
   return { stars, particles };
 }
 
@@ -67,9 +68,9 @@ export function drawHero(
   t: number,
   stars: Star[],
   particles: Particle[],
+  W = 1920,
+  H = 1080,
 ): void {
-  const W = 1920,
-    H = 1080;
   const tc = Math.min(t, HSET);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, H);
@@ -104,7 +105,7 @@ export function drawHero(
       ctx.globalAlpha = st.a * starO * tw;
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(st.x, st.y, st.r, 0, 7);
+      ctx.arc(st.x * W, st.y * H, st.r, 0, 7);
       ctx.fill();
     }
     ctx.restore();
@@ -178,7 +179,7 @@ export function drawHero(
   }
 
   {
-    const baseFR = W * 0.17;
+    const baseFR = Math.hypot(W, H) * 0.148;
     const fr = baseFR * (0.42 + 0.58 * fgrow) * (1 + 0.02 * Math.sin(t * 2.0)) * (1 + 0.55 * bloom);
     const fx = cx + W * 0.02,
       fy = apexY;
@@ -211,7 +212,7 @@ export function drawHero(
     for (const pp of particles) {
       const life = (t * pp.sp + pp.o) % 1;
       const py = apexY - life * H * 0.5;
-      const px = cx + pp.x * (0.6 + 0.4 * life);
+      const px = cx + pp.x * W * (0.6 + 0.4 * life);
       ctx.globalAlpha = Math.sin(life * Math.PI) * 0.45 * pa;
       ctx.fillStyle = "rgba(255,232,212,1)";
       ctx.beginPath();

@@ -93,7 +93,7 @@ export function WaitlistForm() {
 
   return (
     <form onSubmit={submit}>
-      <div style={{ display: "flex", gap: 10 }}>
+      <div className={styles.wlRow}>
         <input
           ref={inputRef}
           type="email"

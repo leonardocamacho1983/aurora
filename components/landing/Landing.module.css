@@ -31,6 +31,27 @@
   filter: brightness(1.06);
 }
 
+.wlRow {
+  display: flex;
+  gap: 10px;
+}
+@media (max-width: 440px) {
+  .wlRow {
+    flex-direction: column;
+  }
+  .wlRow .wlBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* nav: esconde os links de texto no mobile (deixa logo + pill) */
+@media (max-width: 560px) {
+  .navText {
+    display: none !important;
+  }
+}
+
 .wlInput {
   flex: 1;
   min-width: 0;

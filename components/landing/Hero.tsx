@@ -43,7 +43,8 @@ export function Hero() {
   const [soundOn, setSoundOn] = useState(true);
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext("2d") ?? null;
+    const cv = canvasRef.current;
+    const ctx = cv?.getContext("2d") ?? null;
     const audio = audioRef.current;
     const { stars, particles } = makeDawnField();
     let heroT = 0;
@@ -55,10 +56,29 @@ export function Hero() {
     let fallbackTimer = 0;
     let veilTimer = 0;
     let curBeat = "";
+    let ro: ResizeObserver | null = null;
 
-    const paint = () => {
-      if (ctx) drawHero(ctx, heroT / S, stars, particles);
+    // Canvas responsivo: backing store = tamanho exibido × DPR → pixels quadrados
+    // (sem esticar o círculo do horizonte = sem "ovo").
+    const sizeCanvas = () => {
+      if (!cv) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = cv.clientWidth || window.innerWidth;
+      const h = cv.clientHeight || window.innerHeight;
+      cv.width = Math.max(1, Math.round(w * dpr));
+      cv.height = Math.max(1, Math.round(h * dpr));
     };
+    const paint = () => {
+      if (ctx && cv) drawHero(ctx, heroT / S, stars, particles, cv.width, cv.height);
+    };
+    sizeCanvas();
+    if (cv && "ResizeObserver" in window) {
+      ro = new ResizeObserver(() => {
+        sizeCanvas();
+        paint();
+      });
+      ro.observe(cv);
+    }
 
     const revealHero = (v: number) => {
       const el = heroContentRef.current;
@@ -293,6 +313,7 @@ export function Hero() {
       clearTimeout(revealTimer);
       clearTimeout(fallbackTimer);
       clearTimeout(veilTimer);
+      ro?.disconnect();
       if (audio) audio.pause();
     };
   }, []);
@@ -325,8 +346,10 @@ export function Hero() {
             <span className="font-serif" style={{ fontSize: 23, fontWeight: 450, letterSpacing: "-0.02em", color: "#F0ECF7" }}>Aurora</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
-            <a href="#manifesto" className={styles.navLink}>Manifesto</a>
-            <a href="#privacidade" className={styles.navLink}>Privacidade</a>
+            <div className={styles.navText} style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
+              <a href="#manifesto" className={styles.navLink}>Manifesto</a>
+              <a href="#privacidade" className={styles.navLink}>Privacidade</a>
+            </div>
             <a href="#lista" className={styles.pill}>Entrar na lista</a>
           </div>
         </div>
