@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HeroInviteNextStep } from "./HeroInviteNextStep";
 import { WaitlistForm } from "./WaitlistForm";
 import { drawHero, makeDawnField, HSET, smooth } from "@/lib/landing/dawn";
 import styles from "./Landing.module.css";
@@ -560,7 +561,11 @@ export function Hero() {
           </p>
 
           <div id="hero-lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>
-            <WaitlistForm />
+            {inviteGreeting ? (
+              <HeroInviteNextStep initialName={inviteGreeting.name} />
+            ) : (
+              <WaitlistForm />
+            )}
           </div>
         </div>
       </div>
