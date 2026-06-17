@@ -38,13 +38,13 @@ export function AdaptiveDemo() {
       style={{
         zIndex: 4,
         background:
-          "radial-gradient(ellipse 96% 360px at 50% 340px, rgba(169,155,217,.12), rgba(236,182,210,.055) 42%, transparent 76%), linear-gradient(180deg,#08060f 0%,#08060f 24%,#090715 52%,#070512 86%,#070512 100%)",
+          "radial-gradient(ellipse 120% 560px at 50% -130px, rgba(236,182,210,.075), rgba(169,155,217,.04) 42%, rgba(127,208,196,.018) 62%, transparent 78%), radial-gradient(ellipse 92% 360px at 50% 360px, rgba(169,155,217,.1), rgba(236,182,210,.045) 42%, transparent 76%), linear-gradient(180deg,#070512 0%,#08060f 18%,#090715 52%,#070512 88%,#070512 100%)",
         borderTop: 0,
       }}
     >
       <div className={styles.constellation} aria-hidden="true" />
       <AuroraGlow style={{ top: -120, right: "12%", width: 520, height: 520 }} />
-      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(172px,21vw,230px) clamp(20px,5vw,32px) clamp(52px,9vw,104px)" }}>
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(120px,14vw,140px) clamp(20px,5vw,32px) clamp(52px,9vw,104px)" }}>
         <div style={{ textAlign: "center" }}>
           <div className={styles.sectionEyebrow}>
             Não é uma página em branco
