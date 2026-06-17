@@ -19,9 +19,20 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Aurora",
-  description: "Um diário falado que reflete com você.",
+  title: "Aurora | Diário por voz com IA",
+  description: "Um diário por voz com IA para registrar seus dias, organizar sentimentos e perceber padrões com mais clareza.",
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "Aurora | Diário por voz com IA",
+    description: "Fale por alguns minutos. A Aurora organiza seu registro, percebe seu momento e ajuda você a se entender melhor.",
+    siteName: "Aurora",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aurora | Diário por voz com IA",
+    description: "Fale por alguns minutos. A Aurora organiza seu registro, percebe seu momento e ajuda você a se entender melhor.",
+  },
   appleWebApp: {
     capable: true,
     title: "Aurora",

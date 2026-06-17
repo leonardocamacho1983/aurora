@@ -1,4 +1,4 @@
-/* Landing — interações (hover/focus) e keyframes. Paleta escura específica da LP
+/* Landing: interacoes (hover/focus) e keyframes. Paleta escura especifica da LP
    fica inline nos componentes; aqui só o que precisa de pseudo-estado/animação. */
 
 .navLink {
@@ -586,7 +586,7 @@
   }
 }
 
-/* ===== Rodada 4 — legibilidade, respiração, atmosfera ===== */
+/* ===== Rodada 4: legibilidade, respiracao, atmosfera ===== */
 
 /* Scrim de leitura: escurece suave só atrás do texto do hero */
 .heroScrim {

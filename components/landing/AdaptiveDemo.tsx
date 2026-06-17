@@ -5,7 +5,7 @@ import { AuroraGlow } from "./Reveal";
 import styles from "./Landing.module.css";
 
 const scenes = [
-  { who: "acabou de ser mãe", q: "Como você está — além de cansada?" },
+  { who: "acabou de ser mãe", q: "Como você está, além de cansada?" },
   { who: "está sem emprego", q: "O que teve de bom hoje, mesmo no meio disso?" },
   { who: "está mudando de carreira", q: "O que te puxa pro novo caminho?" },
   { who: "está abrindo uma empresa", q: "O que te empolgou e o que pesou hoje?" },
@@ -53,7 +53,7 @@ export function AdaptiveDemo() {
             Ela pergunta a coisa certa pra <span style={{ fontStyle: "italic", color: "var(--accent)" }}>você</span>, hoje.
           </h2>
           <p style={{ margin: "20px auto 0", font: "400 clamp(16px,2.4vw,18px)/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 540, textWrap: "pretty" }}>
-            A Aurora aprende o momento que você vive e propõe por onde começar. Sem tela vazia, sem saber o que escrever.
+            A Aurora entende o seu momento e mostra um ponto de partida. Sem tela vazia. Sem o peso de começar do zero.
           </p>
         </div>
         <div className={styles.oracleLayout} style={{ marginTop: 56, display: "flex", gap: 44, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
@@ -76,7 +76,7 @@ export function AdaptiveDemo() {
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                 <line x1="12" x2="12" y1="19" y2="22" />
               </svg>
-              a Aurora propõe · você fala o que quiser
+              a Aurora propõe · você fala no seu ritmo
             </div>
           </div>
         </div>

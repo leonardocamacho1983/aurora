@@ -56,15 +56,18 @@ export function AsTelas() {
       <div className={styles.sectionInner} style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(56px,9vw,100px) clamp(20px,5vw,32px)" }}>
         <div style={{ textAlign: "center" }}>
           <div className={styles.sectionEyebrow}>
-            As telas
+            Por dentro da experiência
           </div>
           <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>
-            Da fala à reflexão, em uma respirada.
+            Você fala. A Aurora transforma em clareza.
           </h2>
+          <p style={{ margin: "18px auto 0", font: "400 16px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 540, textWrap: "pretty" }}>
+            Um registro íntimo, guiado por voz, para perceber o que mudou em você antes que vire ruído.
+          </p>
         </div>
-        <div className={styles.screensRail} aria-label="Telas do aplicativo Aurora">
-          {/* A · Início */}
-          <Phone label="Início">
+        <div className={styles.screensRail} aria-label="Prévia da experiência da Aurora">
+          {/* A · Falar */}
+          <Phone label="Falar">
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 22px 24px" }}>
               <div style={{ height: 50, flexShrink: 0 }} />
               <div className="font-serif" style={{ fontSize: 26, fontWeight: 450, lineHeight: 1.3, letterSpacing: "-0.01em", color: "#F0ECF7", textAlign: "center", maxWidth: 250, textWrap: "balance" }}>
@@ -86,8 +89,8 @@ export function AsTelas() {
             </div>
           </Phone>
 
-          {/* B · Reflexão */}
-          <Phone label="Reflexão">
+          {/* B · Clareza */}
+          <Phone label="Clareza">
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "4px 22px 22px" }}>
               {back}
               <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -116,8 +119,8 @@ export function AsTelas() {
             </div>
           </Phone>
 
-          {/* C · Linha do tempo */}
-          <Phone label="Linha do tempo">
+          {/* C · Padrões */}
+          <Phone label="Padrões">
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "4px 22px 22px" }}>
               {back}
               <div style={{ marginTop: 10, marginBottom: 8, font: "600 21px var(--font-sans)", letterSpacing: "-0.01em", color: "#F0ECF7" }}>Sua linha do tempo</div>

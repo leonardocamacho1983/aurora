@@ -8,7 +8,7 @@ import styles from "./Landing.module.css";
 // Tempo "base" do design (9.9s). S desacelera tudo p/ respirar.
 const S = 1.35;
 const BASE_END = 9.9;
-const HEND = BASE_END * S; // ~13.4s — relógio mestre da intro
+const HEND = BASE_END * S; // ~13.4s, relogio mestre da intro
 const beats = [
   { text: "Parar pra se ouvir é raro.", in: 0.7, out: 2.6 },
   { text: "E você está aqui.", in: 2.8, out: 4.5 },
@@ -515,7 +515,7 @@ export function Hero() {
           </h1>
 
           <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
-            A Aurora te encontra em qualquer um deles — um diário por voz que aprende a sua fase e te pergunta a coisa certa pra hoje. Você fala; ela escuta, reflete e te ajuda a enxergar.
+            Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.
           </p>
 
           <div id="hero-lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>

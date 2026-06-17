@@ -18,12 +18,12 @@ export function Privacidade() {
     },
     {
       title: "Nunca vendido",
-      body: "Seus desabafos não são produto. Não vendemos nada disso a ninguém.",
+      body: "Seus registros não são vendidos. O que você conta continua protegido.",
       icon: <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />,
     },
     {
       title: "Você apaga",
-      body: "Apague qualquer entrada — ou tudo de uma vez — quando quiser.",
+      body: "Apague qualquer entrada, ou tudo de uma vez, quando quiser.",
       icon: (
         <>
           <path d="M3 6h18" />
@@ -46,7 +46,7 @@ export function Privacidade() {
             Seu diário é só <span style={{ fontStyle: "italic", color: "var(--accent)" }}>seu</span>.
           </h2>
           <p style={{ margin: "22px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 440, textWrap: "pretty" }}>
-            O que você confia à Aurora não vira produto. Sem anúncios, sem revenda, sem letras miúdas.
+            O que você conta à Aurora continua sendo seu. Sem anúncios. Sem venda de dados. Sem truque escondido.
           </p>
         </div>
         <div className={styles.sanctuaryList} style={{ display: "flex", flexDirection: "column" }}>
@@ -70,9 +70,9 @@ export function Privacidade() {
 /* ============ COMO FUNCIONA ============ */
 export function ComoFunciona() {
   const steps = [
-    { n: "01", title: "Toque e fale", body: "A Aurora propõe por onde começar; você toca no orb e fala o que vier. Sem digitar, sem campo em branco, sem julgamento." },
-    { n: "02", title: "A Aurora reflete", body: "Ela transcreve o que você falou e devolve uma pergunta gentil — não um conselho pronto — pra você enxergar o que estava por trás." },
-    { n: "03", title: "Acompanhe", body: "Cada dia vira um ponto na sua linha do tempo. Com o passar das semanas, o padrão aparece sozinho — e você começa a se entender melhor." },
+    { n: "01", title: "Toque e fale", body: "A Aurora sugere um começo. Você toca no orb e fala do seu jeito, sem digitar e sem ter que organizar tudo antes." },
+    { n: "02", title: "A Aurora reflete", body: "Ela organiza sua fala, percebe sinais importantes e devolve uma reflexão feita para o seu momento." },
+    { n: "03", title: "Acompanhe", body: "Com o tempo, a Aurora revela padrões com leveza. Você entende melhor seus dias sem precisar fazer força." },
   ];
   return (
     <section id="como-funciona" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
@@ -104,12 +104,12 @@ export function ComoFunciona() {
 /* ============ FEATURES ============ */
 export function Features() {
   const cells = [
-    { title: "Aprende a sua fase", body: "Propõe a pergunta certa pro momento que você vive — e muda com você.", stroke: "var(--accent)", icon: (<><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></>) },
-    { title: "Tudo por voz", body: "Sem digitar. Toque no orb e fale por dois minutos, do jeito que vier.", stroke: "#C9C4D8", icon: (<><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></>) },
-    { title: "Vira texto sozinho", body: "A Aurora transcreve e organiza o que você falou, pra você reler depois com calma.", stroke: "#C9C4D8", icon: (<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>) },
-    { title: "Reflexão, não conselho", body: "Em vez de respostas prontas, ela devolve uma pergunta que te faz pensar.", stroke: "var(--accent)", icon: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" /> },
-    { title: "Sua linha do tempo", body: "Cada dia vira um ponto. Você vê padrões que sozinho passariam batido.", stroke: "#C9C4D8", icon: (<><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.8" /></>) },
-    { title: "Modo Crepúsculo", body: "Uma interface escura e silenciosa, pensada para os minutos antes de dormir.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
+    { title: "Aprende a sua fase", body: "Percebe mudanças no seu momento e adapta os convites de reflexão.", stroke: "var(--accent)", icon: (<><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></>) },
+    { title: "Tudo por voz", body: "Toque no orb e fale por alguns minutos, no seu ritmo.", stroke: "#C9C4D8", icon: (<><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></>) },
+    { title: "Vira texto sozinho", body: "Sua fala vira um registro claro para reler quando quiser.", stroke: "#C9C4D8", icon: (<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>) },
+    { title: "Clareza, não conselho", body: "A Aurora ajuda você a pensar e sentir com mais nitidez, sem respostas prontas.", stroke: "var(--accent)", icon: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" /> },
+    { title: "Sua linha do tempo", body: "Seus dias viram sinais. A Aurora costura padrões com cuidado, sem pesar a experiência.", stroke: "#C9C4D8", icon: (<><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.8" /></>) },
+    { title: "Conforto a qualquer hora", body: "Uma interface que descansa seus olhos, feita para acolher qualquer momento do dia.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
   ];
   return (
     <section id="features" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
@@ -150,7 +150,7 @@ export function ParaTerapeutas() {
           Para terapeutas e psicólogos
         </div>
         <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(1.9rem,4.6vw,36px)", fontWeight: 450, lineHeight: 1.14, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 700, textWrap: "balance" }}>
-          Uma ferramenta entre as sessões — e, no horizonte, dentro do seu <span style={{ fontStyle: "italic", color: "var(--accent)" }}>consultório</span>.
+          Uma ferramenta entre as sessões e, no horizonte, dentro do seu <span style={{ fontStyle: "italic", color: "var(--accent)" }}>consultório</span>.
         </h2>
         <div className={styles.threeCards} style={{ marginTop: 40 }}>
           <div className={styles.card} style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
@@ -170,7 +170,7 @@ export function ParaTerapeutas() {
           </div>
         </div>
         <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 32, height: 48, padding: "0 24px" }}>
-          Quero saber como
+          Entrar na lista profissional
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </a>
       </div>
@@ -192,10 +192,10 @@ export function Convide() {
           Conhece alguém que precisa se <span style={{ fontStyle: "italic", color: "var(--accent)" }}>ouvir</span>?
         </h2>
         <p style={{ margin: "18px auto 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 520, textWrap: "pretty" }}>
-          Convide — inclusive seu terapeuta — pra conhecer a Aurora. A cada convite, você sobe na fila.
+          Convide alguém que também precisa se ouvir. Pode ser uma amiga, um paciente ou seu terapeuta. Cada convite aproxima você do acesso.
         </p>
         <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 30, height: 50, padding: "0 26px", font: "600 15px var(--font-sans)" }}>
-          Convidar e subir na fila
+          Convidar alguém
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </a>
         <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Convidar é só mostrar o app. Seu diário continua só seu.</div>
@@ -219,7 +219,7 @@ export function Manifesto() {
             Por que falar em voz alta muda o que você <span style={{ fontStyle: "italic", color: "var(--accent)" }}>sente</span>.
           </h2>
           <p style={{ margin: "20px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 460, textWrap: "pretty" }}>
-            O ensaio que deu origem à Aurora — e, dentro dele, o white paper com o método e a ciência por trás.
+            O ensaio que deu origem à Aurora, com o método, a pesquisa e as escolhas de produto por trás da experiência.
           </p>
           <a href="#" className={styles.outlineBtn} style={{ marginTop: 28, height: 48, padding: "0 24px" }}>
             Ler o manifesto
@@ -228,7 +228,7 @@ export function Manifesto() {
         </div>
         <div className={styles.manifestoQuote} style={{ borderLeft: "2px solid rgba(236,182,210,.18)", padding: "6px 0 6px 28px" }}>
           <div className="font-serif" style={{ fontStyle: "italic", fontSize: "clamp(20px,3vw,24px)", fontWeight: 400, lineHeight: 1.45, color: "#E7E2F0", textWrap: "pretty" }}>
-            &ldquo;O que a gente diz em voz alta para de morar só na cabeça — e começa a fazer sentido.&rdquo;
+            &ldquo;O que a gente diz em voz alta deixa de morar só na cabeça e começa a fazer sentido.&rdquo;
           </div>
         </div>
       </div>

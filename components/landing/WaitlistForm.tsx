@@ -74,7 +74,7 @@ export function WaitlistForm() {
             textAlign: "center",
           }}
         >
-          A gente te chama quando for a sua vez de se ouvir.
+          A gente avisa quando o seu acesso chegar.
         </div>
         <a
           href="#convide"
@@ -85,7 +85,7 @@ export function WaitlistForm() {
             textDecoration: "none",
           }}
         >
-          Quer adiantar? Convide alguém →
+          Quer chegar antes? Convide alguém
         </a>
       </div>
     );
@@ -113,7 +113,7 @@ export function WaitlistForm() {
         </button>
       </div>
       <div style={{ marginTop: 14, font: "400 13px var(--font-sans)", color: "#A39EBA", textShadow: "0 1px 16px rgba(0,0,0,.6)" }}>
-        Sem spam. Um aviso quando for a sua vez.
+        Sem spam. Só o aviso do seu acesso.
       </div>
     </form>
   );

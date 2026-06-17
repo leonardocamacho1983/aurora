@@ -1,7 +1,7 @@
 import { WaitlistForm } from "./WaitlistForm";
 import styles from "./Landing.module.css";
 
-// CTA final — orb grande no rodapé + waitlist reusado. orbGlow default 1.
+// CTA final: orb grande no rodape + waitlist reusado. orbGlow default 1.
 export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
   return (
     <section id="lista" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "radial-gradient(ellipse 100% 90% at 50% 120%, #1a1330 0%, #0A0814 62%)" }}>
@@ -17,7 +17,7 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
           Entre na lista. Seja dos <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>primeiros</span> a se ouvir.
         </h2>
         <p style={{ margin: "20px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#C3BED4", maxWidth: 480, textWrap: "pretty" }}>
-          A Aurora abre em breve, por convites. Deixe seu email e avisamos quando for a sua vez.
+          A Aurora abre em breve por convites. Deixe seu email para receber acesso quando sua vez chegar.
         </p>
         <div style={{ marginTop: 34, width: "100%", maxWidth: 460 }}>
           <WaitlistForm />
