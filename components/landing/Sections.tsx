@@ -1,4 +1,5 @@
 import styles from "./Landing.module.css";
+import { AuroraGlow } from "./Reveal";
 
 const eyebrow = {
   font: "600 12px var(--font-sans)",
@@ -119,8 +120,9 @@ export function Features() {
     { title: "Modo Crepúsculo", body: "Uma interface escura e silenciosa, pensada para os minutos antes de dormir.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
   ];
   return (
-    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
+    <section style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <AuroraGlow style={{ top: -160, right: -140, width: 560, height: 560 }} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
         <div style={eyebrow}>
           <span style={dot} />
           O que o Aurora faz
@@ -130,7 +132,7 @@ export function Features() {
         </h2>
         <div className={styles.featGrid} style={{ marginTop: 54 }}>
           {cells.map((c) => (
-            <div key={c.title} style={{ padding: "34px 30px", borderRight: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+            <div key={c.title} className={styles.cell} style={{ padding: "34px 30px", borderRight: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c.stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {c.icon}
               </svg>
@@ -157,15 +159,15 @@ export function ParaTerapeutas() {
           Uma ferramenta entre as sessões — e, no horizonte, dentro do seu <span style={{ fontStyle: "italic", color: "var(--accent)" }}>consultório</span>.
         </h2>
         <div className={styles.threeCards} style={{ marginTop: 40 }}>
-          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+          <div className={styles.card} style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
             <div style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Usar</div>
             <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>Reflita você também, do seu jeito.</p>
           </div>
-          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+          <div className={styles.card} style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
             <div style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Recomendar</div>
             <p style={{ margin: "8px 0 0", font: "400 15px/1.55 var(--font-sans)", color: "#948FA8", textWrap: "pretty" }}>Uma prática gentil pros seus pacientes entre os encontros.</p>
           </div>
-          <div style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
+          <div className={styles.card} style={{ padding: 26, border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, background: "#0E0C1A" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ font: "600 16px var(--font-sans)", color: "#F0ECF7" }}>Integrar</span>
               <span style={{ font: "600 10px var(--font-sans)", letterSpacing: ".8px", textTransform: "uppercase", color: "#1B1730", background: "var(--accent)", padding: "3px 8px", borderRadius: 999 }}>Em breve</span>
@@ -185,8 +187,9 @@ export function ParaTerapeutas() {
 /* ============ CONVIDE ============ */
 export function Convide() {
   return (
-    <section id="convide" style={{ background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
+    <section id="convide" style={{ position: "relative", overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <AuroraGlow style={{ top: -140, left: "28%", width: 640, height: 640 }} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
         <div style={{ ...eyebrow, display: "inline-flex" }}>
           <span style={dot} />
           Convide
@@ -210,8 +213,9 @@ export function Convide() {
 /* ============ MANIFESTO ============ */
 export function Manifesto() {
   return (
-    <section id="manifesto" style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
-      <div className={styles.twoColManifesto} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
+    <section id="manifesto" style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+      <AuroraGlow style={{ bottom: -180, left: -120, width: 600, height: 600 }} />
+      <div className={styles.twoColManifesto} style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(72px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div>
           <div style={eyebrow}>
             <span style={dot} />

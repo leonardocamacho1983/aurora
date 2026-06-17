@@ -112,7 +112,7 @@ export function WaitlistForm() {
           </svg>
         </button>
       </div>
-      <div style={{ marginTop: 14, font: "400 13px var(--font-sans)", color: "#827C99" }}>
+      <div style={{ marginTop: 14, font: "400 13px var(--font-sans)", color: "#A39EBA", textShadow: "0 1px 16px rgba(0,0,0,.6)" }}>
         Sem spam. Um aviso quando for a sua vez.
       </div>
     </form>
