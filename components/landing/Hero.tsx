@@ -376,15 +376,15 @@ export function Hero() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); startFnRef.current(true); }}
-                className={`${styles.veilBtn} ${styles.veilBreathe}`}
-                style={{ marginTop: 10 }}
+                className={styles.auroraPlay}
+                aria-label="Revelar o amanhecer"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                </svg>
-                Revelar o amanhecer
+                <span className={`${styles.auroraPlayIcon} ${styles.playBreathe}`} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.25 6.75c0-.86.94-1.39 1.68-.95l8.08 4.84c.72.43.72 1.47 0 1.9l-8.08 4.84c-.74.44-1.68-.09-1.68-.95V6.75Z" />
+                  </svg>
+                </span>
+                <span className={styles.auroraPlayLabel}>Revelar o amanhecer</span>
               </button>
               <button
                 type="button"
@@ -397,63 +397,59 @@ export function Hero() {
           </div>
         )}
 
-        {/* ===== Botão de som (durante a intro) ===== */}
-        {introActive && !showVeil && (
-          <button
-            type="button"
-            onClick={() => toggleFnRef.current()}
-            aria-label={soundOn ? "Desligar som" : "Ligar som"}
-            className={styles.ctrl}
-            style={{ right: 24, bottom: 74 }}
-          >
-            {soundOn ? (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-              </svg>
-            ) : (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <line x1="22" x2="16" y1="9" y2="15" />
-                <line x1="16" x2="22" y1="9" y2="15" />
-              </svg>
+        {(introActive && !showVeil) || showReplay ? (
+          <div className={styles.ctrlStack}>
+            {introActive && !showVeil && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => toggleFnRef.current()}
+                  aria-label={soundOn ? "Desligar som" : "Ligar som"}
+                  className={styles.ctrl}
+                >
+                  {soundOn ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <path d="M15.2 8.8a4.5 4.5 0 0 1 0 6.4" />
+                      <path d="M18.5 5.8a9 9 0 0 1 0 12.4" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <line x1="21" x2="16" y1="9" y2="14" />
+                      <line x1="16" x2="21" y1="9" y2="14" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  ref={skipRef}
+                  type="button"
+                  onClick={() => skipFnRef.current()}
+                  aria-label="Pular intro"
+                  className={styles.ctrl}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="6 5 14 12 6 19" />
+                    <line x1="18" x2="18" y1="6" y2="18" />
+                  </svg>
+                </button>
+              </>
             )}
-          </button>
-        )}
-
-        {/* ===== Pular intro (durante a intro) ===== */}
-        {introActive && !showVeil && (
-          <button
-            ref={skipRef}
-            type="button"
-            onClick={() => skipFnRef.current()}
-            aria-label="Pular intro"
-            className={styles.ctrl}
-            style={{ right: 24, bottom: 24 }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polygon points="5 4 15 12 5 20" />
-              <line x1="19" x2="19" y1="5" y2="19" />
-            </svg>
-          </button>
-        )}
-
-        {/* ===== Rever (após a intro) ===== */}
-        {showReplay && (
-          <button
-            type="button"
-            onClick={() => replayFnRef.current()}
-            aria-label="Rever a intro"
-            className={styles.ctrl}
-            style={{ right: 24, bottom: 24 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
-          </button>
-        )}
+            {showReplay && (
+              <button
+                type="button"
+                onClick={() => replayFnRef.current()}
+                aria-label="Rever a intro"
+                className={styles.ctrl}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 12a8 8 0 1 0 2.7-6L4 8" />
+                  <path d="M4 4v4h4" />
+                </svg>
+              </button>
+            )}
+          </div>
+        ) : null}
 
         <div ref={introRef} aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 4, pointerEvents: "none" }}>
           <div ref={kineticRef} className="font-serif" style={{ position: "absolute", left: "50%", top: "46%", transform: "translate(-50%,-50%)", width: "min(860px,86%)", fontSize: "clamp(2rem,6.5vw,54px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.022em", color: "#F8F6FC", opacity: 0, textAlign: "center", textWrap: "balance", textShadow: "0 2px 60px rgba(0,0,0,.6)" }} />

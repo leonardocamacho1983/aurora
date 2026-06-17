@@ -128,26 +128,89 @@
 }
 
 /* entrada "1 toque" (veil) */
-.veilBtn {
+.auroraPlay {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f8f6fc;
+  cursor: pointer;
+}
+.auroraPlay::before {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 124px;
+  height: 124px;
+  border-radius: 999px;
+  background: var(--aurora);
+  filter: blur(38px);
+  opacity: 0.28;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.auroraPlayIcon {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 11px;
-  height: 56px;
-  padding: 0 30px;
+  justify-content: center;
+  width: 82px;
+  height: 82px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #f8f6fc;
-  font: 600 16px var(--font-sans);
-  cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 246, 237, 0.9), rgba(236, 182, 210, 0.36) 34%, rgba(169, 155, 217, 0.18) 62%, rgba(24, 21, 39, 0.34) 100%),
+    var(--aurora);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow:
+    inset 0 9px 26px rgba(255, 255, 255, 0.22),
+    inset 0 -18px 42px rgba(24, 21, 39, 0.28),
+    0 0 0 1px rgba(236, 182, 210, 0.08),
+    0 22px 58px -26px rgba(236, 182, 210, 0.85);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
 }
-.veilBtn:hover {
+.auroraPlayIcon svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 4px;
+  color: rgba(27, 23, 48, 0.78);
+  filter: drop-shadow(0 1px 8px rgba(255, 255, 255, 0.35));
+}
+.auroraPlayLabel {
+  position: relative;
+  font: 600 13px var(--font-sans);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d8d3e6;
+  text-shadow: 0 1px 22px rgba(0, 0, 0, 0.72);
+  transition: color 0.24s ease, transform 0.24s ease;
+}
+.auroraPlay:hover .auroraPlayIcon {
+  transform: translateY(-2px) scale(1.025);
+  border-color: rgba(255, 255, 255, 0.36);
+  box-shadow:
+    inset 0 10px 28px rgba(255, 255, 255, 0.28),
+    inset 0 -18px 42px rgba(24, 21, 39, 0.24),
+    0 0 0 1px rgba(236, 182, 210, 0.2),
+    0 28px 68px -24px rgba(236, 182, 210, 0.95);
+}
+.auroraPlay:hover .auroraPlayLabel {
+  color: #f8f6fc;
   transform: translateY(-1px);
-  border-color: rgba(236, 182, 210, 0.6);
-  background: rgba(255, 255, 255, 0.1);
+}
+.auroraPlay:focus-visible {
+  outline: none;
+}
+.auroraPlay:focus-visible .auroraPlayIcon {
+  outline: 2px solid rgba(236, 182, 210, 0.72);
+  outline-offset: 5px;
 }
 .veilSkip {
   background: none;
@@ -366,30 +429,48 @@
   );
 }
 
+.ctrlStack {
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* Controles da intro (som/skip/replay): discretos, acendem no hover */
 .ctrl {
-  position: absolute;
-  z-index: 6;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
-  background: rgba(10, 8, 20, 0.32);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #c3bed4;
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 58%),
+    rgba(12, 10, 24, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  color: rgba(216, 211, 230, 0.74);
   cursor: pointer;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  opacity: 0.42;
-  transition: opacity 0.6s ease, border-color 0.45s ease, transform 0.45s ease, background 0.45s ease;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  opacity: 0.5;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 40px -28px rgba(0, 0, 0, 0.9);
+  transition: opacity 0.45s ease, border-color 0.32s ease, transform 0.32s ease, background 0.32s ease, color 0.32s ease;
+}
+.ctrl svg {
+  width: 15px;
+  height: 15px;
 }
 .ctrl:hover {
-  opacity: 1;
-  border-color: rgba(236, 182, 210, 0.5);
-  background: rgba(10, 8, 20, 0.55);
-  transform: translateY(-1px);
+  opacity: 0.92;
+  color: #f0ecf7;
+  border-color: rgba(236, 182, 210, 0.32);
+  background:
+    radial-gradient(circle at 35% 24%, rgba(236, 182, 210, 0.16), rgba(255, 255, 255, 0) 58%),
+    rgba(15, 12, 28, 0.42);
+  transform: translateY(-1px) scale(1.015);
 }
 .ctrl:focus-visible {
   opacity: 1;
@@ -414,6 +495,44 @@
 }
 .veilBreathe {
   animation: breathe 5.5s ease-in-out infinite;
+}
+
+.playBreathe {
+  animation: playBreathe 5.8s ease-in-out infinite;
+}
+@keyframes playBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+@media (max-width: 560px) {
+  .auroraPlay {
+    gap: 12px;
+  }
+  .auroraPlay::before {
+    width: 112px;
+    height: 112px;
+    filter: blur(34px);
+    opacity: 0.24;
+  }
+  .auroraPlayIcon {
+    width: 76px;
+    height: 76px;
+  }
+  .auroraPlayLabel {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+  }
+  .ctrlStack {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(28px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  .ctrl {
+    width: 38px;
+    height: 38px;
+    opacity: 0.38;
+  }
 }
 
 /* Reveal on scroll (fade-up suave) */
@@ -476,7 +595,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
-  .auroraGlow, .veilBreathe, .veilInner, .eyebrowDot { animation: none; }
+  .auroraGlow, .veilBreathe, .playBreathe, .veilInner, .eyebrowDot { animation: none; }
 }
 
 @keyframes auroraBreathe {

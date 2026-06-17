@@ -63,6 +63,52 @@ function rimGrad(ctx: CanvasRenderingContext2D, cx: number, R: number, bright: b
   return g;
 }
 
+function drawHorizonFlare(
+  ctx: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  W: number,
+  H: number,
+  bloom: number,
+  portrait: boolean,
+): void {
+  const mobileSoftness = portrait ? 0.58 : 1;
+  const shortAxis = Math.min(W, H);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = bloom * mobileSoftness;
+  ctx.filter = `blur(${Math.max(18, shortAxis * 0.035)}px)`;
+  ctx.translate(fx, fy + shortAxis * 0.008);
+  ctx.scale(portrait ? 2.4 : 3.5, portrait ? 0.18 : 0.14);
+  const mist = ctx.createRadialGradient(0, 0, 0, 0, 0, shortAxis * 0.24);
+  mist.addColorStop(0, "rgba(255,248,236,0.34)");
+  mist.addColorStop(0.38, "rgba(246,205,205,0.16)");
+  mist.addColorStop(0.72, "rgba(180,155,226,0.08)");
+  mist.addColorStop(1, "rgba(255,236,216,0)");
+  ctx.fillStyle = mist;
+  ctx.beginPath();
+  ctx.arc(0, 0, shortAxis * 0.24, 0, 7);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = bloom * (portrait ? 0.16 : 0.24);
+  ctx.filter = `blur(${Math.max(10, shortAxis * 0.018)}px)`;
+  ctx.translate(fx, fy);
+  ctx.scale(portrait ? 1.55 : 2.15, 0.05);
+  const glint = ctx.createRadialGradient(0, 0, 0, 0, 0, shortAxis * 0.28);
+  glint.addColorStop(0, "rgba(255,255,255,0.34)");
+  glint.addColorStop(0.58, "rgba(255,230,214,0.08)");
+  glint.addColorStop(1, "rgba(255,230,214,0)");
+  ctx.fillStyle = glint;
+  ctx.beginPath();
+  ctx.arc(0, 0, shortAxis * 0.28, 0, 7);
+  ctx.fill();
+  ctx.restore();
+}
+
 export function drawHero(
   ctx: CanvasRenderingContext2D,
   t: number,
@@ -82,8 +128,10 @@ export function drawHero(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
+  const portrait = H > W * 1.25;
+  const shortAxis = Math.min(W, H);
   const cx = W * 0.52,
-    apexY = H * 0.66,
+    apexY = H * (portrait ? 0.682 : 0.66),
     R = W * 1.4,
     cy = apexY + R;
   const s = heroCam(tc);
@@ -125,28 +173,33 @@ export function drawHero(
   }
 
   if (rimO > 0) {
-    const rim = Math.max(9, H * 0.011);
+    const rim = Math.min(12, Math.max(3.2, shortAxis * (portrait ? 0.006 : 0.0075)));
+    const rimAlpha = rimO * (portrait ? 0.68 : 0.9);
     ctx.save();
-    ctx.globalAlpha = rimO;
+    ctx.globalAlpha = rimAlpha;
     ctx.globalCompositeOperation = "screen";
-    ctx.filter = "blur(30px)";
-    ctx.fillStyle = rimGrad(ctx, cx, R, false);
+    ctx.filter = `blur(${Math.max(12, shortAxis * 0.03)}px)`;
+    ctx.strokeStyle = rimGrad(ctx, cx, R, false);
+    ctx.lineWidth = rim * 3.8;
     ctx.beginPath();
-    ctx.arc(cx, cy, R + rim * 0.4, 0, 7);
-    ctx.fill();
+    ctx.arc(cx, cy, R + rim * 0.28, 0, 7);
+    ctx.stroke();
     ctx.restore();
+
     ctx.save();
-    ctx.globalAlpha = rimO;
-    ctx.filter = "blur(2px)";
-    ctx.fillStyle = rimGrad(ctx, cx, R, true);
+    ctx.globalAlpha = rimAlpha * 0.72;
+    ctx.globalCompositeOperation = "screen";
+    ctx.filter = `blur(${portrait ? 3.6 : 2.4}px)`;
+    ctx.strokeStyle = rimGrad(ctx, cx, R, true);
+    ctx.lineWidth = Math.max(1.1, rim * (portrait ? 0.55 : 0.72));
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, 7);
-    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 
   {
-    const rim = Math.max(9, H * 0.011);
+    const rim = Math.min(12, Math.max(3.2, shortAxis * (portrait ? 0.006 : 0.0075)));
     ctx.save();
     const pg = ctx.createRadialGradient(cx, cy - R * 0.6, 0, cx, cy, R);
     pg.addColorStop(0, "#1b1633");
@@ -154,7 +207,7 @@ export function drawHero(
     pg.addColorStop(1, "#08060f");
     ctx.fillStyle = pg;
     ctx.beginPath();
-    ctx.arc(cx, cy + rim, R, 0, 7);
+    ctx.arc(cx, cy + rim * (portrait ? 0.42 : 0.55), R, 0, 7);
     ctx.fill();
     ctx.restore();
   }
@@ -242,14 +295,8 @@ export function drawHero(
     bb.addColorStop(1, "rgba(255,210,180,0)");
     ctx.fillStyle = bb;
     ctx.fillRect(0, 0, W, H);
-    ctx.filter = "blur(2px)";
-    const sf = ctx.createLinearGradient(0, fy, W, fy);
-    sf.addColorStop(0, "rgba(255,236,216,0)");
-    sf.addColorStop(0.5, "rgba(255,247,233," + 0.8 * bloom + ")");
-    sf.addColorStop(1, "rgba(255,236,216,0)");
-    ctx.fillStyle = sf;
-    ctx.fillRect(0, fy - 2.5, W, 5);
     ctx.restore();
+    drawHorizonFlare(ctx, fx, fy, W, H, bloom, portrait);
   }
 
   ctx.save();
