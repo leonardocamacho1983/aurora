@@ -429,6 +429,37 @@
   );
 }
 
+.heroEyebrow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  max-width: min(100%, 720px);
+  font: 600 clamp(11px, 2.6vw, 12px) var(--font-sans);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #b8b3cc;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.6);
+}
+
+.heroEyebrowText {
+  display: block;
+}
+
+.eyebrowDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ebb7d2;
+  box-shadow: 0 0 8px rgba(235, 183, 210, 0.9);
+  flex: 0 0 auto;
+  transform-origin: center;
+  animation: dotPulse 4.2s ease-in-out infinite;
+}
+
 .ctrlStack {
   position: absolute;
   right: max(20px, env(safe-area-inset-right));
@@ -524,14 +555,40 @@
     letter-spacing: 0.16em;
   }
   .ctrlStack {
-    right: max(16px, env(safe-area-inset-right));
-    bottom: max(28px, env(safe-area-inset-bottom));
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(34px, env(safe-area-inset-bottom));
     gap: 8px;
   }
   .ctrl {
     width: 38px;
     height: 38px;
-    opacity: 0.38;
+    opacity: 0.46;
+  }
+  .heroEyebrow {
+    display: block;
+    max-width: 21rem;
+    letter-spacing: 2.6px;
+    line-height: 1.55;
+  }
+  .heroEyebrow::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 58px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(235, 183, 210, 0.16);
+    filter: blur(22px);
+    opacity: 0.65;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .heroEyebrowText {
+    position: relative;
+  }
+  .eyebrowDot {
+    display: none;
   }
 }
 
@@ -584,10 +641,6 @@
   }
 }
 
-/* Ponto do eyebrow respirando */
-.eyebrowDot {
-  animation: dotPulse 4.2s ease-in-out infinite;
-}
 @keyframes dotPulse {
   0%, 100% { opacity: 0.7; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.25); }

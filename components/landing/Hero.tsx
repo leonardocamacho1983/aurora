@@ -96,7 +96,10 @@ export function Hero() {
     const settleIntro = () => {
       if (introRef.current) introRef.current.style.opacity = "0";
       if (kineticRef.current) kineticRef.current.style.opacity = "0";
-      if (logoWrapRef.current) logoWrapRef.current.style.opacity = "0";
+      if (logoWrapRef.current) {
+        logoWrapRef.current.style.opacity = "0";
+        logoWrapRef.current.style.filter = "blur(0px)";
+      }
       revealHero(1);
       revealHeader(1);
     };
@@ -130,6 +133,8 @@ export function Hero() {
     };
 
     const updateHero = (t: number) => {
+      const settle = smooth(SETTLE_IN * S, SETTLE_OUT * S, t);
+      const introChildFade = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 0.45) * S, t);
       const k = kineticRef.current;
       if (k) {
         let best: (typeof beats)[number] | null = null;
@@ -149,7 +154,7 @@ export function Hero() {
           k.textContent = best.text;
           curBeat = best.text;
         }
-        k.style.opacity = bestO.toFixed(3);
+        k.style.opacity = (bestO * introChildFade).toFixed(3);
         k.style.transform = `translate(-50%,-50%) translateY(${(12 * (1 - bestFin)).toFixed(1)}px)`;
       }
 
@@ -157,28 +162,34 @@ export function Hero() {
       const lout = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 1.0) * S, t);
       const lw = logoWrapRef.current;
       if (lw) {
-        lw.style.opacity = (lr * lout).toFixed(3);
+        lw.style.opacity = (lr * lout * introChildFade).toFixed(3);
         lw.style.transform = `translate(-50%,-50%) translateY(${(24 * (1 - lr)).toFixed(1)}px) scale(${(1.04 - 0.04 * lr).toFixed(3)})`;
         lw.style.filter = `blur(${(11 * (1 - lr)).toFixed(2)}px)`;
       }
 
-      const settle = smooth(SETTLE_IN * S, SETTLE_OUT * S, t);
       if (introRef.current) introRef.current.style.opacity = (1 - settle).toFixed(3);
       revealHero(settle);
       revealHeader(settle);
     };
 
-    const finishIntro = () => {
+    const completeIntro = (remember = true) => {
       if (raf) cancelAnimationFrame(raf);
+      clearTimeout(revealTimer);
+      clearTimeout(fallbackTimer);
+      clearTimeout(veilTimer);
+      playing = false;
+      hlast = null;
       settleIntro();
       hideSkip();
       setIntroActive(false);
       setShowReplay(true);
       fadeOutAudio();
-      try {
-        sessionStorage.setItem("aurora_hero_seen", "1");
-      } catch {
-        /* ignore */
+      if (remember) {
+        try {
+          sessionStorage.setItem("aurora_hero_seen", "1");
+        } catch {
+          /* ignore */
+        }
       }
     };
 
@@ -192,7 +203,7 @@ export function Hero() {
           heroT = HEND;
           playing = false;
           paint();
-          finishIntro();
+          completeIntro();
           return;
         }
       }
@@ -207,6 +218,17 @@ export function Hero() {
       hlast = null;
       setIntroActive(true);
       setShowReplay(false);
+      if (introRef.current) introRef.current.style.opacity = "1";
+      if (kineticRef.current) {
+        kineticRef.current.style.opacity = "0";
+        kineticRef.current.style.filter = "";
+      }
+      if (logoWrapRef.current) {
+        logoWrapRef.current.style.opacity = "0";
+        logoWrapRef.current.style.filter = "blur(11px)";
+      }
+      revealHero(0);
+      revealHeader(0);
       showSkip();
       if (withSound && soundOnRef.current && audio) {
         audio.muted = false;
@@ -232,7 +254,7 @@ export function Hero() {
       playing = false;
       paint();
       updateHero(heroT);
-      finishIntro();
+      completeIntro();
     };
 
     replayFnRef.current = () => {
@@ -279,11 +301,11 @@ export function Hero() {
     revealTimer = window.setTimeout(() => {
       const el = heroContentRef.current;
       if (el && parseFloat(getComputedStyle(el).opacity) < 0.95) {
+        heroT = HEND;
         playing = false;
         if (raf) cancelAnimationFrame(raf);
-        settleIntro();
-        hideSkip();
-        setIntroActive(false);
+        paint();
+        completeIntro();
       }
     }, 16000);
 
@@ -291,9 +313,7 @@ export function Hero() {
       heroT = HSET * S; // mostra o amanhecer plenamente nascido (drawHero recebe HSET)
       playing = false;
       paint();
-      settleIntro();
-      hideSkip();
-      setIntroActive(false);
+      completeIntro(false);
     } else {
       heroT = 0;
       paint(); // céu inicial atrás do veil
@@ -460,9 +480,9 @@ export function Hero() {
         </div>
 
         <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
-          <div style={{ font: "600 clamp(11px,2.6vw,12px) var(--font-sans)", letterSpacing: "2px", textTransform: "uppercase", color: "#B8B3CC", display: "flex", alignItems: "center", gap: 9, textShadow: "0 1px 16px rgba(0,0,0,.6)" }}>
-            <span className={styles.eyebrowDot} style={{ width: 5, height: 5, borderRadius: "50%", background: "#EBB7D2", boxShadow: "0 0 8px rgba(235,183,210,.9)", flexShrink: 0 }} />
-            Diário por voz com IA · lista de espera aberta
+          <div className={styles.heroEyebrow}>
+            <span className={styles.eyebrowDot} aria-hidden="true" />
+            <span className={styles.heroEyebrowText}>Diário por voz com IA · lista de espera aberta</span>
           </div>
 
           <h1 className="font-serif" style={{ margin: "clamp(16px,4vw,24px) 0 0", fontSize: "clamp(1.9rem,7vw,64px)", fontWeight: 450, lineHeight: 1.1, letterSpacing: "-0.028em", color: "#F8F6FC", maxWidth: 840, textWrap: "balance", textShadow: "0 2px 50px rgba(0,0,0,.65)" }}>
