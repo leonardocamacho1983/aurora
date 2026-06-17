@@ -44,6 +44,11 @@ export function Hero() {
   const [introActive, setIntroActive] = useState(true);
   const [showReplay, setShowReplay] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [inviteGreeting, setInviteGreeting] = useState<{
+    name: string;
+    confirmed: boolean;
+    confirmedCount: number;
+  } | null>(null);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -301,6 +306,27 @@ export function Hero() {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     let seen = false;
     try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("sala") === "convite") {
+        sessionStorage.setItem("aurora_hero_seen", "1");
+        const rawContext = localStorage.getItem("aurora_invite_context");
+        if (rawContext) {
+          const context = JSON.parse(rawContext) as {
+            name?: string;
+            confirmed?: boolean;
+            confirmedCount?: number;
+            savedAt?: number;
+          };
+          const fresh = !context.savedAt || Date.now() - context.savedAt < 7 * 24 * 60 * 60 * 1000;
+          if (fresh) {
+            setInviteGreeting({
+              name: typeof context.name === "string" ? context.name.trim().slice(0, 40) : "",
+              confirmed: Boolean(context.confirmed),
+              confirmedCount: Number.isFinite(context.confirmedCount) ? Number(context.confirmedCount) : 0,
+            });
+          }
+        }
+      }
       seen = sessionStorage.getItem("aurora_hero_seen") === "1";
     } catch {
       /* ignore */
@@ -505,6 +531,21 @@ export function Hero() {
         </div>
 
         <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
+          {inviteGreeting ? (
+            <div className={styles.heroInviteGreeting}>
+              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu convite está guardado.` : "Seu convite está guardado."}</span>
+              <strong>
+                {inviteGreeting.confirmedCount > 0
+                  ? inviteGreeting.confirmedCount === 1
+                    ? "1 pessoa já entrou pela sua indicação."
+                    : `${inviteGreeting.confirmedCount} pessoas já entraram pela sua indicação.`
+                  : inviteGreeting.confirmed
+                    ? "A Aurora vai avisar quando chegar sua vez."
+                    : "Confirme seu email para ativar seus convites."}
+              </strong>
+            </div>
+          ) : null}
+
           <div className={styles.heroEyebrow}>
             <span className={styles.eyebrowDot} aria-hidden="true" />
             <span className={styles.heroEyebrowText}>Diário por voz com IA · lista de espera aberta</span>

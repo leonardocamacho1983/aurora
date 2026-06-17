@@ -6,6 +6,8 @@ import { waitlist } from "@/lib/db/schema";
 import { MILESTONES, progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
+import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
+import { ReferralHomeLink } from "@/components/landing/ReferralHomeLink";
 import { ShareInvite } from "@/components/landing/ShareInvite";
 import styles from "@/components/landing/Landing.module.css";
 
@@ -84,54 +86,57 @@ export default async function WaitlistStatusPage({ params }: Props) {
         </div>
 
         <div className={styles.referralActionPanel}>
-          <div className={styles.referralProgressCard}>
-            <div className={styles.referralProgressTop}>
-              <span>{confirmedCount} confirmados</span>
-              <span>
-                {progress.next
-                  ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
-                  : "todos os marcos desbloqueados"}
-              </span>
+          <InviteNameCapture confirmed={confirmed} confirmedCount={confirmedCount} />
+
+          <div className={styles.referralDashboard}>
+            <div className={styles.referralProgressCard}>
+              <div className={styles.referralProgressTop}>
+                <span>{confirmedCount} confirmados</span>
+                <span>
+                  {progress.next
+                    ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
+                    : "todos os marcos desbloqueados"}
+                </span>
+              </div>
+              <div className={styles.referralTrack} aria-hidden="true">
+                <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
+              </div>
+              <div className={styles.referralMilestones}>
+                {MILESTONES.map((m) => (
+                  <div
+                    key={m.count}
+                    className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
+                  >
+                    <span>{m.count}</span>
+                    <strong>{m.shortTitle}</strong>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className={styles.referralTrack} aria-hidden="true">
-              <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
-            </div>
-            <div className={styles.referralMilestones}>
-              {MILESTONES.map((m) => (
-                <div
-                  key={m.count}
-                  className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
-                >
-                  <span>{m.count}</span>
-                  <strong>{m.shortTitle}</strong>
-                </div>
-              ))}
-            </div>
+
+            {progress.current ? (
+              <div className={styles.referralCelebration}>
+                <span>Marco desbloqueado</span>
+                <strong>{progress.current.title}</strong>
+                <p>{progress.current.description}</p>
+              </div>
+            ) : (
+              <div className={styles.referralCelebration}>
+                <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
+                <strong>Traga 5 pessoas para perto</strong>
+                <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
+              </div>
+            )}
           </div>
 
-          {progress.current ? (
-            <div className={styles.referralCelebration}>
-              <span>Marco desbloqueado</span>
-              <strong>{progress.current.title}</strong>
-              <p>{progress.current.description}</p>
-            </div>
-          ) : (
-            <div className={styles.referralCelebration}>
-              <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
-              <strong>Traga 5 pessoas para perto</strong>
-              <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
-            </div>
-          )}
-
-          <ShareInvite
-            referralCode={row.referralCode}
-            inviteUrl={inviteUrl}
-            label="Seu convite para pessoas queridas"
-          />
-
-          <Link href="/" className={styles.referralSecondary}>
-            Voltar para a página da Aurora
-          </Link>
+          <div className={styles.referralSharePanel}>
+            <ShareInvite
+              referralCode={row.referralCode}
+              inviteUrl={inviteUrl}
+              label="Seu convite para pessoas queridas"
+            />
+            <ReferralHomeLink confirmed={confirmed} confirmedCount={confirmedCount} />
+          </div>
         </div>
       </section>
     </main>
