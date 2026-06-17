@@ -1081,7 +1081,7 @@
   min-height: 100svh;
   display: grid;
   place-items: center;
-  padding: clamp(18px, 3.2vw, 42px) clamp(18px, 5vw, 32px);
+  padding: clamp(22px, 4vh, 48px) clamp(28px, 5vw, 72px);
   background:
     radial-gradient(ellipse 68% 42% at 50% 0%, rgba(169, 155, 217, 0.18), transparent 68%),
     radial-gradient(ellipse 80% 58% at 50% 100%, rgba(236, 182, 210, 0.12), transparent 70%),
@@ -1092,14 +1092,14 @@
 
 .referralShell {
   position: relative;
-  width: min(1040px, 100%);
-  min-height: min(900px, calc(100svh - clamp(36px, 6.4vw, 84px)));
-  display: flex;
-  flex-direction: column;
+  width: min(1480px, 100%);
+  min-height: min(820px, calc(100svh - clamp(44px, 8vh, 96px)));
+  display: grid;
+  grid-template-columns: minmax(360px, 0.92fr) minmax(520px, 1.08fr);
   align-items: center;
   justify-content: center;
-  gap: clamp(16px, 2.2vh, 22px);
-  padding: clamp(26px, 4.8vw, 56px);
+  gap: clamp(28px, 4vw, 60px);
+  padding: clamp(30px, 4.2vw, 62px);
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
@@ -1109,6 +1109,26 @@
   text-align: center;
   isolation: isolate;
   overflow: hidden;
+}
+
+.referralIntro,
+.referralActionPanel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.referralIntro {
+  gap: clamp(14px, 2vh, 22px);
+  max-width: 620px;
+  justify-self: center;
+}
+
+.referralActionPanel {
+  gap: clamp(14px, 2vh, 18px);
+  max-width: 850px;
+  justify-self: stretch;
 }
 
 .referralShell::before {
@@ -1140,18 +1160,18 @@
   text-transform: uppercase;
 }
 
-.referralShell h1 {
+.referralIntro h1 {
   max-width: 720px;
   margin: 0;
   color: #f8f6fc;
-  font-size: clamp(2.2rem, 6vw, 56px);
+  font-size: clamp(2.55rem, 5vw, 64px);
   font-weight: 450;
   line-height: 1.05;
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
-.referralShell > p {
+.referralIntro > p {
   max-width: 640px;
   margin: 0;
   color: #c3bed4;
@@ -1162,7 +1182,6 @@
 .referralProgressCard,
 .referralCelebration {
   width: 100%;
-  max-width: 860px;
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(7, 5, 18, 0.5);
@@ -1290,28 +1309,62 @@
   color: #8f89a6;
 }
 
-@media (min-width: 900px) and (max-height: 820px) {
+@media (min-width: 900px) and (max-height: 860px) {
+  .referralPage {
+    padding-block: 18px;
+  }
+
   .referralShell {
-    gap: 14px;
-    padding: 28px 46px;
+    min-height: calc(100svh - 36px);
+    gap: 34px;
+    padding: 26px 44px;
   }
 
-  .referralShell h1 {
-    font-size: clamp(2.1rem, 4.8vw, 48px);
+  .referralIntro,
+  .referralActionPanel {
+    gap: 12px;
   }
 
-  .referralShell > p {
-    font-size: 16px;
-    line-height: 1.5;
+  .referralOrb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .referralIntro h1 {
+    font-size: clamp(2.25rem, 4.2vw, 52px);
+  }
+
+  .referralIntro > p {
+    font-size: 15px;
+    line-height: 1.48;
   }
 
   .referralProgressCard,
   .referralCelebration {
-    padding: 16px;
+    padding: 14px;
   }
 
   .referralMilestone {
-    min-height: 76px;
+    min-height: 70px;
+  }
+
+  .referralCelebration strong {
+    margin-top: 5px;
+    font-size: clamp(22px, 2.5vw, 28px);
+  }
+
+  .referralCelebration p {
+    margin-top: 5px;
+    line-height: 1.42;
+  }
+
+  .shareInvite {
+    gap: 9px;
+  }
+
+  .shareUrl {
+    min-height: 38px;
+    padding-block: 8px;
   }
 }
 
@@ -1351,6 +1404,8 @@
   .referralShell {
     width: 100%;
     min-height: 100svh;
+    display: flex;
+    flex-direction: column;
     justify-content: flex-start;
     gap: 18px;
     padding: clamp(30px, 7vw, 46px) 24px;
@@ -1359,11 +1414,17 @@
     border-right: 0;
   }
 
-  .referralShell h1 {
+  .referralIntro,
+  .referralActionPanel {
+    gap: 18px;
+    max-width: none;
+  }
+
+  .referralIntro h1 {
     font-size: clamp(2.2rem, 12vw, 3.25rem);
   }
 
-  .referralShell > p {
+  .referralIntro > p {
     font-size: 17px;
     line-height: 1.55;
   }

@@ -76,59 +76,63 @@ export default async function WaitlistStatusPage({ params }: Props) {
   return (
     <main className={styles.referralPage}>
       <section className={styles.referralShell}>
-        <div className={styles.referralOrb} aria-hidden="true" />
-        <p className={styles.referralKicker}>Sua sala Aurora</p>
-        <h1 className="font-serif">{title}</h1>
-        <p>{body}</p>
-
-        <div className={styles.referralProgressCard}>
-          <div className={styles.referralProgressTop}>
-            <span>{confirmedCount} confirmados</span>
-            <span>
-              {progress.next
-                ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
-                : "todos os marcos desbloqueados"}
-            </span>
-          </div>
-          <div className={styles.referralTrack} aria-hidden="true">
-            <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
-          </div>
-          <div className={styles.referralMilestones}>
-            {MILESTONES.map((m) => (
-              <div
-                key={m.count}
-                className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
-              >
-                <span>{m.count}</span>
-                <strong>{m.shortTitle}</strong>
-              </div>
-            ))}
-          </div>
+        <div className={styles.referralIntro}>
+          <div className={styles.referralOrb} aria-hidden="true" />
+          <p className={styles.referralKicker}>Sua sala Aurora</p>
+          <h1 className="font-serif">{title}</h1>
+          <p>{body}</p>
         </div>
 
-        {progress.current ? (
-          <div className={styles.referralCelebration}>
-            <span>Marco desbloqueado</span>
-            <strong>{progress.current.title}</strong>
-            <p>{progress.current.description}</p>
+        <div className={styles.referralActionPanel}>
+          <div className={styles.referralProgressCard}>
+            <div className={styles.referralProgressTop}>
+              <span>{confirmedCount} confirmados</span>
+              <span>
+                {progress.next
+                  ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
+                  : "todos os marcos desbloqueados"}
+              </span>
+            </div>
+            <div className={styles.referralTrack} aria-hidden="true">
+              <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
+            </div>
+            <div className={styles.referralMilestones}>
+              {MILESTONES.map((m) => (
+                <div
+                  key={m.count}
+                  className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
+                >
+                  <span>{m.count}</span>
+                  <strong>{m.shortTitle}</strong>
+                </div>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className={styles.referralCelebration}>
-            <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
-            <strong>Traga 5 pessoas para perto</strong>
-            <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
-          </div>
-        )}
 
-        <ShareInvite
-          referralCode={row.referralCode}
-          inviteUrl={inviteUrl}
-          label="Seu convite para pessoas queridas"
-        />
+          {progress.current ? (
+            <div className={styles.referralCelebration}>
+              <span>Marco desbloqueado</span>
+              <strong>{progress.current.title}</strong>
+              <p>{progress.current.description}</p>
+            </div>
+          ) : (
+            <div className={styles.referralCelebration}>
+              <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
+              <strong>Traga 5 pessoas para perto</strong>
+              <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
+            </div>
+          )}
 
-        <Link href="/#lista" className={styles.referralSecondary}>
-          Voltar para a página da Aurora
-        </Link>
+          <ShareInvite
+            referralCode={row.referralCode}
+            inviteUrl={inviteUrl}
+            label="Seu convite para pessoas queridas"
+          />
+
+          <Link href="/" className={styles.referralSecondary}>
+            Voltar para a página da Aurora
+          </Link>
+        </div>
       </section>
     </main>
   );
