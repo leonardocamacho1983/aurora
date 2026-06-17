@@ -47,7 +47,7 @@ export function CrisisResources({
           gap: "var(--space-4)",
         }}
       >
-        <h2 id="crisis-title" className="font-serif" style={{ margin: 0, fontSize: "1.25rem" }}>
+        <h2 id="crisis-title" className="font-serif" style={{ margin: 0, fontSize: "clamp(1.1rem, 1rem + 0.5vw, 1.25rem)" }}>
           Você não está sozinho(a)
         </h2>
         <p style={{ margin: 0, color: "var(--ink)" }}>{data.message}</p>

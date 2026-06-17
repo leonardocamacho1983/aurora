@@ -6,7 +6,7 @@
 
 /* Início / gravando / refletindo: orb centralizado, "sobe" pra cena */
 .center {
-  --orb-size: 300px;
+  --orb-size: clamp(200px, 70vw, 300px);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -15,6 +15,12 @@
   gap: var(--space-6);
   padding: var(--space-5);
   text-align: center;
+}
+
+@media (max-width: 480px) {
+  .center {
+    gap: var(--space-4);
+  }
 }
 
 /* Resultado: orb como SOL atrás do card */

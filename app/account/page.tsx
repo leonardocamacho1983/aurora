@@ -27,7 +27,7 @@ export default async function AccountPage() {
         textAlign: "center",
       }}
     >
-      <h1 className="font-serif" style={{ fontSize: "1.5rem", margin: 0 }}>
+      <h1 className="font-serif" style={{ fontSize: "clamp(1.3rem, 1.1rem + 0.6vw, 1.6rem)", margin: 0 }}>
         Conta
       </h1>
       <p style={{ color: "var(--ink-soft)", margin: 0 }}>{user.email}</p>

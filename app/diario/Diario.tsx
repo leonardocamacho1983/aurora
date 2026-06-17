@@ -159,7 +159,7 @@ export function Diario() {
           {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
             <p
               className="font-serif"
-              style={{ fontSize: "1.35rem", color: "var(--ink)", maxWidth: "24ch", margin: 0 }}
+              style={{ fontSize: "clamp(1.1rem, 1rem + 0.6vw, 1.35rem)", color: "var(--ink)", maxWidth: "24ch", margin: 0 }}
             >
               {PROMPT_DO_DIA}
             </p>
@@ -199,7 +199,7 @@ export function Diario() {
                     display: "flex",
                     flexDirection: "column",
                     gap: "var(--space-4)",
-                    fontSize: "1.2rem",
+                    fontSize: "clamp(1.05rem, 0.95rem + 0.45vw, 1.2rem)",
                     lineHeight: 1.6,
                     color: "var(--ink)",
                   }}

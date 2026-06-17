@@ -91,6 +91,14 @@
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
 }
+@media (max-width: 480px) {
+  .hero {
+    padding: var(--space-5) var(--space-4);
+  }
+  .card {
+    padding: var(--space-4);
+  }
+}
 .hero::before {
   content: "";
   position: absolute;

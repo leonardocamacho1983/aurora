@@ -138,7 +138,7 @@
   align-items: center;
 }
 .pwWrap .input {
-  padding-right: 92px;
+  padding-right: clamp(72px, 20vw, 92px);
 }
 .pwToggle {
   position: absolute;
