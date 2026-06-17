@@ -391,7 +391,11 @@ export function Hero() {
             style={{ position: "absolute", inset: 0, zIndex: 7, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, padding: 24, background: "rgba(8,6,15,.5)", cursor: "pointer", textAlign: "center", opacity: veilFading ? 0 : 1 }}
           >
             <div className={styles.veilInner} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
-              <div style={{ font: "600 clamp(11px,2.4vw,13px) var(--font-sans)", letterSpacing: 6, textTransform: "uppercase", color: "#A7A2BE" }}>diário por voz · em breve</div>
+              <div className={styles.teaserSignature}>
+                <span>diário por voz</span>
+                <span aria-hidden="true" />
+                <span>em breve</span>
+              </div>
               <div className="font-serif" style={{ fontSize: "clamp(3rem,13vw,104px)", fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1, color: "#F8F6FC", textShadow: "0 0 90px rgba(236,182,210,.5),0 2px 40px rgba(0,0,0,.5)" }}>Aurora</div>
               <div className="font-serif" style={{ fontStyle: "italic", fontSize: "clamp(16px,3vw,21px)", fontWeight: 400, color: "#D8D3E6", textShadow: "0 1px 30px rgba(0,0,0,.6)" }}>Algo novo está amanhecendo.</div>
               <button
@@ -476,7 +480,11 @@ export function Hero() {
           <div ref={kineticRef} className="font-serif" style={{ position: "absolute", left: "50%", top: "46%", transform: "translate(-50%,-50%)", width: "min(860px,86%)", fontSize: "clamp(2rem,6.5vw,54px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.022em", color: "#F8F6FC", opacity: 0, textAlign: "center", textWrap: "balance", textShadow: "0 2px 60px rgba(0,0,0,.6)" }} />
           <div ref={logoWrapRef} style={{ position: "absolute", left: "50%", top: "46%", transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 18, opacity: 0 }}>
             <div className="font-serif" style={{ fontSize: "clamp(3.5rem,15vw,118px)", fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1, color: "#F8F6FC", textShadow: "0 0 80px rgba(236,182,210,.55),0 2px 40px rgba(0,0,0,.5)" }}>Aurora</div>
-            <div style={{ font: "600 clamp(12px,2.6vw,15px) var(--font-sans)", letterSpacing: 7, textTransform: "uppercase", color: "#C9C4D8" }}>diário por voz · em breve</div>
+            <div className={styles.teaserSignature}>
+              <span>diário por voz</span>
+              <span aria-hidden="true" />
+              <span>em breve</span>
+            </div>
           </div>
         </div>
 

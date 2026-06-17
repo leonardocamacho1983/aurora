@@ -331,6 +331,27 @@
   animation: auroraDrift 28s ease-in-out infinite alternate;
 }
 
+.demoSection {
+  margin-top: -1px;
+}
+
+.demoSection::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -92px;
+  z-index: 0;
+  width: min(980px, 120vw);
+  height: 220px;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, rgba(236, 182, 210, 0.08), rgba(169, 155, 217, 0.045) 42%, transparent 72%);
+  filter: blur(34px);
+  opacity: 0.86;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 /* grids do design (desktop) que empilham no mobile */
 .twoCol {
   display: grid;
@@ -523,6 +544,41 @@
   }
 }
 
+@media (max-width: 760px) {
+  .screensRail {
+    gap: 16px;
+    margin-top: 36px;
+    padding-bottom: 4px;
+  }
+
+  .phoneWrap {
+    flex-basis: min(74vw, 292px);
+    gap: 9px;
+  }
+
+  .phoneFrame {
+    height: clamp(500px, 132vw, 584px);
+    aspect-ratio: auto;
+    border-radius: 30px;
+    box-shadow: 0 28px 62px -34px rgba(0, 0, 0, 0.78);
+  }
+
+  .phoneLabel {
+    font-size: 12px;
+    color: rgba(111, 105, 135, 0.78);
+  }
+}
+
+@media (max-width: 440px) {
+  .phoneWrap {
+    flex-basis: min(73vw, 286px);
+  }
+
+  .phoneFrame {
+    height: clamp(482px, 128vw, 548px);
+  }
+}
+
 /* ===== Rodada 4 — legibilidade, respiração, atmosfera ===== */
 
 /* Scrim de leitura: escurece suave só atrás do texto do hero */
@@ -545,11 +601,60 @@
   right: 0;
   bottom: -1px;
   z-index: 2;
-  height: clamp(96px, 18vh, 190px);
+  height: clamp(150px, 28vh, 260px);
   pointer-events: none;
   background:
-    radial-gradient(ellipse 78% 64% at 50% 92%, rgba(169, 155, 217, 0.16), transparent 58%),
-    linear-gradient(180deg, rgba(8, 6, 15, 0), rgba(7, 5, 18, 0.72) 72%, #070512 100%);
+    radial-gradient(ellipse 86% 58% at 50% 80%, rgba(236, 182, 210, 0.13), transparent 62%),
+    radial-gradient(ellipse 80% 56% at 50% 100%, rgba(127, 208, 196, 0.07), transparent 58%),
+    linear-gradient(180deg, rgba(8, 6, 15, 0), rgba(7, 5, 18, 0.62) 56%, #070512 100%);
+}
+
+.heroToDemo::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: min(760px, 92vw);
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(169, 155, 217, 0.12), rgba(236, 182, 210, 0.045) 46%, transparent 72%);
+  filter: blur(26px);
+  opacity: 0.9;
+  transform: translateX(-50%);
+}
+
+.heroToDemo::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  width: min(980px, 118vw);
+  height: 180px;
+  border-radius: 50%;
+  border-top: 1px solid rgba(236, 182, 210, 0.08);
+  opacity: 0.72;
+  transform: translateX(-50%);
+  filter: blur(0.2px);
+}
+
+.teaserSignature {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 2.4vw, 16px);
+  font: 500 clamp(13px, 2.6vw, 15px) var(--font-sans);
+  letter-spacing: 0.08em;
+  color: rgba(216, 211, 230, 0.82);
+  text-shadow: 0 1px 28px rgba(0, 0, 0, 0.72);
+  white-space: nowrap;
+}
+
+.teaserSignature span[aria-hidden="true"] {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(236, 182, 210, 0.72);
+  box-shadow: 0 0 14px rgba(236, 182, 210, 0.55);
 }
 
 .heroEyebrow {
@@ -716,6 +821,49 @@
   z-index: -1;
 }
 
+@media (max-width: 760px) {
+  .step {
+    display: block;
+    padding: 30px 0 31px;
+  }
+
+  .step::before {
+    display: none;
+  }
+
+  .stepNumber {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    min-width: 42px;
+    margin-bottom: 16px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(236, 182, 210, 0.14), transparent 64%),
+      rgba(169, 155, 217, 0.055);
+    box-shadow: inset 0 0 0 1px rgba(169, 155, 217, 0.12), 0 0 28px -16px rgba(169, 155, 217, 0.7);
+    font-size: 13px;
+  }
+
+  .stepNumber::after {
+    display: none;
+  }
+
+  .stepTitle {
+    font-size: clamp(26px, 7.2vw, 34px);
+    line-height: 1.08;
+    letter-spacing: -0.018em;
+  }
+
+  .stepBody {
+    margin-top: 14px;
+    max-width: 34rem;
+    font-size: clamp(16px, 4.45vw, 18px);
+    line-height: 1.58;
+  }
+}
+
 .cell {
   position: relative;
   overflow: hidden;
@@ -820,6 +968,37 @@
 }
 
 @media (max-width: 560px) {
+  .heroToDemo {
+    height: clamp(190px, 34vh, 280px);
+    background:
+      radial-gradient(ellipse 86% 50% at 50% 76%, rgba(236, 182, 210, 0.16), transparent 64%),
+      radial-gradient(ellipse 84% 54% at 50% 100%, rgba(127, 208, 196, 0.08), transparent 60%),
+      linear-gradient(180deg, rgba(8, 6, 15, 0), rgba(7, 5, 18, 0.54) 50%, #070512 100%);
+  }
+
+  .heroToDemo::before {
+    bottom: 28px;
+    width: 108vw;
+    height: 132px;
+    opacity: 0.78;
+    filter: blur(34px);
+  }
+
+  .heroToDemo::after {
+    bottom: 52px;
+    width: 126vw;
+    height: 150px;
+    border-top-color: rgba(236, 182, 210, 0.06);
+    opacity: 0.48;
+  }
+
+  .teaserSignature {
+    gap: 11px;
+    font-size: 13px;
+    letter-spacing: 0.07em;
+    color: rgba(216, 211, 230, 0.78);
+  }
+
   .auroraPlay {
     gap: 12px;
   }
@@ -843,9 +1022,9 @@
     gap: 8px;
   }
   .ctrl {
-    width: 38px;
-    height: 38px;
-    opacity: 0.46;
+    width: 36px;
+    height: 36px;
+    opacity: 0.38;
   }
   .oracleLayout::before {
     display: none;
