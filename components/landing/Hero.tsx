@@ -477,7 +477,7 @@ export function Hero() {
             A Aurora te encontra em qualquer um deles — um diário por voz que aprende a sua fase e te pergunta a coisa certa pra hoje. Você fala; ela escuta, reflete e te ajuda a enxergar.
           </p>
 
-          <div id="lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>
+          <div id="hero-lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>
             <WaitlistForm />
           </div>
         </div>

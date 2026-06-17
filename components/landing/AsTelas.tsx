@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./Landing.module.css";
 
 function StatusBar() {
   return (
@@ -23,12 +24,12 @@ function StatusBar() {
 
 function Phone({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
-      <div style={{ width: 340, maxWidth: "86vw", height: 716, background: "#181527", borderRadius: 42, border: "1px solid rgba(255,255,255,.07)", boxShadow: "0 36px 80px -34px rgba(0,0,0,.7)", overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div className={styles.phoneWrap}>
+      <div className={styles.phoneFrame}>
         <StatusBar />
         {children}
       </div>
-      <div style={{ font: "500 13px var(--font-sans)", color: "#6F6987", letterSpacing: ".2px" }}>{label}</div>
+      <div className={styles.phoneLabel}>{label}</div>
     </div>
   );
 }
@@ -48,7 +49,7 @@ const timeline = [
 
 export function AsTelas() {
   return (
-    <section style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
+    <section id="telas" className={styles.sectionAnchor} style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "#070512" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(56px,9vw,100px) clamp(20px,5vw,32px)" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ font: "600 12px var(--font-sans)", letterSpacing: "2.4px", textTransform: "uppercase", color: "#948FA8", display: "inline-flex", alignItems: "center", gap: 9 }}>
@@ -59,7 +60,7 @@ export function AsTelas() {
             Da fala à reflexão, em uma respirada.
           </h2>
         </div>
-        <div style={{ marginTop: 64, display: "flex", flexWrap: "wrap", gap: 36, justifyContent: "center", alignItems: "flex-start" }}>
+        <div className={styles.screensRail} aria-label="Telas do aplicativo Aurora">
           {/* A · Início */}
           <Phone label="Início">
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 22px 24px" }}>

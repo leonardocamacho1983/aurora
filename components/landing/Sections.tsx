@@ -44,7 +44,7 @@ export function Privacidade() {
     },
   ];
   return (
-    <section id="privacidade" style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="privacidade" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <div className={styles.twoCol} style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
         <div>
           <div style={eyebrow}>
@@ -84,7 +84,7 @@ export function ComoFunciona() {
     { n: "03", title: "Acompanhe", body: "Cada dia vira um ponto na sua linha do tempo. Com o passar das semanas, o padrão aparece sozinho — e você começa a se entender melhor." },
   ];
   return (
-    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="como-funciona" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
         <div style={eyebrow}>
           <span style={dot} />
@@ -93,13 +93,13 @@ export function ComoFunciona() {
         <h2 className="font-serif" style={{ margin: "18px 0 0", fontSize: "clamp(2rem,5vw,40px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 620, textWrap: "balance" }}>
           Três minutos. Nenhuma tela em branco.
         </h2>
-        <div style={{ marginTop: 56, display: "flex", flexDirection: "column" }}>
+        <div className={styles.steps}>
           {steps.map((st, n) => (
-            <div key={st.n} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 32, padding: "32px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: n === steps.length - 1 ? "1px solid rgba(255,255,255,.08)" : undefined, alignItems: "start" }}>
-              <div style={{ font: "600 15px var(--font-sans)", letterSpacing: ".5px", color: "var(--accent)" }}>{st.n}</div>
+            <div key={st.n} className={`${styles.step} ${n === steps.length - 1 ? styles.stepLast : ""}`}>
+              <div className={styles.stepNumber}>{st.n}</div>
               <div>
-                <div className="font-serif" style={{ fontSize: 26, fontWeight: 450, letterSpacing: "-0.01em", color: "#F0ECF7" }}>{st.title}</div>
-                <p style={{ margin: "12px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 560, textWrap: "pretty" }}>{st.body}</p>
+                <div className={`font-serif ${styles.stepTitle}`}>{st.title}</div>
+                <p className={styles.stepBody}>{st.body}</p>
               </div>
             </div>
           ))}
@@ -120,7 +120,7 @@ export function Features() {
     { title: "Modo Crepúsculo", body: "Uma interface escura e silenciosa, pensada para os minutos antes de dormir.", stroke: "#C9C4D8", icon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /> },
   ];
   return (
-    <section style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="features" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ top: -160, right: -140, width: 560, height: 560 }} />
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: sectionPad }}>
         <div style={eyebrow}>
@@ -149,7 +149,7 @@ export function Features() {
 /* ============ PARA TERAPEUTAS ============ */
 export function ParaTerapeutas() {
   return (
-    <section style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="terapeutas" className={styles.sectionAnchor} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div style={eyebrow}>
           <span style={dot} />
@@ -187,7 +187,7 @@ export function ParaTerapeutas() {
 /* ============ CONVIDE ============ */
 export function Convide() {
   return (
-    <section id="convide" style={{ position: "relative", overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="convide" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#070512", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ top: -140, left: "28%", width: 640, height: 640 }} />
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
         <div style={{ ...eyebrow, display: "inline-flex" }}>
@@ -213,7 +213,7 @@ export function Convide() {
 /* ============ MANIFESTO ============ */
 export function Manifesto() {
   return (
-    <section id="manifesto" style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+    <section id="manifesto" className={styles.sectionAnchor} style={{ position: "relative", overflow: "hidden", background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
       <AuroraGlow style={{ bottom: -180, left: -120, width: 600, height: 600 }} />
       <div className={styles.twoColManifesto} style={{ position: "relative", zIndex: 1, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)" }}>
         <div>

@@ -1,9 +1,10 @@
 import { WaitlistForm } from "./WaitlistForm";
+import styles from "./Landing.module.css";
 
 // CTA final — orb grande no rodapé + waitlist reusado. orbGlow default 1.
 export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
   return (
-    <section style={{ borderTop: "1px solid rgba(255,255,255,.06)", position: "relative", overflow: "hidden", background: "radial-gradient(ellipse 100% 90% at 50% 120%, #1a1330 0%, #0A0814 62%)" }}>
+    <section id="lista" className={styles.sectionAnchor} style={{ borderTop: "1px solid rgba(255,255,255,.06)", position: "relative", overflow: "hidden", background: "radial-gradient(ellipse 100% 90% at 50% 120%, #1a1330 0%, #0A0814 62%)" }}>
       <div style={{ position: "absolute", left: "50%", bottom: -560, transform: "translateX(-50%)", width: 1500, height: 1500, maxWidth: "180vw", pointerEvents: "none" }} aria-hidden="true">
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "linear-gradient(98deg,#79AEDB,#9A8AD9 30%,#E0A6C8 52%,#F4B6A0 78%,#F8CC92)", filter: "blur(26px)", opacity: 0.85 * orbGlow }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "linear-gradient(98deg,#93B9E0,#B49BE2 30%,#ECB4D2 52%,#F8C2A6 78%,#FBD79C)" }} />
