@@ -33,10 +33,18 @@ export function AdaptiveDemo() {
   const fade = { transition: "opacity .43s ease", opacity: visible ? 1 : 0 } as const;
 
   return (
-    <section className={`${styles.divineSection} ${styles.sectionAnchor} ${styles.demoSection}`} style={{ zIndex: 4, background: "#070512", borderTop: 0 }}>
+    <section
+      className={`${styles.divineSection} ${styles.sectionAnchor} ${styles.demoSection}`}
+      style={{
+        zIndex: 4,
+        background:
+          "radial-gradient(ellipse 96% 360px at 50% 340px, rgba(169,155,217,.12), rgba(236,182,210,.055) 42%, transparent 76%), linear-gradient(180deg,#08060f 0%,#08060f 24%,#090715 52%,#070512 86%,#070512 100%)",
+        borderTop: 0,
+      }}
+    >
       <div className={styles.constellation} aria-hidden="true" />
       <AuroraGlow style={{ top: -120, right: "12%", width: 520, height: 520 }} />
-      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(44px,9vw,104px) clamp(20px,5vw,32px)" }}>
+      <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(172px,21vw,230px) clamp(20px,5vw,32px) clamp(52px,9vw,104px)" }}>
         <div style={{ textAlign: "center" }}>
           <div className={styles.sectionEyebrow}>
             Não é uma página em branco

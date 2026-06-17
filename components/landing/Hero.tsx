@@ -17,6 +17,8 @@ const beats = [
 const LOGO_IN = 6.5;
 const SETTLE_IN = 8.3;
 const SETTLE_OUT = 9.7;
+const FINAL_IN = 9.05;
+const FINAL_OUT = 9.72;
 const PHRASE_FADE = 0.6; // largura base do fade das frases (mais suave)
 const LOGO_FADE = 0.9;
 
@@ -24,6 +26,7 @@ export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const heroContentRef = useRef<HTMLDivElement>(null);
+  const bridgeRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
   const kineticRef = useRef<HTMLDivElement>(null);
   const logoWrapRef = useRef<HTMLDivElement>(null);
@@ -93,6 +96,11 @@ export function Hero() {
       h.style.setProperty("transform", `translateY(${(-8 * (1 - v)).toFixed(1)}px)`, "important");
       h.style.setProperty("pointer-events", v > 0.5 ? "auto" : "none", "important");
     };
+    const revealBridge = (v: number) => {
+      const b = bridgeRef.current;
+      if (!b) return;
+      b.style.setProperty("opacity", v.toFixed(3), "important");
+    };
     const settleIntro = () => {
       if (introRef.current) introRef.current.style.opacity = "0";
       if (kineticRef.current) kineticRef.current.style.opacity = "0";
@@ -102,6 +110,7 @@ export function Hero() {
       }
       revealHero(1);
       revealHeader(1);
+      revealBridge(1);
     };
     const showSkip = () => {
       const s = skipRef.current;
@@ -133,8 +142,9 @@ export function Hero() {
     };
 
     const updateHero = (t: number) => {
-      const settle = smooth(SETTLE_IN * S, SETTLE_OUT * S, t);
-      const introChildFade = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 0.45) * S, t);
+      const finalReveal = smooth(FINAL_IN * S, FINAL_OUT * S, t);
+      const introFade = 1 - smooth(SETTLE_IN * S, FINAL_IN * S, t);
+      const introChildFade = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 0.62) * S, t);
       const k = kineticRef.current;
       if (k) {
         let best: (typeof beats)[number] | null = null;
@@ -159,7 +169,7 @@ export function Hero() {
       }
 
       const lr = smooth(LOGO_IN * S, (LOGO_IN + LOGO_FADE) * S, t);
-      const lout = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 1.0) * S, t);
+      const lout = 1 - smooth(SETTLE_IN * S, (SETTLE_IN + 0.68) * S, t);
       const lw = logoWrapRef.current;
       if (lw) {
         lw.style.opacity = (lr * lout * introChildFade).toFixed(3);
@@ -167,9 +177,10 @@ export function Hero() {
         lw.style.filter = `blur(${(11 * (1 - lr)).toFixed(2)}px)`;
       }
 
-      if (introRef.current) introRef.current.style.opacity = (1 - settle).toFixed(3);
-      revealHero(settle);
-      revealHeader(settle);
+      if (introRef.current) introRef.current.style.opacity = introFade.toFixed(3);
+      revealHero(finalReveal);
+      revealHeader(finalReveal);
+      revealBridge(finalReveal);
     };
 
     const completeIntro = (remember = true) => {
@@ -181,6 +192,8 @@ export function Hero() {
       hlast = null;
       settleIntro();
       hideSkip();
+      setShowVeil(false);
+      setVeilFading(false);
       setIntroActive(false);
       setShowReplay(true);
       fadeOutAudio();
@@ -216,6 +229,8 @@ export function Hero() {
       heroT = 0;
       playing = true;
       hlast = null;
+      setShowVeil(false);
+      setVeilFading(false);
       setIntroActive(true);
       setShowReplay(false);
       if (introRef.current) introRef.current.style.opacity = "1";
@@ -229,6 +244,7 @@ export function Hero() {
       }
       revealHero(0);
       revealHeader(0);
+      revealBridge(0);
       showSkip();
       if (withSound && soundOnRef.current && audio) {
         audio.muted = false;
@@ -381,7 +397,7 @@ export function Hero() {
 
         {/* Scrim de leitura (só atrás do texto) */}
         <div className={styles.heroScrim} aria-hidden="true" />
-        <div className={styles.heroToDemo} aria-hidden="true" />
+        <div ref={bridgeRef} className={styles.heroToDemo} aria-hidden="true" />
 
         {/* ===== Veil de entrada "1 toque" ===== */}
         {showVeil && (
