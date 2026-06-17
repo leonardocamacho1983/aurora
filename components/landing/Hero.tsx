@@ -533,7 +533,7 @@ export function Hero() {
         <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
           {inviteGreeting ? (
             <div className={styles.heroInviteGreeting}>
-              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu convite está guardado.` : "Seu convite está guardado."}</span>
+              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu lugar na lista está confirmado.` : "Seu lugar na lista está confirmado."}</span>
               <strong>
                 {inviteGreeting.confirmedCount > 0
                   ? inviteGreeting.confirmedCount === 1

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./Landing.module.css";
 
 type InviteNameCaptureProps = {
@@ -32,12 +32,9 @@ export function InviteNameCapture({ confirmedCount, confirmed }: InviteNameCaptu
     }
   }, []);
 
-  const statusText = useMemo(() => {
-    if (!confirmed) return "Quando seu email for confirmado, seus convites começam a contar.";
-    if (confirmedCount === 0) return "Seu acesso está confirmado. Você já pode guardar seu convite.";
-    if (confirmedCount === 1) return "Seu acesso está confirmado e 1 pessoa já entrou pela sua indicação.";
-    return `Seu acesso está confirmado e ${confirmedCount} pessoas já entraram pela sua indicação.`;
-  }, [confirmed, confirmedCount]);
+  const signedByText = savedName
+    ? `As mensagens que você compartilhar podem aparecer assinadas como ${savedName}.`
+    : "Ao sabermos seu nome, a mensagem que você compartilha fica assinada por você, mais pessoal e mais calorosa.";
 
   function save() {
     const nextName = cleanName(name);
@@ -63,8 +60,8 @@ export function InviteNameCapture({ confirmedCount, confirmed }: InviteNameCaptu
     <div className={styles.inviteNameCard}>
       <div>
         <span>Para ficar mais pessoal</span>
-        <strong>{savedName ? `${savedName}, a Aurora já sabe como te chamar.` : "Como a Aurora pode te chamar?"}</strong>
-        <p>{statusText}</p>
+        <strong>{savedName ? "Sua indicação agora tem mais presença." : "Quer assinar seus convites com seu nome?"}</strong>
+        <p>{signedByText}</p>
       </div>
       <div className={styles.inviteNameForm}>
         <input
