@@ -117,7 +117,7 @@ export function WaitlistForm() {
           <>
             <ShareInvite referralCode={done.referralCode} compact />
             <a href={`/lista/${done.statusToken}`} className={styles.waitlistStatusLink}>
-              Abrir minha sala de convite
+              Conhecer meus convites
             </a>
           </>
         ) : null}

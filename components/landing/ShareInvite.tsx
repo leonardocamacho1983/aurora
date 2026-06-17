@@ -7,6 +7,7 @@ type ShareInviteProps = {
   referralCode: string;
   inviteUrl?: string;
   compact?: boolean;
+  label?: string;
 };
 
 function buildUrl(code: string, explicit?: string): string {
@@ -15,10 +16,15 @@ function buildUrl(code: string, explicit?: string): string {
   return `${window.location.origin}/r/${code}`;
 }
 
-export function ShareInvite({ referralCode, inviteUrl, compact = false }: ShareInviteProps) {
+export function ShareInvite({
+  referralCode,
+  inviteUrl,
+  compact = false,
+  label,
+}: ShareInviteProps) {
   const [copied, setCopied] = useState(false);
   const url = useMemo(() => buildUrl(referralCode, inviteUrl), [referralCode, inviteUrl]);
-  const text = `Achei a Aurora, um diário por voz que ajuda a se ouvir com mais clareza. Entra comigo no acesso antecipado: ${url}`;
+  const text = `Estou na lista da Aurora, um diário por voz com IA para organizar o que a gente sente com mais clareza. Vem conhecer comigo: ${url}`;
   const whats = `https://wa.me/?text=${encodeURIComponent(text)}`;
 
   async function copy() {
@@ -45,6 +51,7 @@ export function ShareInvite({ referralCode, inviteUrl, compact = false }: ShareI
 
   return (
     <div className={`${styles.shareInvite} ${compact ? styles.shareInviteCompact : ""}`}>
+      {label ? <div className={styles.shareLabel}>{label}</div> : null}
       <div className={styles.shareUrl} aria-label="Seu link de convite">
         {url.replace(/^https?:\/\//, "")}
       </div>

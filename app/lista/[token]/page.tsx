@@ -19,7 +19,7 @@ type Props = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function pluralPessoa(count: number): string {
-  return count === 1 ? "pessoa confirmou" : "pessoas confirmaram";
+  return count === 1 ? "pessoa entrou" : "pessoas entraram";
 }
 
 function InvalidState() {
@@ -61,22 +61,25 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || `${proto}://${host}`;
   const inviteUrl = referralUrl(row.referralCode, baseUrl);
   const confirmed = Boolean(row.confirmedAt);
+  const hasReferrals = confirmedCount > 0;
+  const title = !confirmed
+    ? "Confirme seu email para guardar seu lugar."
+    : hasReferrals
+      ? "Seu convite já começou a amanhecer."
+      : "Seu acesso está confirmado.";
+  const body = !confirmed
+    ? "Enviamos um email de confirmação. Depois disso, seu convite passa a contar."
+    : hasReferrals
+      ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação. Continue trazendo pessoas queridas para conhecer a Aurora.`
+      : "A Aurora vai avisar quando chegar sua vez. Você chegou por um convite. Se quiser, também pode trazer pessoas queridas para conhecer a Aurora e desbloquear acesso antecipado e cortesias.";
 
   return (
     <main className={styles.referralPage}>
       <section className={styles.referralShell}>
         <div className={styles.referralOrb} aria-hidden="true" />
         <p className={styles.referralKicker}>Sua sala Aurora</p>
-        <h1 className="font-serif">
-          {confirmed
-            ? "Seu convite já está vivo."
-            : "Confirme seu email para ativar seu convite."}
-        </h1>
-        <p>
-          {confirmed
-            ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pelo seu link. Continue chamando pessoas que também precisam se ouvir.`
-            : "Enviamos um email de confirmação. Depois disso, seus convites passam a contar."}
-        </p>
+        <h1 className="font-serif">{title}</h1>
+        <p>{body}</p>
 
         <div className={styles.referralProgressCard}>
           <div className={styles.referralProgressTop}>
@@ -111,16 +114,20 @@ export default async function WaitlistStatusPage({ params }: Props) {
           </div>
         ) : (
           <div className={styles.referralCelebration}>
-            <span>Próximo gesto</span>
-            <strong>Indique 5 pessoas confirmadas</strong>
-            <p>Esse primeiro marco libera seu acesso antes da fila comum.</p>
+            <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
+            <strong>Traga 5 pessoas para perto</strong>
+            <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
           </div>
         )}
 
-        <ShareInvite referralCode={row.referralCode} inviteUrl={inviteUrl} />
+        <ShareInvite
+          referralCode={row.referralCode}
+          inviteUrl={inviteUrl}
+          label="Seu convite para pessoas queridas"
+        />
 
         <Link href="/#lista" className={styles.referralSecondary}>
-          Voltar para a landing
+          Voltar para a página da Aurora
         </Link>
       </section>
     </main>
