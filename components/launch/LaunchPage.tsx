@@ -99,7 +99,7 @@ export function LaunchFooter() {
 }
 
 const launchPaths = {
-  manifesto: { href: "/manifesto", label: "Manifesto", note: "a luz, o oráculo e o produto" },
+  manifesto: { href: "/manifesto", label: "Manifesto", note: "a luz, o oráculo e a voz" },
   metodo: { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
   "diario-por-voz": { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
   "ia-para-reflexao": { href: "/ia-para-reflexao", label: "IA para reflexão", note: "clareza sem conselho pronto" },
@@ -108,7 +108,7 @@ const launchPaths = {
   faq: { href: "/faq", label: "FAQ", note: "respostas para chegar com calma" },
   termos: { href: "/termos", label: "Termos", note: "o acordo simples da experiência" },
   "para-terapeutas": { href: "/para-terapeutas", label: "Profissionais", note: "uso entre encontros, com limites" },
-  "aurora-org": { href: "/aurora-org", label: "Aurora.org", note: "a dimensão regenerativa em gestação" },
+  "aurora-org": { href: "/aurora-org", label: "Aurora.org", note: "o próximo passo regenerativo" },
 } satisfies Record<string, { href: string; label: string; note: string }>;
 
 const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
@@ -145,7 +145,7 @@ const conversionCopy: Record<string, { eyebrow: string; title: string; body: str
   },
   "ia-para-reflexao": {
     eyebrow: "Tecnologia com limite",
-    title: "Quer ver essa ideia virar produto?",
+    title: "Quer acompanhar essa forma de usar IA?",
     body: "Entre na lista para acompanhar uma IA pensada para clareza, não para dependência.",
     label: "Entrar na lista",
   },
@@ -156,9 +156,9 @@ const conversionCopy: Record<string, { eyebrow: string; title: string; body: str
     label: "Entrar na lista profissional",
   },
   "aurora-org": {
-    eyebrow: "Em gestação",
-    title: "Acompanhe a Aurora desde o começo.",
-    body: "A lista é o melhor lugar para ver como produto, pesquisa e compromisso regenerativo vão se encontrar.",
+    eyebrow: "Próximo passo",
+    title: "Acompanhe a Aurora.org desde o início.",
+    body: "A lista também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
     label: "Entrar na lista",
   },
 };

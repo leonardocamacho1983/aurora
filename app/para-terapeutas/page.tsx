@@ -30,23 +30,23 @@ export default function ParaTerapeutasPage() {
         page="para-terapeutas"
         eyebrow="Profissionais"
         title="Uma prática de reflexão entre encontros."
-        lead="A Aurora pode ser usada por pessoas que fazem terapia, por profissionais que querem refletir sobre si e, no futuro, como apoio integrado ao acompanhamento."
+        lead="A Aurora nasce para a pessoa, mas pode dialogar com profissionais que levam reflexão a sério. Entre sessões, ela ajuda a preservar linguagem, contexto e perguntas que poderiam se perder."
       >
         <LaunchSection eyebrow="Posicionamento" title="A Aurora não substitui vínculo clínico." lead="Ela não diagnostica, não prescreve e não promete tratamento. O valor está em ajudar a pessoa a chegar com mais registro, clareza e linguagem sobre o próprio momento.">
           <Grid columns={3}>
             <Card title="Usar">
-              <p>Profissionais também podem usar a Aurora como diário de reflexão pessoal.</p>
+              <p>Um espaço de reflexão pessoal também para quem cuida de outras pessoas.</p>
             </Card>
             <Card title="Recomendar">
               <p>Uma prática gentil para pacientes que querem registrar entre sessões, quando fizer sentido para o processo.</p>
             </Card>
             <Card title="Integrar">
-              <p>No horizonte, uma experiência pensada para consultórios, com consentimento e privacidade desde a origem.</p>
+              <p>Mais adiante, uma experiência para consultórios só fará sentido com consentimento claro e privacidade desde a origem.</p>
             </Card>
           </Grid>
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Bom uso" title="Quando pode ajudar." lead="A Aurora tende a fazer mais sentido como espaço de registro e preparação, não como intervenção clínica.">
+        <LaunchSection alt eyebrow="Bom uso" title="Quando pode ajudar." lead="A Aurora faz mais sentido como espaço de registro e preparação, não como intervenção clínica.">
           <FineList
             items={[
               {
@@ -65,7 +65,7 @@ export default function ParaTerapeutasPage() {
           />
         </LaunchSection>
 
-        <LaunchSection eyebrow="Limites profissionais" title="Consentimento precisa vir antes de qualquer integração." lead="Se a Aurora criar recursos para profissionais, eles devem respeitar consentimento explícito, minimização de dados e separação clara entre diário pessoal e acompanhamento.">
+        <LaunchSection eyebrow="Limites profissionais" title="Consentimento vem antes de qualquer integração." lead="Qualquer recurso para profissionais parte de consentimento explícito, minimização de dados e separação clara entre diário pessoal e acompanhamento.">
           <WideCard title="Convite aos profissionais">
             <p>Terapeutas, psicólogos e pesquisadores são bem-vindos na construção. O objetivo é ouvir cedo, errar pouco e criar uma ferramenta que respeite a complexidade do cuidado.</p>
           </WideCard>

@@ -16,7 +16,7 @@ const questions = [
   },
   {
     title: "Como funciona a lista de espera?",
-    body: "Você cadastra o email, confirma a entrada e recebe uma sala pessoal para acompanhar convites e marcos.",
+    body: "Você cadastra o email, confirma a entrada e recebe uma sala pessoal para acompanhar convites, marcos e próximos passos.",
   },
   {
     title: "Preciso indicar pessoas?",
@@ -24,7 +24,7 @@ const questions = [
   },
   {
     title: "A Aurora vende meus dados?",
-    body: "Não. A Aurora não vende dados pessoais e não usa sua intimidade como produto de anúncio.",
+    body: "Não. A Aurora não vende dados pessoais e não usa sua intimidade para anúncio.",
   },
   {
     title: "O que é o Ritual de Chegada?",
@@ -32,7 +32,7 @@ const questions = [
   },
   {
     title: "Quando o app abre?",
-    body: "A Aurora abre por convites. Quem entra na lista recebe notícias quando houver novas vagas.",
+    body: "A Aurora abre por convites. Quem está na lista recebe notícias quando novas vagas forem liberadas.",
   },
 ];
 
@@ -58,7 +58,7 @@ export default function FaqPage() {
         page="faq"
         eyebrow="FAQ"
         title="Perguntas para chegar com calma."
-        lead="As respostas mais importantes sobre Aurora, convites, privacidade e limites do produto."
+        lead="As respostas mais importantes sobre Aurora, convites, privacidade e limites da experiência."
       >
         <LaunchSection eyebrow="Respostas" title="O essencial, sem letra miúda." lead="Se algo ainda não estiver claro, escreva para hello@leonardocamacho.com.">
           <FineList items={questions} />

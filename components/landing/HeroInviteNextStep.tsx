@@ -62,7 +62,7 @@ const steps: Step[] = [
     storageKey: "aurora_guest_presence",
     eyebrow: "Sua preferência",
     title: () => "Que tipo de presença combina mais com você?",
-    body: "A Aurora deve acolher sem invadir. Escolha o tom que parece mais confortável agora.",
+    body: "A Aurora acolhe melhor quando entende o tom que combina com você.",
     button: "Guardar preferência",
     options: ["Gentil", "Direta", "Profunda", "Prática"],
     max: 40,

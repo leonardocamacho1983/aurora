@@ -3,9 +3,9 @@ import { Card, Grid, LaunchPage, LaunchSection, WideCard } from "@/components/la
 import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 
 export const metadata = pageMetadata({
-  title: "Aurora.org | Uma ideia em gestação",
+  title: "Aurora.org | O próximo passo da Aurora",
   description:
-    "Aurora.org é a iniciativa em gestação ligada ao compromisso regenerativo da Aurora com educação, pesquisa e prevenção.",
+    "Aurora.org é o próximo passo do compromisso regenerativo da Aurora com educação, pesquisa e prevenção.",
   path: "/aurora-org",
   keywords: ["Aurora.org", "empresa regenerativa", "prevenção suicídio", "tecnologia para bem-estar"],
 });
@@ -16,7 +16,7 @@ export default function AuroraOrgPage() {
     "@type": "WebPage",
     name: "Aurora.org",
     url: absoluteUrl("/aurora-org"),
-    description: "Uma iniciativa em gestação ligada ao compromisso regenerativo da Aurora.",
+    description: "O próximo passo do compromisso regenerativo da Aurora.",
   };
 
   return (
@@ -25,26 +25,26 @@ export default function AuroraOrgPage() {
       <LaunchPage
         page="aurora-org"
         eyebrow="Aurora.org"
-        title="Uma parte da Aurora vai nascer para servir além do produto."
-        lead="Aurora.org será uma iniciativa separada, em gestação, dedicada a educação, pesquisa, prevenção e acesso a recursos de cuidado. Ainda não é um serviço ativo."
+        title="O próximo passo da Aurora nasce para servir além do app."
+        lead="Aurora.org será uma iniciativa separada da experiência comercial, preparada com responsabilidade para educação, pesquisa, prevenção e acesso a recursos de cuidado."
       >
-        <LaunchSection eyebrow="Por que existe" title="Uma empresa regenerativa precisa devolver luz." lead="A Aurora não é regenerativa apenas por doar ou apoiar uma causa. Ela precisa ser regenerativa no produto, nos dados, no crescimento e na forma como trata pessoas.">
+        <LaunchSection eyebrow="Compromisso" title="Regenerar começa no jeito de crescer." lead="A Aurora só faz sentido se a confiança que recebe voltar para pessoas como clareza, cuidado e acesso.">
           <Grid columns={3}>
-            <Card title="Produto">
-              <p>A experiência deve ajudar pessoas a se entenderem melhor, sem criar dependência artificial.</p>
+            <Card title="Experiência">
+              <p>O app ajuda pessoas a se entenderem melhor sem transformar cuidado em dependência.</p>
             </Card>
             <Card title="Crescimento">
-              <p>A indicação só faz sentido quando nasce de confiança e desejo de trazer pessoas queridas para perto.</p>
+              <p>Indicação só vale quando nasce de confiança e da vontade de trazer pessoas queridas para perto.</p>
             </Card>
             <Card title="Causa">
-              <p>Aurora.org será um caminho para transformar parte do valor criado em apoio, pesquisa e educação.</p>
+              <p>Aurora.org transforma parte do valor criado em educação, pesquisa e prevenção, com cuidado e governança.</p>
             </Card>
           </Grid>
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Cuidado" title="Prevenção exige seriedade." lead="Falar de sofrimento humano pede responsabilidade. Aurora.org não substitui serviços de emergência, linhas de crise, atendimento médico ou psicoterapia.">
-          <WideCard title="Em construção">
-            <p>O primeiro papel público de Aurora.org é declarar uma direção. Antes de prometer impacto, será preciso construir governança, parcerias, protocolos e linguagem com especialistas.</p>
+        <LaunchSection alt eyebrow="Responsabilidade" title="Prevenção pede método, parceria e linguagem cuidadosa." lead="Falar de sofrimento humano exige seriedade. Aurora.org não substitui serviços de emergência, linhas de crise, atendimento médico ou psicoterapia.">
+          <WideCard title="Próximo passo, com calma">
+            <p>Antes de prometer impacto, a iniciativa será construída com especialistas, protocolos, governança e parcerias. O compromisso é real. A pressa não pode ser maior que o cuidado.</p>
           </WideCard>
         </LaunchSection>
       </LaunchPage>

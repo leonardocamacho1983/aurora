@@ -33,12 +33,12 @@ export default function DiarioPorVozPage() {
         page="diario-por-voz"
         eyebrow="Diário por voz"
         title="Falar pode ser mais fácil do que começar a escrever."
-        lead="Um diário por voz reduz a pressão de ter a frase certa. Você fala por alguns minutos. A Aurora organiza o registro e ajuda a perceber o que ficou vivo."
+        lead="Um diário por voz tira o peso de encontrar a frase certa. Você fala por alguns minutos. A Aurora organiza o registro e ajuda a notar o que continuou vivo em você."
       >
-        <LaunchSection eyebrow="Para quem" title="Quando um diário por voz faz sentido." lead="A Aurora foi pensada para momentos em que escrever parece pesado, frio ou distante demais do que a pessoa está sentindo.">
+        <LaunchSection eyebrow="Para quem" title="Quando um diário por voz faz sentido." lead="A Aurora foi pensada para momentos em que escrever parece pesado, formal ou distante do que você está sentindo.">
           <Grid columns={3}>
             <Card title="Dias cheios">
-              <p>Quando muita coisa aconteceu e você só precisa despejar antes de organizar.</p>
+              <p>Quando muita coisa aconteceu e falar vem antes de conseguir organizar.</p>
             </Card>
             <Card title="Mudanças de fase">
               <p>Quando trabalho, maternidade, carreira, relação ou dinheiro pedem um jeito novo de olhar.</p>
@@ -72,9 +72,9 @@ export default function DiarioPorVozPage() {
           />
         </LaunchSection>
 
-        <LaunchSection eyebrow="Privacidade" title="Um diário só funciona se parece seguro." lead="A Aurora não é uma rede social. Não existe para expor sua intimidade, vender dados ou capturar atenção infinita.">
+        <LaunchSection eyebrow="Privacidade" title="Um diário só funciona quando é seguro." lead="A Aurora não é uma rede social. Não existe para expor sua intimidade, vender dados ou capturar atenção infinita.">
           <WideCard title="O gesto certo é pequeno">
-            <p>Falar por alguns minutos, guardar o registro e seguir com o dia. A Aurora deve ajudar a pessoa a voltar para a própria vida com um pouco mais de clareza.</p>
+            <p>Falar por alguns minutos, guardar o registro e seguir com o dia. A Aurora existe para devolver um pouco mais de clareza, não para prender você na tela.</p>
           </WideCard>
         </LaunchSection>
       </LaunchPage>

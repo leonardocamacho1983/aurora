@@ -77,7 +77,7 @@ export async function sendStatusEmail(row: WaitlistEmailRow, baseUrl: string) {
     to: row.email,
     subject: "Seu link da lista Aurora",
     html: shell(`
-      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Recebemos uma nova tentativa de entrada com este email. Aqui está seu link pessoal para acompanhar seus convites.</p>
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Este email já está na lista Aurora. Aqui está seu link pessoal para acompanhar convites e próximos passos.</p>
       ${button("Abrir minha sala de convite", url)}
     `),
     text: `Seu link pessoal da Aurora: ${url}`,
@@ -95,7 +95,7 @@ export async function sendFriendJoinedEmail(input: {
     to: input.row.email,
     subject: "Alguém entrou pelo seu convite Aurora",
     html: shell(`
-      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${input.confirmedCount} ${plural} pelo seu convite. Sua constelação está ganhando luz.</p>
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${input.confirmedCount} ${plural} pelo seu convite. Sua indicação está trazendo pessoas para perto.</p>
       ${button("Ver meu progresso", url)}
     `),
     text: `${input.confirmedCount} ${plural} pelo seu convite Aurora.\n\nVer progresso: ${url}`,

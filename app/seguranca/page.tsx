@@ -25,18 +25,18 @@ export default function SegurancaPage() {
         page="seguranca"
         eyebrow="Segurança"
         title="A beleza não serve se a pessoa não se sente segura."
-        lead="A Aurora precisa ser íntima sem ser invasiva. Segurança aqui significa reduzir risco técnico, respeitar limites humanos e explicar escolhas sem linguagem opaca."
+        lead="A Aurora é íntima sem ser invasiva. Segurança aqui significa reduzir risco técnico, respeitar limites humanos e explicar escolhas sem linguagem opaca."
       >
-        <LaunchSection eyebrow="Princípios" title="Segurança como experiência de produto." lead="O usuário não deveria precisar entender arquitetura para se sentir respeitado. Ainda assim, a arquitetura precisa sustentar essa confiança.">
+        <LaunchSection eyebrow="Princípios" title="Segurança também se sente." lead="Você não tem que entender arquitetura para perceber respeito. Por trás da calma, existe trabalho técnico.">
           <Grid columns={3}>
             <Card title="Coleta mínima">
               <p>Guardar apenas o que ajuda a entregar acesso, reflexão e contexto útil.</p>
             </Card>
             <Card title="Separação de sinais">
-              <p>Conteúdo íntimo fica fora de analytics de marketing. Eventos de produto devem carregar apenas metadados seguros.</p>
+              <p>Conteúdo íntimo fica fora de analytics de marketing. Eventos de uso carregam apenas metadados seguros.</p>
             </Card>
             <Card title="Controle progressivo">
-              <p>A pessoa deve poder rever, corrigir, exportar e apagar dados conforme o produto amadurece.</p>
+              <p>Com o amadurecimento da Aurora, a pessoa terá caminhos para rever, corrigir, exportar e apagar dados.</p>
             </Card>
           </Grid>
         </LaunchSection>
@@ -46,7 +46,7 @@ export default function SegurancaPage() {
             items={[
               {
                 title: "Double opt-in",
-                body: "O email precisa ser confirmado para que a indicação conte.",
+                body: "O email é confirmado antes de a indicação contar.",
               },
               {
                 title: "Links pessoais",
@@ -65,9 +65,9 @@ export default function SegurancaPage() {
         </LaunchSection>
 
         <LaunchSection eyebrow="No app" title="O diário por voz exigirá cuidado ainda maior." lead="Quando a Aurora estiver aberta, áudio, transcrição e reflexão terão uma camada de sensibilidade diferente da lista de espera.">
-          <WideCard title="Direção técnica">
-            <p>O caminho esperado inclui autenticação, políticas de acesso, registros apagáveis, controles de retenção e decisões claras sobre o que pode ou não treinar modelos.</p>
-            <p>Esses detalhes precisam estar escritos antes de abrir o produto para uso amplo.</p>
+          <WideCard title="Próxima camada de proteção">
+            <p>A abertura do app pede autenticação, políticas de acesso, registros apagáveis, controles de retenção e escolhas claras sobre modelos de IA.</p>
+            <p>Esses pontos serão descritos com clareza antes do uso amplo.</p>
           </WideCard>
         </LaunchSection>
       </LaunchPage>

@@ -72,7 +72,7 @@ export function ComoFunciona() {
   const steps = [
     { n: "01", title: "Toque e fale", body: "A Aurora sugere um começo. Você toca no orb e fala do seu jeito, sem digitar e sem ter que organizar tudo antes." },
     { n: "02", title: "A Aurora reflete", body: "Ela organiza sua fala, percebe sinais importantes e devolve uma reflexão feita para o seu momento." },
-    { n: "03", title: "Acompanhe", body: "Com o tempo, a Aurora revela padrões com leveza. Você entende melhor seus dias sem precisar fazer força." },
+    { n: "03", title: "Acompanhe", body: "Com o tempo, a Aurora revela padrões com leveza. Você entende melhor seus dias sem fazer força." },
   ];
   return (
     <section id="como-funciona" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ background: "#0A0814", borderTop: "1px solid rgba(255,255,255,.06)" }}>
@@ -219,7 +219,7 @@ export function Manifesto() {
             Por que falar em voz alta muda o que você <span style={{ fontStyle: "italic", color: "var(--accent)" }}>sente</span>.
           </h2>
           <p style={{ margin: "20px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 460, textWrap: "pretty" }}>
-            O ensaio que deu origem à Aurora, com o método, a pesquisa e as escolhas de produto por trás da experiência.
+            O ensaio que deu origem à Aurora, com o método, a pesquisa e as escolhas que sustentam a experiência.
           </p>
           <a href="/manifesto" className={styles.outlineBtn} style={{ marginTop: 28, height: 48, padding: "0 24px" }}>
             Ler o manifesto

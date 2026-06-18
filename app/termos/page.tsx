@@ -62,11 +62,11 @@ export default function TermosPage() {
               },
               {
                 title: "Conteúdo",
-                body: "Você mantém direitos sobre o que registra. A Aurora precisa processar esse conteúdo para entregar a experiência.",
+                body: "Você mantém direitos sobre o que registra. A Aurora processa esse conteúdo para entregar a experiência.",
               },
               {
                 title: "Mudanças",
-                body: "Termos, recursos e benefícios podem ser atualizados. Mudanças importantes devem ser comunicadas com clareza.",
+                body: "Termos, recursos e benefícios podem ser atualizados. Mudanças importantes serão comunicadas com clareza.",
               },
               {
                 title: "Contato",

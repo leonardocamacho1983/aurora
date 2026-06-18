@@ -22,7 +22,7 @@ export default function ManifestoPage() {
     "@type": "Article",
     headline: "Manifesto Aurora",
     description:
-      "A história da luz, do nome Aurora e da decisão de criar um diário por voz com IA para reflexão pessoal.",
+      "A história da luz, da voz e da decisão de criar um diário por voz com IA para reflexão pessoal.",
     url: absoluteUrl("/manifesto"),
     publisher: {
       "@type": "Organization",
@@ -42,18 +42,18 @@ export default function ManifestoPage() {
       >
         <LaunchSection
           eyebrow="Por que Aurora"
-          title="O nome vem do amanhecer."
-          lead="Na mitologia romana, Aurora anuncia a chegada do sol. O nome carrega renovação, esperança e a passagem delicada entre escuridão e luz."
+          title="Aurora é o nome de quando a luz começa a voltar."
+          lead="Na mitologia romana, Aurora anuncia o sol. O nome guarda essa imagem simples: a passagem entre o escuro e o primeiro contorno do dia."
         >
           <Grid columns={3}>
             <Card title="A deusa do amanhecer">
-              <p>Ela cruza o céu para acordar o mundo. A Aurora do produto nasce dessa imagem: um começo que chega com leveza.</p>
+              <p>Ela atravessa o céu antes do sol e espalha orvalho sobre o mundo. É uma imagem de chegada, não de pressa.</p>
             </Card>
             <Card title="Luz e visão">
-              <p>Na família mítica de Aurora estão luz, visão, sol e lua. Isso conversa com o que o app tenta fazer: iluminar sem invadir.</p>
+              <p>Na família mítica de Aurora estão luz, visão, sol e lua. A experiência carrega essa promessa: iluminar sem invadir.</p>
             </Card>
-            <Card title="A hora favorita">
-              <p>O amanhecer não promete que tudo ficou simples. Ele só muda a luz. Às vezes, isso basta para enxergar o próximo gesto.</p>
+            <Card title="O próximo gesto">
+              <p>Nem todo amanhecer resolve o dia. Às vezes, ele só mostra melhor onde pisar. Para a Aurora, isso já importa.</p>
             </Card>
           </Grid>
         </LaunchSection>
@@ -62,7 +62,7 @@ export default function ManifestoPage() {
           alt
           eyebrow="O oráculo"
           title="A Aurora não pergunta o que está errado."
-          lead="Ela não parte do diagnóstico. Ela parte da pessoa que chegou, do dia que ela viveu e do que precisa aparecer com mais clareza."
+          lead="Ela não parte do diagnóstico. Ela parte da pessoa que chegou, do dia que ela viveu e do que pede mais clareza."
         >
           <Grid columns={2}>
             <WideCard title="Conhece-te a ti mesmo">
@@ -70,7 +70,7 @@ export default function ManifestoPage() {
               <p>A Aurora segue essa inspiração: não reduzir a pessoa a um estado emocional, mas descobrir o que vale ser perguntado hoje.</p>
             </WideCard>
             <WideCard title="Nada em excesso">
-              <p>O produto precisa ser bonito, mas não pode ser ruidoso. Precisa ser inteligente, mas não pode fingir autoridade sobre a vida de alguém.</p>
+              <p>A experiência pode ser bonita sem ficar ruidosa. Pode ser inteligente sem fingir autoridade sobre a vida de alguém.</p>
               <p>O papel da Aurora é criar um espelho cuidadoso. A decisão continua sendo da pessoa.</p>
             </WideCard>
           </Grid>
@@ -99,18 +99,21 @@ export default function ManifestoPage() {
           />
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Empresa regenerativa" title="Crescer só faz sentido se fizer bem." lead="A Aurora quer crescer a partir de confiança, indicação e valor real. Não por vício, ruído ou exploração da intimidade.">
+        <LaunchSection alt eyebrow="Empresa regenerativa" title="Crescer só faz sentido se fizer bem." lead="A Aurora quer crescer quando gera confiança suficiente para ser indicada. Não por vício, ruído ou exploração da intimidade.">
           <Grid columns={2}>
             <WideCard title="Dados a serviço da pessoa">
-              <p>O dado mais importante é aquele que volta para o usuário como cuidado, contexto e clareza. A Aurora não existe para metrificar humor ou vender fragilidade.</p>
+              <p>Quando a Aurora aprende algo, esse aprendizado volta para quem falou como cuidado, contexto e clareza. Não como publicidade.</p>
             </WideCard>
-            <WideCard title="Aurora.org no horizonte">
-              <p>Aurora.org será uma iniciativa separada, em gestação, dedicada a educação, pesquisa e apoio em prevenção. A ideia é simples: a empresa nutre uma causa maior que ela.</p>
+            <WideCard title="Aurora.org como próximo passo">
+              <p>Aurora.org é o próximo passo da companhia: uma iniciativa separada, preparada com responsabilidade, para educação, pesquisa e prevenção. A Aurora nasce comercial, mas não termina em si mesma.</p>
             </WideCard>
           </Grid>
         </LaunchSection>
 
-        <LaunchSection eyebrow="O filme" title="A trilha do teaser é só o começo." lead="O filme do manifesto vai contar essa passagem: da escuridão para o contorno, do ruído para a voz, da voz para uma forma mais clara de presença. A música completa expande os dezoito segundos do teaser para uma narrativa feita para ser sentida antes de ser explicada.">
+        <LaunchSection eyebrow="O filme" title="O filme está nascendo." lead="A música que abre a experiência é um fragmento de uma composição maior. Ela vai acompanhar um filme-manifesto sobre luz, voz e travessia.">
+          <WideCard title="Aguarde. O filme-manifesto está em produção.">
+            <p>Por enquanto, fica o recorte do amanhecer. A versão completa virá como uma peça para ser sentida antes de ser explicada.</p>
+          </WideCard>
           <Quote>O que a gente diz em voz alta deixa de morar só na cabeça e começa a fazer sentido.</Quote>
         </LaunchSection>
       </LaunchPage>

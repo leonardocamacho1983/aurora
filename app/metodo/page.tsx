@@ -33,15 +33,15 @@ export default function MetodoPage() {
         page="metodo"
         eyebrow="Método"
         title="A pergunta certa muda o começo da conversa."
-        lead="A Aurora combina voz, organização de linguagem e reflexão adaptativa. A ideia não é dar conselho. É criar clareza suficiente para você escutar melhor o que acabou de dizer."
+        lead="Você fala do jeito que consegue. A Aurora organiza o registro, percebe o que merece atenção e devolve um começo mais claro para a conversa."
       >
         <LaunchSection eyebrow="Entrada" title="A voz reduz a pressão." lead="Escrever exige forma. Falar permite chegada. Por isso, a Aurora começa pelo gesto mais simples: tocar e falar por alguns minutos.">
           <Grid columns={3}>
             <Card title="Menos tela em branco">
-              <p>Você não precisa escrever bonito, escolher título ou começar do jeito certo. A fala pode vir como vier.</p>
+              <p>Você não tem que escrever bonito, escolher título ou começar do jeito certo. A fala pode vir como vier.</p>
             </Card>
             <Card title="Mais contexto vivo">
-              <p>Ritmo, pausa e escolha de palavras carregam sinais que ajudam a Aurora a entender melhor aquele momento.</p>
+              <p>Pausas, repetições e escolha de palavras ajudam a revelar o que importa naquele momento.</p>
             </Card>
             <Card title="Registro que fica">
               <p>A fala vira um texto claro para reler, guardar e perceber com mais calma depois.</p>
@@ -49,7 +49,7 @@ export default function MetodoPage() {
           </Grid>
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Reflexão" title="A Aurora não tenta vencer sua vida por argumento." lead="Ela devolve perspectiva, não autoridade. O retorno precisa ser útil, gentil e proporcional ao que você trouxe.">
+        <LaunchSection alt eyebrow="Reflexão" title="Clareza não vem como conselho pronto." lead="A Aurora devolve perspectiva, não autoridade. O retorno fica útil, gentil e na medida do que você trouxe.">
           <FineList
             items={[
               {
@@ -68,13 +68,13 @@ export default function MetodoPage() {
           />
         </LaunchSection>
 
-        <LaunchSection eyebrow="Inspiração" title="O Oráculo não assumia quem chegava." lead="Essa é a diferença central. A Aurora não abre perguntando apenas como você está. Ela tenta descobrir o que é relevante para você naquele dia.">
+        <LaunchSection eyebrow="Inspiração" title="O Oráculo não assumia quem chegava." lead="A Aurora não abre tentando encaixar você em uma categoria. Ela procura o que vale atenção naquele dia.">
           <Grid columns={2}>
             <WideCard title="Sem diagnóstico de entrada">
-              <p>Você pode chegar feliz, triste, confuso, empolgado ou apenas comum. A Aurora deve receber todos esses estados sem reduzir a pessoa a uma categoria.</p>
+              <p>Você pode chegar feliz, triste, confuso, empolgado ou apenas comum. A Aurora recebe esses estados sem reduzir sua vida a uma etiqueta.</p>
             </WideCard>
             <WideCard title="Sem excesso">
-              <p>O produto deve falar pouco quando pouco basta. Inteligência também é saber não pesar a experiência.</p>
+              <p>Às vezes, uma pergunta basta. Inteligência também é saber não pesar a experiência.</p>
             </WideCard>
           </Grid>
         </LaunchSection>

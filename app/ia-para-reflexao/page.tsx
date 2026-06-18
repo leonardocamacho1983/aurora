@@ -32,16 +32,16 @@ export default function IaParaReflexaoPage() {
       <LaunchPage
         page="ia-para-reflexao"
         eyebrow="IA para reflexão"
-        title="A IA não precisa fingir que sabe mais sobre você do que você."
+        title="A boa IA não finge saber mais sobre você do que você."
         lead="A Aurora usa IA como espelho, não como juiz. Ela organiza a fala, percebe sinais e oferece uma devolutiva que ajuda a pensar e sentir com mais nitidez."
       >
-        <LaunchSection eyebrow="Uso responsável" title="O que a IA faz na Aurora." lead="A tecnologia trabalha nos bastidores para reduzir atrito e aumentar clareza. Ela não deve tomar o lugar da pessoa nem do cuidado profissional.">
+        <LaunchSection eyebrow="Uso responsável" title="Como a IA aparece para você." lead="A tecnologia reduz atrito e amplia clareza sem ocupar o lugar da pessoa, da terapia ou do cuidado profissional.">
           <Grid columns={3}>
             <Card title="Transcreve">
-              <p>Transforma fala em texto para que o registro possa ser relido.</p>
+              <p>Transforma fala em texto para você reler com calma.</p>
             </Card>
             <Card title="Organiza">
-              <p>Ajuda a encontrar começo, tema e sinal importante no que foi dito.</p>
+              <p>Encontra tema, sinal e começo dentro do que foi dito.</p>
             </Card>
             <Card title="Reflete">
               <p>Propõe uma perspectiva feita para aquele momento, sem conselho pronto.</p>
@@ -49,7 +49,7 @@ export default function IaParaReflexaoPage() {
           </Grid>
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Limites" title="O que a IA não deve fazer." lead="Um produto íntimo precisa ter limites claros. Sem fantasia de autoridade, sem promessa clínica e sem captura desnecessária de dados.">
+        <LaunchSection alt eyebrow="Limites" title="Onde a Aurora coloca limite." lead="Um espaço íntimo fica mais seguro quando é claro sobre o que não promete. Sem fantasia de autoridade, sem promessa clínica e sem captura desnecessária de dados.">
           <FineList
             items={[
               {
@@ -58,18 +58,18 @@ export default function IaParaReflexaoPage() {
               },
               {
                 title: "Não dá ordem",
-                body: "A devolutiva deve abrir espaço de reflexão, não empurrar uma decisão.",
+                body: "A devolutiva abre espaço de reflexão, sem empurrar uma decisão.",
               },
               {
                 title: "Não transforma sua vida em métrica de marketing",
-                body: "Dados íntimos devem voltar para a pessoa como clareza, não virar ferramenta de anúncio.",
+                body: "Dados íntimos voltam para a pessoa como clareza, não como ferramenta de anúncio.",
               },
             ]}
           />
         </LaunchSection>
 
         <LaunchSection eyebrow="Tese" title="A boa IA fica menor quando a pessoa fica maior." lead="Na Aurora, tecnologia boa é aquela que desaparece o suficiente para você se escutar melhor.">
-          <Quote>A IA não deve falar por você. Deve ajudar você a reconhecer melhor a própria voz.</Quote>
+          <Quote>A IA não fala por você. Ela ajuda você a reconhecer melhor a própria voz.</Quote>
         </LaunchSection>
       </LaunchPage>
     </>

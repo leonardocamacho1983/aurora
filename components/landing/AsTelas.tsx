@@ -153,7 +153,7 @@ export function AsTelas() {
           </a>
           <a href="/manifesto">
             <span>Manifesto</span>
-            <small>a luz, o oráculo e o produto</small>
+            <small>a luz, o oráculo e a voz</small>
           </a>
         </nav>
       </div>
