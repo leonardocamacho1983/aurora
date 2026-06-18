@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: ["/", "/diario-por-voz"],
-        disallow: ["/api/", "/account", "/login", "/timeline", "/diario", "/orb", "/lista/", "/r/", "/chegada"],
+        disallow: ["/api/", "/admin", "/account", "/login", "/timeline", "/diario", "/orb", "/lista/", "/r/", "/chegada"],
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),
