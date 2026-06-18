@@ -637,24 +637,24 @@
 
 .experienceLinks {
   width: min(100%, 980px);
-  margin: 44px auto 0;
+  margin: 34px auto 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
 .experienceLinks a {
-  min-height: 78px;
+  min-height: 72px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 6px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.085);
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.072);
   background:
-    radial-gradient(ellipse 90% 80% at 50% 0%, rgba(236, 182, 210, 0.08), transparent 72%),
-    rgba(255, 255, 255, 0.032);
+    radial-gradient(ellipse 90% 80% at 50% 0%, rgba(236, 182, 210, 0.055), transparent 72%),
+    rgba(255, 255, 255, 0.024);
   color: #f0ecf7;
   text-align: left;
   text-decoration: none;
@@ -670,16 +670,12 @@
 }
 
 .experienceLinks span {
-  font: 750 13px var(--font-sans);
+  font: 700 12px var(--font-sans);
 }
 
 .experienceLinks small {
   color: #8f89a6;
   font: 500 11px/1.35 var(--font-sans);
-}
-
-.experienceLinks + .screensRail {
-  margin-top: 38px;
 }
 
 @media (max-width: 760px) {
@@ -740,7 +736,7 @@
     width: calc(100% + 40px);
     display: flex;
     gap: 10px;
-    margin: 28px -20px 0;
+    margin: 24px -20px 0;
     padding: 0 20px 4px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -753,12 +749,8 @@
 
   .experienceLinks a {
     flex: 0 0 min(74vw, 292px);
-    min-height: 74px;
+    min-height: 70px;
     scroll-snap-align: center;
-  }
-
-  .experienceLinks + .screensRail {
-    margin-top: 26px;
   }
 }
 
