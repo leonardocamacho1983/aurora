@@ -59,7 +59,6 @@ export default function FaqPage() {
         eyebrow="FAQ"
         title="Perguntas para chegar com calma."
         lead="As respostas mais importantes sobre Aurora, convites, privacidade e limites do produto."
-        secondary={{ href: "/privacidade", label: "Privacidade" }}
       >
         <LaunchSection eyebrow="Respostas" title="O essencial, sem letra miúda." lead="Se algo ainda não estiver claro, escreva para hello@leonardocamacho.com.">
           <FineList items={questions} />

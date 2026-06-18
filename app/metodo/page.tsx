@@ -34,7 +34,6 @@ export default function MetodoPage() {
         eyebrow="Método"
         title="A pergunta certa muda o começo da conversa."
         lead="A Aurora combina voz, organização de linguagem e reflexão adaptativa. A ideia não é dar conselho. É criar clareza suficiente para você escutar melhor o que acabou de dizer."
-        secondary={{ href: "/diario-por-voz", label: "Entender diário por voz" }}
       >
         <LaunchSection eyebrow="Entrada" title="A voz reduz a pressão." lead="Escrever exige forma. Falar permite chegada. Por isso, a Aurora começa pelo gesto mais simples: tocar e falar por alguns minutos.">
           <Grid columns={3}>

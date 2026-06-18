@@ -34,7 +34,6 @@ export default function DiarioPorVozPage() {
         eyebrow="Diário por voz"
         title="Falar pode ser mais fácil do que começar a escrever."
         lead="Um diário por voz reduz a pressão de ter a frase certa. Você fala por alguns minutos. A Aurora organiza o registro e ajuda a perceber o que ficou vivo."
-        secondary={{ href: "/metodo", label: "Ver método" }}
       >
         <LaunchSection eyebrow="Para quem" title="Quando um diário por voz faz sentido." lead="A Aurora foi pensada para momentos em que escrever parece pesado, frio ou distante demais do que a pessoa está sentindo.">
           <Grid columns={3}>

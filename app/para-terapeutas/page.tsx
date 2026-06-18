@@ -31,8 +31,6 @@ export default function ParaTerapeutasPage() {
         eyebrow="Profissionais"
         title="Uma prática de reflexão entre encontros."
         lead="A Aurora pode ser usada por pessoas que fazem terapia, por profissionais que querem refletir sobre si e, no futuro, como apoio integrado ao acompanhamento."
-        primary={{ href: "/#lista", label: "Entrar na lista profissional" }}
-        secondary={{ href: "/metodo", label: "Conhecer o método" }}
       >
         <LaunchSection eyebrow="Posicionamento" title="A Aurora não substitui vínculo clínico." lead="Ela não diagnostica, não prescreve e não promete tratamento. O valor está em ajudar a pessoa a chegar com mais registro, clareza e linguagem sobre o próprio momento.">
           <Grid columns={3}>

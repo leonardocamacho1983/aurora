@@ -26,7 +26,6 @@ export default function SegurancaPage() {
         eyebrow="Segurança"
         title="A beleza não serve se a pessoa não se sente segura."
         lead="A Aurora precisa ser íntima sem ser invasiva. Segurança aqui significa reduzir risco técnico, respeitar limites humanos e explicar escolhas sem linguagem opaca."
-        secondary={{ href: "/privacidade", label: "Ver privacidade" }}
       >
         <LaunchSection eyebrow="Princípios" title="Segurança como experiência de produto." lead="O usuário não deveria precisar entender arquitetura para se sentir respeitado. Ainda assim, a arquitetura precisa sustentar essa confiança.">
           <Grid columns={3}>

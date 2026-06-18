@@ -39,7 +39,6 @@ export default function ManifestoPage() {
         eyebrow="Manifesto"
         title="A luz que aparece quando a voz encontra espaço."
         lead="Amanhecer não conserta o mundo. Ele revela contornos. A Aurora nasce dessa mesma imagem: quando você fala em voz alta, algo que estava confuso começa a ganhar forma."
-        secondary={{ href: "/metodo", label: "Conhecer o método" }}
       >
         <LaunchSection
           eyebrow="Por que Aurora"

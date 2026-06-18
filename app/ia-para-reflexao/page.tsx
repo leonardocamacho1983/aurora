@@ -34,7 +34,6 @@ export default function IaParaReflexaoPage() {
         eyebrow="IA para reflexão"
         title="A IA não precisa fingir que sabe mais sobre você do que você."
         lead="A Aurora usa IA como espelho, não como juiz. Ela organiza a fala, percebe sinais e oferece uma devolutiva que ajuda a pensar e sentir com mais nitidez."
-        secondary={{ href: "/privacidade", label: "Privacidade" }}
       >
         <LaunchSection eyebrow="Uso responsável" title="O que a IA faz na Aurora." lead="A tecnologia trabalha nos bastidores para reduzir atrito e aumentar clareza. Ela não deve tomar o lugar da pessoa nem do cuidado profissional.">
           <Grid columns={3}>

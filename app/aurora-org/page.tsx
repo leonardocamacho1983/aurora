@@ -27,7 +27,6 @@ export default function AuroraOrgPage() {
         eyebrow="Aurora.org"
         title="Uma parte da Aurora vai nascer para servir além do produto."
         lead="Aurora.org será uma iniciativa separada, em gestação, dedicada a educação, pesquisa, prevenção e acesso a recursos de cuidado. Ainda não é um serviço ativo."
-        secondary={{ href: "/manifesto", label: "Ler manifesto" }}
       >
         <LaunchSection eyebrow="Por que existe" title="Uma empresa regenerativa precisa devolver luz." lead="A Aurora não é regenerativa apenas por doar ou apoiar uma causa. Ela precisa ser regenerativa no produto, nos dados, no crescimento e na forma como trata pessoas.">
           <Grid columns={3}>

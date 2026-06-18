@@ -32,7 +32,6 @@ export default function PrivacidadePage() {
         eyebrow="Privacidade"
         title="Feita para ser lida por gente."
         lead="A Aurora lida com intimidade. Por isso, privacidade não é uma página escondida no rodapé. É uma parte central do produto."
-        secondary={{ href: "/seguranca", label: "Ver segurança" }}
       >
         <LaunchSection
           eyebrow="Resumo humano"

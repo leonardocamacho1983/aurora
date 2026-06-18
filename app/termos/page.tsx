@@ -26,7 +26,6 @@ export default function TermosPage() {
         eyebrow="Termos"
         title="Um acordo simples para uma experiência delicada."
         lead="A Aurora é um diário por voz com IA para reflexão pessoal. Estes termos explicam a lista de espera, os convites e os limites da experiência."
-        secondary={{ href: "/privacidade", label: "Ver privacidade" }}
       >
         <LaunchSection eyebrow="Uso" title="O que você pode esperar." lead="A lista de espera dá acesso a convites, páginas pessoais e comunicações sobre lançamento. O app ainda pode mudar durante testes.">
           <FineList

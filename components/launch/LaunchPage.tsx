@@ -9,8 +9,6 @@ type LaunchPageProps = {
   eyebrow: string;
   title: ReactNode;
   lead: string;
-  primary?: { href: string; label: string };
-  secondary?: { href: string; label: string };
   children: ReactNode;
 };
 
@@ -28,8 +26,6 @@ export function LaunchPage({
   eyebrow,
   title,
   lead,
-  primary = { href: "/#lista", label: "Entrar na lista" },
-  secondary,
   children,
 }: LaunchPageProps) {
   return (
@@ -40,32 +36,13 @@ export function LaunchPage({
         <section className={styles.hero}>
           <div className={styles.stars} aria-hidden="true" />
           <div className={styles.heroInner}>
-            <div className={styles.heroSun} aria-hidden="true" />
             <p className={styles.kicker}>{eyebrow}</p>
             <h1 className={styles.heroTitle}>{title}</h1>
             <p className={styles.heroLead}>{lead}</p>
-            <div className={styles.heroActions}>
-              <TrackedLink
-                href={primary.href}
-                className={styles.primary}
-                eventProperties={{ page, source: "launch_hero", label: primary.label }}
-              >
-                {primary.label}
-              </TrackedLink>
-              {secondary ? (
-                <TrackedLink
-                  href={secondary.href}
-                  className={styles.secondary}
-                  eventProperties={{ page, source: "launch_hero", label: secondary.label }}
-                >
-                  {secondary.label}
-                </TrackedLink>
-              ) : null}
-            </div>
-            <LaunchPathRail page={page} />
           </div>
         </section>
         {children}
+        <LaunchNextStep page={page} />
       </main>
       <LaunchFooter />
     </div>
@@ -108,13 +85,12 @@ export function LaunchFooter() {
           Aurora
         </Link>
         <nav className={styles.footerLinks} aria-label="Rodapé">
-          <Link href="/manifesto">Manifesto</Link>
-          <Link href="/metodo">Método</Link>
-          <Link href="/diario-por-voz">Diário por voz</Link>
+          <Link href="/">Home</Link>
           <Link href="/privacidade">Privacidade</Link>
           <Link href="/termos">Termos</Link>
           <Link href="/seguranca">Segurança</Link>
           <Link href="/faq">FAQ</Link>
+          <a href="mailto:hello@leonardocamacho.com">Contato</a>
         </nav>
         <span>© 2026 Aurora</span>
       </div>
@@ -122,28 +98,114 @@ export function LaunchFooter() {
   );
 }
 
-const launchPaths = [
-  { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
-  { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
-  { href: "/ia-para-reflexao", label: "IA para reflexão", note: "clareza sem conselho pronto" },
-  { href: "/manifesto", label: "Manifesto", note: "a luz, o oráculo e o produto" },
-];
+const launchPaths = {
+  manifesto: { href: "/manifesto", label: "Manifesto", note: "a luz, o oráculo e o produto" },
+  metodo: { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
+  "diario-por-voz": { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
+  "ia-para-reflexao": { href: "/ia-para-reflexao", label: "IA para reflexão", note: "clareza sem conselho pronto" },
+  privacidade: { href: "/privacidade", label: "Privacidade", note: "dados íntimos tratados com clareza" },
+  seguranca: { href: "/seguranca", label: "Segurança", note: "cuidado técnico sem linguagem opaca" },
+  faq: { href: "/faq", label: "FAQ", note: "respostas para chegar com calma" },
+  termos: { href: "/termos", label: "Termos", note: "o acordo simples da experiência" },
+  "para-terapeutas": { href: "/para-terapeutas", label: "Profissionais", note: "uso entre encontros, com limites" },
+  "aurora-org": { href: "/aurora-org", label: "Aurora.org", note: "a dimensão regenerativa em gestação" },
+} satisfies Record<string, { href: string; label: string; note: string }>;
 
-export function LaunchPathRail({ page }: { page: string }) {
+const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
+  manifesto: ["metodo", "diario-por-voz", "aurora-org"],
+  metodo: ["diario-por-voz", "ia-para-reflexao", "privacidade"],
+  "diario-por-voz": ["metodo", "ia-para-reflexao", "privacidade"],
+  "ia-para-reflexao": ["metodo", "seguranca", "privacidade"],
+  privacidade: ["seguranca", "termos", "faq"],
+  seguranca: ["privacidade", "faq", "para-terapeutas"],
+  faq: ["privacidade", "seguranca", "termos"],
+  termos: ["privacidade", "seguranca", "faq"],
+  "para-terapeutas": ["metodo", "diario-por-voz", "privacidade"],
+  "aurora-org": ["manifesto", "metodo", "privacidade"],
+};
+
+const conversionCopy: Record<string, { eyebrow: string; title: string; body: string; label: string }> = {
+  manifesto: {
+    eyebrow: "Próximo gesto",
+    title: "Se a ideia fez sentido, entre perto do começo.",
+    body: "A Aurora abre por convites. Entrar na lista também ajuda a moldar a experiência antes do lançamento.",
+    label: "Entrar na lista",
+  },
+  metodo: {
+    eyebrow: "Lista de espera",
+    title: "Acompanhe a Aurora enquanto o método ganha forma.",
+    body: "Você recebe acesso quando chegar sua vez e pode convidar pessoas queridas para conhecer a experiência.",
+    label: "Entrar na lista",
+  },
+  "diario-por-voz": {
+    eyebrow: "Experimente primeiro",
+    title: "Quando a Aurora abrir, você pode começar pela voz.",
+    body: "Entre na lista para receber o convite e preparar sua chegada com calma.",
+    label: "Entrar na lista",
+  },
+  "ia-para-reflexao": {
+    eyebrow: "Tecnologia com limite",
+    title: "Quer ver essa ideia virar produto?",
+    body: "Entre na lista para acompanhar uma IA pensada para clareza, não para dependência.",
+    label: "Entrar na lista",
+  },
+  "para-terapeutas": {
+    eyebrow: "Profissionais",
+    title: "Quer acompanhar a Aurora pelo olhar clínico?",
+    body: "Entre na lista profissional para receber novidades sobre uso, limites e possíveis integrações.",
+    label: "Entrar na lista profissional",
+  },
+  "aurora-org": {
+    eyebrow: "Em gestação",
+    title: "Acompanhe a Aurora desde o começo.",
+    body: "A lista é o melhor lugar para ver como produto, pesquisa e compromisso regenerativo vão se encontrar.",
+    label: "Entrar na lista",
+  },
+};
+
+function LaunchNextStep({ page }: { page: string }) {
+  const conversion = conversionCopy[page];
+  const journeyItems = (journeyByPage[page] ?? ["manifesto", "metodo", "diario-por-voz"])
+    .filter((key) => key !== page)
+    .slice(0, 3)
+    .map((key) => launchPaths[key]);
+
   return (
-    <nav className={styles.pathRail} aria-label="Caminhos para entender a Aurora">
-      {launchPaths.map((item) => (
-        <TrackedLink
-          key={item.href}
-          href={item.href}
-          className={styles.pathCard}
-          eventProperties={{ page, source: "launch_path_rail", label: item.label }}
-        >
-          <span>{item.label}</span>
-          <small>{item.note}</small>
-        </TrackedLink>
-      ))}
-    </nav>
+    <section className={styles.nextStep} aria-label="Continue pela Aurora">
+      <div className={styles.nextStepInner}>
+        {conversion ? (
+          <div className={styles.conversionCard}>
+            <p>{conversion.eyebrow}</p>
+            <h2>{conversion.title}</h2>
+            <span>{conversion.body}</span>
+            <TrackedLink
+              href="/#lista"
+              className={styles.primary}
+              eventProperties={{ page, source: "launch_contextual_cta", label: conversion.label }}
+            >
+              {conversion.label}
+            </TrackedLink>
+          </div>
+        ) : null}
+
+        <div className={styles.journeyBlock}>
+          <p className={styles.eyebrow}>Continue pela Aurora</p>
+          <div className={styles.journeyGrid}>
+            {journeyItems.map((item) => (
+              <TrackedLink
+                key={item.href}
+                href={item.href}
+                className={styles.journeyCard}
+                eventProperties={{ page, source: "launch_continue_journey", label: item.label }}
+              >
+                <span>{item.label}</span>
+                <small>{item.note}</small>
+              </TrackedLink>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
