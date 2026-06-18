@@ -1,5 +1,5 @@
 import { JsonLd } from "@/components/seo/JsonLd";
-import { Card, FineList, Grid, LaunchPage, LaunchSection, Quote, WideCard } from "@/components/launch/LaunchPage";
+import { Card, FineList, Grid, LaunchPage, LaunchSection, ManifestoPremiere, Quote, WideCard } from "@/components/launch/LaunchPage";
 import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 
 export const metadata = pageMetadata({
@@ -110,10 +110,8 @@ export default function ManifestoPage() {
           </Grid>
         </LaunchSection>
 
-        <LaunchSection eyebrow="O filme" title="O filme está nascendo." lead="A música que abre a experiência é um fragmento de uma composição maior. Ela vai acompanhar um filme-manifesto sobre luz, voz e travessia.">
-          <WideCard title="Aguarde. O filme-manifesto está em produção.">
-            <p>Por enquanto, fica o recorte do amanhecer. A versão completa virá como uma peça para ser sentida antes de ser explicada.</p>
-          </WideCard>
+        <LaunchSection eyebrow="Mini-documentário" title="A história da luz vai ganhar imagem." lead="O manifesto também será uma peça curta sobre voz, travessia e o instante em que algo dentro da gente começa a ganhar contorno.">
+          <ManifestoPremiere />
           <Quote>O que a gente diz em voz alta deixa de morar só na cabeça e começa a fazer sentido.</Quote>
         </LaunchSection>
       </LaunchPage>

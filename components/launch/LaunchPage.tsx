@@ -267,6 +267,29 @@ export function Quote({ children }: { children: ReactNode }) {
   return <blockquote className={styles.quote}>{children}</blockquote>;
 }
 
+export function ManifestoPremiere() {
+  return (
+    <article className={styles.premiere} aria-label="Prévia do mini-documentário Manifesto Aurora">
+      <div className={styles.premiereFrame}>
+        <div className={styles.premiereSky} aria-hidden="true" />
+        <div className={styles.premiereHorizon} aria-hidden="true" />
+        <div className={styles.premiereContent}>
+          <span className={styles.premiereBadge}>Em produção</span>
+          <span className={styles.premierePlay} role="img" aria-label="Mini-documentário em produção">
+            <span aria-hidden="true" />
+          </span>
+          <h3>Manifesto Aurora: a história da luz</h3>
+          <p>Um mini-documentário sobre voz, travessia e o instante em que algo dentro da gente começa a ganhar contorno.</p>
+        </div>
+      </div>
+      <div className={styles.premiereNote}>
+        <strong>Aguarde a estreia.</strong>
+        <span>A música completa, a imagem do amanhecer e a origem da Aurora vão se encontrar em uma pequena travessia visual.</span>
+      </div>
+    </article>
+  );
+}
+
 export function SmallOrb() {
   return <span className={styles.smallOrb} aria-hidden="true" />;
 }
