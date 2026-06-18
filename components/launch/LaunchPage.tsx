@@ -40,7 +40,7 @@ export function LaunchPage({
         <section className={styles.hero}>
           <div className={styles.stars} aria-hidden="true" />
           <div className={styles.heroInner}>
-            <div className={styles.orb} aria-hidden="true" />
+            <div className={styles.heroSun} aria-hidden="true" />
             <p className={styles.kicker}>{eyebrow}</p>
             <h1 className={styles.heroTitle}>{title}</h1>
             <p className={styles.heroLead}>{lead}</p>
@@ -62,6 +62,7 @@ export function LaunchPage({
                 </TrackedLink>
               ) : null}
             </div>
+            <LaunchPathRail page={page} />
           </div>
         </section>
         {children}
@@ -81,6 +82,8 @@ export function LaunchHeader({ page }: { page: string }) {
         </Link>
         <nav className={styles.nav} aria-label="Navegação principal">
           <Link href="/manifesto">Manifesto</Link>
+          <Link href="/metodo">Método</Link>
+          <Link href="/diario-por-voz">Diário por voz</Link>
           <Link href="/privacidade">Privacidade</Link>
           <Link href="/para-terapeutas">Profissionais</Link>
           <TrackedLink
@@ -106,6 +109,8 @@ export function LaunchFooter() {
         </Link>
         <nav className={styles.footerLinks} aria-label="Rodapé">
           <Link href="/manifesto">Manifesto</Link>
+          <Link href="/metodo">Método</Link>
+          <Link href="/diario-por-voz">Diário por voz</Link>
           <Link href="/privacidade">Privacidade</Link>
           <Link href="/termos">Termos</Link>
           <Link href="/seguranca">Segurança</Link>
@@ -114,6 +119,31 @@ export function LaunchFooter() {
         <span>© 2026 Aurora</span>
       </div>
     </footer>
+  );
+}
+
+const launchPaths = [
+  { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
+  { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
+  { href: "/ia-para-reflexao", label: "IA para reflexão", note: "clareza sem conselho pronto" },
+  { href: "/manifesto", label: "Manifesto", note: "a luz, o oráculo e o produto" },
+];
+
+export function LaunchPathRail({ page }: { page: string }) {
+  return (
+    <nav className={styles.pathRail} aria-label="Caminhos para entender a Aurora">
+      {launchPaths.map((item) => (
+        <TrackedLink
+          key={item.href}
+          href={item.href}
+          className={styles.pathCard}
+          eventProperties={{ page, source: "launch_path_rail", label: item.label }}
+        >
+          <span>{item.label}</span>
+          <small>{item.note}</small>
+        </TrackedLink>
+      ))}
+    </nav>
   );
 }
 

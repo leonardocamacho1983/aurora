@@ -65,6 +65,24 @@ export function AsTelas() {
             Um registro íntimo, guiado por voz, para perceber o que mudou em você antes que vire ruído.
           </p>
         </div>
+        <nav className={styles.experienceLinks} aria-label="Caminhos para entender melhor a Aurora">
+          <a href="/diario-por-voz">
+            <span>Diário por voz</span>
+            <small>por que falar pode ser mais leve</small>
+          </a>
+          <a href="/metodo">
+            <span>Método Aurora</span>
+            <small>como a pergunta certa nasce</small>
+          </a>
+          <a href="/ia-para-reflexao">
+            <span>IA para reflexão</span>
+            <small>clareza sem conselho pronto</small>
+          </a>
+          <a href="/manifesto">
+            <span>Manifesto</span>
+            <small>a luz, o oráculo e o produto</small>
+          </a>
+        </nav>
         <div className={styles.screensRail} aria-label="Prévia da experiência da Aurora">
           {/* A · Falar */}
           <Phone label="Falar">

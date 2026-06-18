@@ -3,9 +3,9 @@ import { Card, FineList, Grid, LaunchPage, LaunchSection, Quote, WideCard } from
 import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 
 export const metadata = pageMetadata({
-  title: "Manifesto Aurora | A jornada da luz",
+  title: "Manifesto Aurora | Luz, voz e autoconhecimento",
   description:
-    "O manifesto da Aurora, um diário por voz com IA inspirado no amanhecer, no Oráculo de Delfos e na ideia de tecnologia regenerativa.",
+    "O manifesto da Aurora, um diário por voz com IA inspirado no amanhecer, no Oráculo de Delfos e em uma tecnologia feita para revelar sem invadir.",
   path: "/manifesto",
   keywords: [
     "manifesto Aurora",
@@ -37,8 +37,8 @@ export default function ManifestoPage() {
       <LaunchPage
         page="manifesto"
         eyebrow="Manifesto"
-        title="A história da luz que virou um produto."
-        lead="Aurora nasce da ideia de que falar em voz alta pode abrir espaço. Não para consertar uma pessoa, mas para revelar o que ela veio descobrir naquele momento."
+        title="A luz que aparece quando a voz encontra espaço."
+        lead="Amanhecer não conserta o mundo. Ele revela contornos. A Aurora nasce dessa mesma imagem: quando você fala em voz alta, algo que estava confuso começa a ganhar forma."
         secondary={{ href: "/metodo", label: "Conhecer o método" }}
       >
         <LaunchSection
@@ -54,7 +54,7 @@ export default function ManifestoPage() {
               <p>Na família mítica de Aurora estão luz, visão, sol e lua. Isso conversa com o que o app tenta fazer: iluminar sem invadir.</p>
             </Card>
             <Card title="A hora favorita">
-              <p>O amanhecer não promete que tudo ficou simples. Ele só mostra que há uma nova possibilidade de olhar.</p>
+              <p>O amanhecer não promete que tudo ficou simples. Ele só muda a luz. Às vezes, isso basta para enxergar o próximo gesto.</p>
             </Card>
           </Grid>
         </LaunchSection>
@@ -111,7 +111,7 @@ export default function ManifestoPage() {
           </Grid>
         </LaunchSection>
 
-        <LaunchSection eyebrow="O filme" title="A trilha do teaser é só o começo." lead="O filme do manifesto vai contar a jornada da luz. A música completa expande os dezoito segundos do teaser para uma narrativa maior, feita para ser sentida antes de ser explicada.">
+        <LaunchSection eyebrow="O filme" title="A trilha do teaser é só o começo." lead="O filme do manifesto vai contar essa passagem: da escuridão para o contorno, do ruído para a voz, da voz para uma forma mais clara de presença. A música completa expande os dezoito segundos do teaser para uma narrativa feita para ser sentida antes de ser explicada.">
           <Quote>O que a gente diz em voz alta deixa de morar só na cabeça e começa a fazer sentido.</Quote>
         </LaunchSection>
       </LaunchPage>
