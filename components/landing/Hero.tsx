@@ -481,7 +481,7 @@ export function Hero() {
         )}
 
         {(introActive && !showVeil) || showReplay ? (
-          <div className={styles.ctrlStack}>
+          <div className={`${styles.ctrlStack} ${isInviteMode ? styles.ctrlStackInvite : ""}`}>
             {introActive && !showVeil && (
               <>
                 <button
