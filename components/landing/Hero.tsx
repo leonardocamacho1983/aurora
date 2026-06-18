@@ -381,6 +381,21 @@ export function Hero() {
     };
   }, []);
 
+  const isInviteMode = Boolean(inviteGreeting);
+  const heroEyebrow = isInviteMode ? "Seu acesso já começou" : "Diário por voz com IA · lista de espera aberta";
+  const heroTitle = isInviteMode ? (
+    <>
+      Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
+    </>
+  ) : (
+    <>
+      Tem dias que pesam. Outros que <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>brilham</span>.
+    </>
+  );
+  const heroBody = isInviteMode
+    ? "Uma pergunta de cada vez. Quanto mais a Aurora entende seu momento, melhor ela pode te receber quando seu acesso chegar."
+    : "Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.";
+
   return (
     <>
       <audio ref={audioRef} src="/audio/aurora-intro.mp3" preload="auto" playsInline />
@@ -531,7 +546,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div ref={heroContentRef} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
+        <div ref={heroContentRef} className={isInviteMode ? styles.heroPostInvite : undefined} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: isInviteMode ? "clamp(44px,8vw,70px) clamp(20px,5vw,32px) 40px" : "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
           {inviteGreeting ? (
             <div className={styles.heroInviteGreeting}>
               <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu lugar na lista está confirmado.` : "Seu lugar na lista está confirmado."}</span>
@@ -549,18 +564,18 @@ export function Hero() {
 
           <div className={styles.heroEyebrow}>
             <span className={styles.eyebrowDot} aria-hidden="true" />
-            <span className={styles.heroEyebrowText}>Diário por voz com IA · lista de espera aberta</span>
+            <span className={styles.heroEyebrowText}>{heroEyebrow}</span>
           </div>
 
-          <h1 className="font-serif" style={{ margin: "clamp(16px,4vw,24px) 0 0", fontSize: "clamp(1.9rem,7vw,64px)", fontWeight: 450, lineHeight: 1.1, letterSpacing: "-0.028em", color: "#F8F6FC", maxWidth: 840, textWrap: "balance", textShadow: "0 2px 50px rgba(0,0,0,.65)" }}>
-            Tem dias que pesam. Outros que <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>brilham</span>.
+          <h1 className="font-serif" style={{ margin: "clamp(16px,4vw,24px) 0 0", fontSize: isInviteMode ? "clamp(2.05rem,5.8vw,56px)" : "clamp(1.9rem,7vw,64px)", fontWeight: 450, lineHeight: 1.1, letterSpacing: "-0.028em", color: "#F8F6FC", maxWidth: isInviteMode ? 760 : 840, textWrap: "balance", textShadow: "0 2px 50px rgba(0,0,0,.65)" }}>
+            {heroTitle}
           </h1>
 
-          <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
-            Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.
+          <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: isInviteMode ? 640 : 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
+            {heroBody}
           </p>
 
-          <div id="hero-lista" style={{ marginTop: "clamp(26px,6vw,40px)", width: "100%", maxWidth: 460 }}>
+          <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 460 }}>
             {inviteGreeting ? (
               <HeroInviteNextStep initialName={inviteGreeting.name} />
             ) : (
