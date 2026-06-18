@@ -72,7 +72,7 @@ export function HeroInviteNextStep({ initialName = "" }: HeroInviteNextStepProps
         <p>
           {asksName
             ? "Seu email já está na lista. Seu nome ajuda a deixar sua experiência e seus convites mais pessoais."
-            : "Pode ser uma fase, um projeto, uma ambição ou uma frase sobre o que você quer entender melhor."}
+            : "Pode ser uma fase, um projeto, uma mudança, uma pergunta, uma dor ou um desabafo."}
         </p>
       </div>
 
