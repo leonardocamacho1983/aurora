@@ -25,6 +25,11 @@ function pluralPessoa(count: number): string {
   return count === 1 ? "pessoa entrou" : "pessoas entraram";
 }
 
+function nextGestureText(remaining: number): string {
+  if (remaining <= 1) return "Falta só uma confirmação para o próximo marco.";
+  return `Faltam ${remaining} confirmações para o próximo marco.`;
+}
+
 const referralJourneyLinks = [
   { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
   { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
@@ -80,7 +85,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
     ? "Enviamos um email de confirmação. Depois disso, seu convite passa a contar."
     : hasReferrals
       ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação. Continue trazendo pessoas queridas para conhecer a Aurora.`
-      : "A Aurora vai avisar quando chegar sua vez. Você chegou por um convite. Se quiser, também pode trazer pessoas queridas para conhecer a Aurora e desbloquear acesso antecipado e cortesias.";
+      : "A Aurora vai avisar quando chegar sua vez. Você também pode trazer pessoas queridas para conhecer a Aurora e desbloquear acesso antecipado e cortesias.";
 
   return (
     <main className={styles.referralPage}>
@@ -112,6 +117,11 @@ export default async function WaitlistStatusPage({ params }: Props) {
               <div className={styles.referralTrack} aria-hidden="true">
                 <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
               </div>
+              <p className={styles.referralProgressHint}>
+                {progress.next
+                  ? nextGestureText(progress.remaining)
+                  : "Todos os marcos desta fase foram liberados."}
+              </p>
               <div className={styles.referralMilestones}>
                 {MILESTONES.map((m) => (
                   <div
@@ -134,7 +144,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
             ) : (
               <div className={styles.referralCelebration}>
                 <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
-                <strong>Traga 5 pessoas para perto</strong>
+                <strong>Leve a Aurora para 5 pessoas queridas</strong>
                 <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
               </div>
             )}

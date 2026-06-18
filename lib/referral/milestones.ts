@@ -8,9 +8,9 @@ export type ReferralMilestone = {
 export const MILESTONES: ReferralMilestone[] = [
   {
     count: 5,
-    title: "Acesso antes da fila comum",
+    title: "Acesso antecipado liberado",
     shortTitle: "Acesso antecipado",
-    description: "Use a versão grátis antes da abertura geral do pré-lançamento.",
+    description: "Você entra antes da abertura geral e ajuda a Aurora amanhecer com pessoas de confiança.",
   },
   {
     count: 10,
@@ -28,7 +28,7 @@ export const MILESTONES: ReferralMilestone[] = [
     count: 20,
     title: "Um ano grátis da versão paga",
     shortTitle: "1 ano grátis",
-    description: "Um agradecimento maior por trazer tanta gente para perto da Aurora.",
+    description: "Um agradecimento maior por trazer tanta gente querida para perto da Aurora.",
   },
 ];
 

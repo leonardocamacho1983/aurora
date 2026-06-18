@@ -50,6 +50,7 @@ export function Hero() {
     confirmed: boolean;
     confirmedCount: number;
   } | null>(null);
+  const [referralArrival, setReferralArrival] = useState(false);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -308,6 +309,10 @@ export function Hero() {
     let seen = false;
     try {
       const url = new URL(window.location.href);
+      if (url.searchParams.get("ref")) {
+        sessionStorage.setItem("aurora_hero_seen", "1");
+        setReferralArrival(true);
+      }
       if (url.searchParams.get("sala") === "convite") {
         sessionStorage.setItem("aurora_hero_seen", "1");
         const rawContext = localStorage.getItem("aurora_invite_context");
@@ -382,7 +387,12 @@ export function Hero() {
   }, []);
 
   const isInviteMode = Boolean(inviteGreeting);
-  const heroEyebrow = isInviteMode ? "Seu acesso já começou" : "Diário por voz com IA · lista de espera aberta";
+  const isReferralArrival = referralArrival && !isInviteMode;
+  const heroEyebrow = isInviteMode
+    ? "Seu acesso já começou"
+    : isReferralArrival
+      ? "Você chegou por convite · lista aberta"
+      : "Diário por voz com IA · lista de espera aberta";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
@@ -559,6 +569,11 @@ export function Hero() {
                     ? "A Aurora vai avisar quando chegar sua vez."
                     : "Confirme seu email para ativar seus convites."}
               </strong>
+            </div>
+          ) : isReferralArrival ? (
+            <div className={styles.heroInviteGreeting}>
+              <span>Você chegou por convite.</span>
+              <strong>Entre na lista para guardar seu acesso e abrir seus próprios convites.</strong>
             </div>
           ) : null}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./Landing.module.css";
 import { trackAurora } from "@/lib/analytics/client";
 
@@ -37,9 +37,20 @@ export function ShareInvite({
   label,
 }: ShareInviteProps) {
   const [copied, setCopied] = useState(false);
+  const [inviterName, setInviterName] = useState("");
   const url = useMemo(() => buildUrl(referralCode, inviteUrl), [referralCode, inviteUrl]);
-  const text = `Estou na lista da Aurora, um diário por voz com IA para organizar o que a gente sente com mais clareza. Vem conhecer comigo: ${url}`;
+  const text = inviterName
+    ? `${inviterName} te convidou para conhecer a Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. ${url}`
+    : `Estou na lista da Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. Vem conhecer comigo: ${url}`;
   const whats = `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+  useEffect(() => {
+    try {
+      setInviterName((localStorage.getItem("aurora_guest_name") ?? "").trim().slice(0, 40));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   async function copy() {
     try {
@@ -70,12 +81,17 @@ export function ShareInvite({
   return (
     <div className={`${styles.shareInvite} ${compact ? styles.shareInviteCompact : ""}`}>
       {label ? <div className={styles.shareLabel}>{label}</div> : null}
+      {!compact ? (
+        <p className={styles.shareHint}>
+          Convide pessoas que você gostaria de ver por perto quando a Aurora amanhecer.
+        </p>
+      ) : null}
       <div className={styles.shareUrl} aria-label="Seu link de convite">
         {url.replace(/^https?:\/\//, "")}
       </div>
       <div className={styles.shareActions}>
         <a
-          className={styles.shareBtn}
+          className={`${styles.shareBtn} ${styles.shareBtnPrimary}`}
           href={whats}
           target="_blank"
           rel="noreferrer"
@@ -84,10 +100,10 @@ export function ShareInvite({
             trackAurora("invite_whatsapp_clicked", { source: compact ? "waitlist_success" : "referral_room" });
           }}
         >
-          WhatsApp
+          Enviar no WhatsApp
         </a>
         <button className={styles.shareBtn} type="button" onClick={copy}>
-          {copied ? "Copiado" : "Copiar link"}
+          {copied ? "Convite copiado" : "Copiar convite"}
         </button>
         <button className={styles.shareBtn} type="button" onClick={nativeShare}>
           Compartilhar

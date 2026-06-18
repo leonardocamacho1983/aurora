@@ -117,14 +117,14 @@ export function WaitlistForm() {
         </div>
         <p>
           {created
-            ? "Confirme seu email para ativar seus convites. Seu link já está pronto para compartilhar."
+            ? "Confirme seu email para ativar seus convites. Enquanto isso, seu link já pode chegar a pessoas queridas."
             : "Se esse email já estava na Aurora, a sala de convite chegou na sua caixa de entrada."}
         </p>
         {created ? (
           <>
-            <ShareInvite referralCode={done.referralCode} compact />
+            <ShareInvite referralCode={done.referralCode} compact label="Seu convite já nasceu" />
             <a href={`/lista/${done.statusToken}`} className={styles.waitlistStatusLink}>
-              Conhecer meus convites
+              Abrir minha sala Aurora
             </a>
           </>
         ) : null}
