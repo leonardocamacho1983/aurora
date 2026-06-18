@@ -6,7 +6,6 @@ import { waitlist } from "@/lib/db/schema";
 import { MILESTONES, progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
-import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
 import { ReferralHomeLink } from "@/components/landing/ReferralHomeLink";
 import { ShareInvite } from "@/components/landing/ShareInvite";
@@ -29,12 +28,6 @@ function nextGestureText(remaining: number): string {
   if (remaining <= 1) return "Falta só uma confirmação para o próximo marco.";
   return `Faltam ${remaining} confirmações para o próximo marco.`;
 }
-
-const referralJourneyLinks = [
-  { href: "/metodo", label: "Método", note: "como a Aurora escolhe o começo" },
-  { href: "/diario-por-voz", label: "Diário por voz", note: "por que falar ajuda" },
-  { href: "/manifesto", label: "Manifesto", note: "a luz por trás do produto" },
-];
 
 function InvalidState() {
   return (
@@ -151,37 +144,6 @@ export default async function WaitlistStatusPage({ params }: Props) {
           </div>
 
           <div className={styles.referralSharePanel}>
-            <div className={styles.referralJourneyStrip} aria-label="Explore a Aurora">
-              {referralJourneyLinks.map((link) => (
-                <TrackedLink
-                  key={link.href}
-                  href={link.href}
-                  className={styles.referralJourneyCard}
-                  eventProperties={{ source: "referral_room_journey", label: link.label }}
-                >
-                  <span>{link.label}</span>
-                  <small>{link.note}</small>
-                </TrackedLink>
-              ))}
-            </div>
-
-            <details className={styles.referralJourneyDisclosure}>
-              <summary>Explorar a Aurora</summary>
-              <div>
-                {referralJourneyLinks.map((link) => (
-                  <TrackedLink
-                    key={link.href}
-                    href={link.href}
-                    className={styles.referralJourneyCard}
-                    eventProperties={{ source: "referral_room_journey_mobile", label: link.label }}
-                  >
-                    <span>{link.label}</span>
-                    <small>{link.note}</small>
-                  </TrackedLink>
-                ))}
-              </div>
-            </details>
-
             <ShareInvite
               referralCode={row.referralCode}
               inviteUrl={inviteUrl}
