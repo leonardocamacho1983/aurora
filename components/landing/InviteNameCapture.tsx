@@ -6,6 +6,7 @@ import styles from "./Landing.module.css";
 type InviteNameCaptureProps = {
   confirmedCount: number;
   confirmed: boolean;
+  statusToken: string;
 };
 
 const NAME_KEY = "aurora_guest_name";
@@ -18,7 +19,19 @@ function cleanName(value: string): string {
     .slice(0, 40);
 }
 
-export function InviteNameCapture({ confirmedCount, confirmed }: InviteNameCaptureProps) {
+async function saveProfile(statusToken: string, name: string) {
+  try {
+    await fetch("/api/waitlist/profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ statusToken, name, source: "invite_room" }),
+    });
+  } catch {
+    /* local save is enough for the UI */
+  }
+}
+
+export function InviteNameCapture({ confirmedCount, confirmed, statusToken }: InviteNameCaptureProps) {
   const [name, setName] = useState("");
   const [savedName, setSavedName] = useState("");
 
@@ -47,12 +60,14 @@ export function InviteNameCapture({ confirmedCount, confirmed }: InviteNameCaptu
           name: nextName,
           confirmedCount,
           confirmed,
+          statusToken,
           savedAt: Date.now(),
         }),
       );
     } catch {
       /* ignore */
     }
+    void saveProfile(statusToken, nextName);
     setSavedName(nextName);
   }
 

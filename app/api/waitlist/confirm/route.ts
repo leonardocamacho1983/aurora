@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { waitlist } from "@/lib/db/schema";
+import { waitlist, waitlistEvents } from "@/lib/db/schema";
 import { sendFriendJoinedEmail, sendMilestoneEmail } from "@/lib/email/waitlist";
 import { siteUrl, statusUrl } from "@/lib/referral/urls";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
@@ -38,6 +38,12 @@ export async function GET(request: Request) {
       .update(waitlist)
       .set({ confirmedAt: new Date() })
       .where(eq(waitlist.id, row.id));
+    await db.insert(waitlistEvents).values({
+      waitlistId: row.id,
+      eventName: "signup_confirmed",
+      source: row.referredByCode ? "referral" : "email",
+      metadata: row.referredByCode ? { referredByCode: row.referredByCode } : undefined,
+    });
   }
 
   if (!wasAlreadyConfirmed && row.referredByCode) {
@@ -67,6 +73,12 @@ export async function GET(request: Request) {
           milestone,
           confirmedCount,
           baseUrl,
+        });
+        await db.insert(waitlistEvents).values({
+          waitlistId: referrer.id,
+          eventName: "milestone_reached",
+          source: "confirm_route",
+          metadata: { milestone: milestone.count, confirmedCount },
         });
       }
     }

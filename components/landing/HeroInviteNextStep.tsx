@@ -91,7 +91,7 @@ function writeValue(key: string, value: string) {
 function readContext() {
   try {
     const raw = localStorage.getItem(CONTEXT_KEY);
-    return raw ? JSON.parse(raw) : {};
+    return raw ? JSON.parse(raw) as { statusToken?: string; name?: string } : {};
   } catch {
     return {};
   }
@@ -103,6 +103,27 @@ function syncNameToContext(name: string) {
     localStorage.setItem(CONTEXT_KEY, JSON.stringify({ ...context, name, savedAt: Date.now() }));
   } catch {
     /* ignore */
+  }
+}
+
+async function saveProfile(statusToken: string, key: string, value: string) {
+  const fieldByKey: Record<string, string> = {
+    aurora_guest_name: "name",
+    aurora_guest_moment: "moment",
+    aurora_guest_rhythm: "rhythm",
+    aurora_guest_presence: "presence",
+  };
+  const field = fieldByKey[key];
+  if (!field) return;
+
+  try {
+    await fetch("/api/waitlist/profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ statusToken, [field]: value, source: "hero_invite" }),
+    });
+  } catch {
+    /* local save keeps the experience responsive */
   }
 }
 
@@ -159,6 +180,8 @@ export function HeroInviteNextStep({ initialName = "" }: HeroInviteNextStepProps
 
     writeValue(current.storageKey, nextValue);
     if (current.id === "name") syncNameToContext(nextValue);
+    const statusToken = readContext().statusToken;
+    if (statusToken) void saveProfile(statusToken, current.storageKey, nextValue);
 
     setValues((previous) => ({ ...previous, [current.storageKey]: nextValue }));
     setSavedStep(current.id);

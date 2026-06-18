@@ -86,7 +86,11 @@ export default async function WaitlistStatusPage({ params }: Props) {
         </div>
 
         <div className={styles.referralActionPanel}>
-          <InviteNameCapture confirmed={confirmed} confirmedCount={confirmedCount} />
+          <InviteNameCapture
+            confirmed={confirmed}
+            confirmedCount={confirmedCount}
+            statusToken={row.statusToken}
+          />
 
           <div className={styles.referralDashboard}>
             <div className={styles.referralProgressCard}>
@@ -135,7 +139,11 @@ export default async function WaitlistStatusPage({ params }: Props) {
               inviteUrl={inviteUrl}
               label="Seu convite para pessoas queridas"
             />
-            <ReferralHomeLink confirmed={confirmed} confirmedCount={confirmedCount} />
+            <ReferralHomeLink
+              confirmed={confirmed}
+              confirmedCount={confirmedCount}
+              statusToken={row.statusToken}
+            />
           </div>
         </div>
       </section>

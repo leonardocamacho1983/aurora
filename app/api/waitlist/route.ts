@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { waitlist } from "@/lib/db/schema";
+import { waitlist, waitlistEvents } from "@/lib/db/schema";
 import { createUniqueReferralCode } from "@/lib/referral/code";
 import { isRateLimited } from "@/lib/referral/rate-limit";
 import { siteUrl } from "@/lib/referral/urls";
@@ -44,6 +44,7 @@ async function findReferrer(code: string, email: string) {
 }
 
 async function emailExisting(row: {
+  id: string;
   email: string;
   referralCode: string;
   statusToken: string;
@@ -55,6 +56,11 @@ async function emailExisting(row: {
   } else {
     await sendConfirmEmail(row, baseUrl);
   }
+  await db.insert(waitlistEvents).values({
+    waitlistId: row.id,
+    eventName: row.confirmedAt ? "status_email_sent" : "confirm_email_resent",
+    source: "waitlist_form",
+  });
 }
 
 export async function POST(request: Request) {
@@ -86,6 +92,7 @@ export async function POST(request: Request) {
   try {
     const existingRows = await db
       .select({
+        id: waitlist.id,
         email: waitlist.email,
         referralCode: waitlist.referralCode,
         statusToken: waitlist.statusToken,
@@ -113,6 +120,7 @@ export async function POST(request: Request) {
       })
       .onConflictDoNothing({ target: waitlist.email })
       .returning({
+        id: waitlist.id,
         email: waitlist.email,
         referralCode: waitlist.referralCode,
         statusToken: waitlist.statusToken,
@@ -123,6 +131,7 @@ export async function POST(request: Request) {
     if (!row) {
       const duplicateRows = await db
         .select({
+          id: waitlist.id,
           email: waitlist.email,
           referralCode: waitlist.referralCode,
           statusToken: waitlist.statusToken,
@@ -140,6 +149,12 @@ export async function POST(request: Request) {
     }
 
     await sendConfirmEmail(row, baseUrl);
+    await db.insert(waitlistEvents).values({
+      waitlistId: row.id,
+      eventName: "signup_created",
+      source: referrer ? "referral" : "landing",
+      metadata: referrer ? { referredByCode: referrer.referralCode } : undefined,
+    });
 
     return NextResponse.json({
       status: "ok",

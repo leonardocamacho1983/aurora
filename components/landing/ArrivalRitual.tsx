@@ -86,6 +86,38 @@ function writeLocal(key: string, value: string) {
   }
 }
 
+function readStatusToken() {
+  try {
+    const raw = localStorage.getItem("aurora_invite_context");
+    const context = raw ? JSON.parse(raw) as { statusToken?: string } : {};
+    return typeof context.statusToken === "string" ? context.statusToken : "";
+  } catch {
+    return "";
+  }
+}
+
+async function saveProfile(statusToken: string, key: string, value: string) {
+  const fieldByKey: Record<string, string> = {
+    aurora_guest_name: "name",
+    aurora_guest_moment: "moment",
+    aurora_guest_rhythm: "rhythm",
+    aurora_guest_presence: "presence",
+    aurora_guest_value: "value",
+  };
+  const field = fieldByKey[key];
+  if (!field) return;
+
+  try {
+    await fetch("/api/waitlist/profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ statusToken, [field]: value, source: "arrival_ritual" }),
+    });
+  } catch {
+    /* local save keeps the ritual usable offline-ish */
+  }
+}
+
 export function ArrivalRitual() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [index, setIndex] = useState(0);
@@ -120,6 +152,8 @@ export function ArrivalRitual() {
     const nextValue = clean(value, question.max);
     if (!nextValue) return;
     writeLocal(question.key, nextValue);
+    const statusToken = readStatusToken();
+    if (statusToken) void saveProfile(statusToken, question.key, nextValue);
     setAnswers((previous) => ({ ...previous, [question.key]: nextValue }));
     setIndex((current) => Math.min(current + 1, questions.length));
   }

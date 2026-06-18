@@ -6,12 +6,13 @@ import styles from "./Landing.module.css";
 type ReferralHomeLinkProps = {
   confirmed: boolean;
   confirmedCount: number;
+  statusToken: string;
 };
 
 const NAME_KEY = "aurora_guest_name";
 const CONTEXT_KEY = "aurora_invite_context";
 
-export function ReferralHomeLink({ confirmed, confirmedCount }: ReferralHomeLinkProps) {
+export function ReferralHomeLink({ confirmed, confirmedCount, statusToken }: ReferralHomeLinkProps) {
   function prepareHome() {
     try {
       const name = localStorage.getItem(NAME_KEY)?.trim() ?? "";
@@ -22,6 +23,7 @@ export function ReferralHomeLink({ confirmed, confirmedCount }: ReferralHomeLink
           name,
           confirmed,
           confirmedCount,
+          statusToken,
           savedAt: Date.now(),
         }),
       );

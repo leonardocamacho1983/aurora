@@ -4,6 +4,7 @@ import {
   text,
   boolean,
   integer,
+  jsonb,
   timestamp,
   vector,
   index,
@@ -144,5 +145,36 @@ export const waitlist = pgTable(
       t.referredByCode,
       t.confirmedAt,
     ),
+  }),
+);
+
+// waitlist_profile — respostas leves do Ritual de Chegada, ligadas à pessoa da lista.
+export const waitlistProfile = pgTable("waitlist_profile", {
+  waitlistId: uuid("waitlist_id")
+    .primaryKey()
+    .references(() => waitlist.id, { onDelete: "cascade" }),
+  name: text("name"),
+  moment: text("moment"),
+  rhythm: text("rhythm"),
+  presence: text("presence"),
+  value: text("value"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// waitlist_events — eventos server-side mínimos para acompanhar o loop sem dados sensíveis.
+export const waitlistEvents = pgTable(
+  "waitlist_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    waitlistId: uuid("waitlist_id").references(() => waitlist.id, { onDelete: "cascade" }),
+    eventName: text("event_name").notNull(),
+    source: text("source"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    waitlistIdx: index("waitlist_events_waitlist_id_idx").on(t.waitlistId),
+    eventIdx: index("waitlist_events_event_name_idx").on(t.eventName),
   }),
 );

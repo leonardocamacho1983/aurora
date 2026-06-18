@@ -16,6 +16,19 @@ function buildUrl(code: string, explicit?: string): string {
   return `${window.location.origin}/r/${code}`;
 }
 
+function trackInvite(eventName: "invite_copied" | "invite_shared" | "invite_whatsapp_clicked", referralCode: string) {
+  try {
+    void fetch("/api/waitlist/event", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eventName, referralCode }),
+      keepalive: true,
+    });
+  } catch {
+    /* ignore analytics failures */
+  }
+}
+
 export function ShareInvite({
   referralCode,
   inviteUrl,
@@ -30,6 +43,7 @@ export function ShareInvite({
   async function copy() {
     try {
       await navigator.clipboard.writeText(url);
+      trackInvite("invite_copied", referralCode);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -44,6 +58,7 @@ export function ShareInvite({
     }
     try {
       await navigator.share({ title: "Aurora", text, url });
+      trackInvite("invite_shared", referralCode);
     } catch {
       /* user cancelled */
     }
@@ -56,7 +71,13 @@ export function ShareInvite({
         {url.replace(/^https?:\/\//, "")}
       </div>
       <div className={styles.shareActions}>
-        <a className={styles.shareBtn} href={whats} target="_blank" rel="noreferrer">
+        <a
+          className={styles.shareBtn}
+          href={whats}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => trackInvite("invite_whatsapp_clicked", referralCode)}
+        >
           WhatsApp
         </a>
         <button className={styles.shareBtn} type="button" onClick={copy}>
