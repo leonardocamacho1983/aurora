@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Landing.module.css";
+import { trackAurora } from "@/lib/analytics/client";
 
 type HeroInviteNextStepProps = {
   initialName?: string;
@@ -182,6 +183,11 @@ export function HeroInviteNextStep({ initialName = "" }: HeroInviteNextStepProps
     if (current.id === "name") syncNameToContext(nextValue);
     const statusToken = readContext().statusToken;
     if (statusToken) void saveProfile(statusToken, current.storageKey, nextValue);
+    trackAurora("arrival_ritual_step_completed", {
+      source: "hero_invite",
+      step: stepIndex,
+      field: current.id,
+    });
 
     setValues((previous) => ({ ...previous, [current.storageKey]: nextValue }));
     setSavedStep(current.id);

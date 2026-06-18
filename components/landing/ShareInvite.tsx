@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import styles from "./Landing.module.css";
+import { trackAurora } from "@/lib/analytics/client";
 
 type ShareInviteProps = {
   referralCode: string;
@@ -44,6 +45,7 @@ export function ShareInvite({
     try {
       await navigator.clipboard.writeText(url);
       trackInvite("invite_copied", referralCode);
+      trackAurora("invite_link_copied", { source: compact ? "waitlist_success" : "referral_room" });
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -59,6 +61,7 @@ export function ShareInvite({
     try {
       await navigator.share({ title: "Aurora", text, url });
       trackInvite("invite_shared", referralCode);
+      trackAurora("invite_shared", { source: compact ? "waitlist_success" : "referral_room" });
     } catch {
       /* user cancelled */
     }
@@ -76,7 +79,10 @@ export function ShareInvite({
           href={whats}
           target="_blank"
           rel="noreferrer"
-          onClick={() => trackInvite("invite_whatsapp_clicked", referralCode)}
+          onClick={() => {
+            trackInvite("invite_whatsapp_clicked", referralCode);
+            trackAurora("invite_whatsapp_clicked", { source: compact ? "waitlist_success" : "referral_room" });
+          }}
         >
           WhatsApp
         </a>

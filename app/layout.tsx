@@ -3,6 +3,7 @@ import { Fraunces, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { siteUrl } from "@/lib/seo/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,9 +20,22 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Aurora | Diário por voz com IA",
   description: "Um diário por voz com IA para registrar seus dias, organizar sentimentos e perceber padrões com mais clareza.",
+  applicationName: "Aurora",
+  category: "wellbeing",
+  keywords: [
+    "diário por voz com IA",
+    "diário pessoal com IA",
+    "reflexão pessoal",
+    "autoconhecimento por voz",
+    "organizar sentimentos",
+  ],
   manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     title: "Aurora | Diário por voz com IA",
     description: "Fale por alguns minutos. A Aurora organiza seu registro, percebe seu momento e ajuda você a se entender melhor.",

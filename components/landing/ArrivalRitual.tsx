@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Landing.module.css";
+import { trackAurora } from "@/lib/analytics/client";
 
 type RitualQuestion = {
   key: string;
@@ -154,8 +155,19 @@ export function ArrivalRitual() {
     writeLocal(question.key, nextValue);
     const statusToken = readStatusToken();
     if (statusToken) void saveProfile(statusToken, question.key, nextValue);
+    trackAurora("arrival_ritual_step_completed", {
+      source: "arrival_ritual",
+      step: index + 1,
+      field: question.key.replace("aurora_guest_", ""),
+    });
     setAnswers((previous) => ({ ...previous, [question.key]: nextValue }));
-    setIndex((current) => Math.min(current + 1, questions.length));
+    setIndex((current) => {
+      const next = Math.min(current + 1, questions.length);
+      if (next === questions.length) {
+        trackAurora("arrival_ritual_completed", { source: "arrival_ritual" });
+      }
+      return next;
+    });
   }
 
   function goBack() {

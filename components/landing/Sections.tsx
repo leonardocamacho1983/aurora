@@ -189,10 +189,10 @@ export function Convide() {
           Convide
         </div>
         <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(1.9rem,4.8vw,38px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>
-          Conhece alguém que precisa se <span style={{ fontStyle: "italic", color: "var(--accent)" }}>ouvir</span>?
+          Conhece alguém que merece um começo mais <span style={{ fontStyle: "italic", color: "var(--accent)" }}>leve</span>?
         </h2>
         <p style={{ margin: "18px auto 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 520, textWrap: "pretty" }}>
-          Convide alguém que também precisa se ouvir. Quando 5 pessoas confirmam pelo seu link, você ganha acesso antes da fila comum.
+          Convide alguém querido para conhecer a Aurora. Quando 5 pessoas confirmam pelo seu link, seu acesso amanhece antes.
         </p>
         <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 30, height: 50, padding: "0 26px", font: "600 15px var(--font-sans)" }}>
           Criar meu convite
@@ -221,7 +221,7 @@ export function Manifesto() {
           <p style={{ margin: "20px 0 0", font: "400 17px/1.62 var(--font-sans)", color: "#B3ADC4", maxWidth: 460, textWrap: "pretty" }}>
             O ensaio que deu origem à Aurora, com o método, a pesquisa e as escolhas de produto por trás da experiência.
           </p>
-          <a href="#" className={styles.outlineBtn} style={{ marginTop: 28, height: 48, padding: "0 24px" }}>
+          <a href="/manifesto" className={styles.outlineBtn} style={{ marginTop: 28, height: 48, padding: "0 24px" }}>
             Ler o manifesto
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
           </a>
@@ -248,9 +248,10 @@ export function Footer() {
           <span style={{ font: "400 13px var(--font-sans)", color: "#56506B", marginLeft: 4 }}>· diário por voz</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap" }}>
-          <a href="#manifesto" style={link}>Manifesto</a>
-          <a href="#privacidade" style={link}>Privacidade</a>
-          <a href="#" style={link}>Contato</a>
+          <a href="/manifesto" style={link}>Manifesto</a>
+          <a href="/privacidade" style={link}>Privacidade</a>
+          <a href="/termos" style={link}>Termos</a>
+          <a href="mailto:hello@leonardocamacho.com" style={link}>Contato</a>
           <span style={{ font: "400 13px var(--font-sans)", color: "#56506B" }}>© 2026 Aurora</span>
         </div>
       </div>

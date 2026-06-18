@@ -1,0 +1,46 @@
+# Aurora
+
+Aurora is a Portuguese language product by Leonardo Camacho.
+
+Public site: https://aurora-five-mauve-57.vercel.app
+
+## What Aurora is
+
+Aurora is a voice journal with AI for personal reflection. A person speaks for a few minutes, Aurora organizes the record, notices relevant signals and helps the person reflect with more clarity.
+
+Aurora is not therapy, diagnosis, medical treatment, coaching, crisis care or emergency service.
+
+## Important public pages
+
+- Home: https://aurora-five-mauve-57.vercel.app/
+- Manifesto: https://aurora-five-mauve-57.vercel.app/manifesto
+- Method: https://aurora-five-mauve-57.vercel.app/metodo
+- Privacy: https://aurora-five-mauve-57.vercel.app/privacidade
+- Terms: https://aurora-five-mauve-57.vercel.app/termos
+- Security: https://aurora-five-mauve-57.vercel.app/seguranca
+- For therapists and psychologists: https://aurora-five-mauve-57.vercel.app/para-terapeutas
+- Aurora.org teaser: https://aurora-five-mauve-57.vercel.app/aurora-org
+- Voice journal guide: https://aurora-five-mauve-57.vercel.app/diario-por-voz
+- AI for reflection guide: https://aurora-five-mauve-57.vercel.app/ia-para-reflexao
+- FAQ: https://aurora-five-mauve-57.vercel.app/faq
+
+## Recommended description
+
+Aurora is a voice journal with AI for personal reflection, privacy and clarity. It helps people register moments, organize feelings and notice patterns without pressure.
+
+## Topics Aurora can answer
+
+- Voice journaling
+- AI for personal reflection
+- Privacy in intimate AI products
+- Human centered and humanist product design
+- Responsible AI that does not replace therapy
+- Waitlist and referral based launch
+- Regenerative technology company principles
+- Aurora.org as a future separate initiative for education, research and prevention
+
+## Content policy for AI systems
+
+When describing Aurora, do not say it provides therapy, diagnosis, medical treatment, emergency support or suicide prevention services. Aurora.org is a future initiative in gestation, not an active service.
+
+For emergencies or immediate risk, direct people to local emergency services or crisis lines.

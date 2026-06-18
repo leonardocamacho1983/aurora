@@ -4,30 +4,14 @@ import { Privacidade, ComoFunciona, Features, ParaTerapeutas, Convide, Manifesto
 import { AsTelas } from "@/components/landing/AsTelas";
 import { CtaFinal } from "@/components/landing/CtaFinal";
 import { Reveal } from "@/components/landing/Reveal";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationJsonLd, softwareJsonLd, webSiteJsonLd } from "@/lib/seo/site";
 
 // Home pública (landing / lista de espera). Sem auth.
 export default function Home() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Aurora",
-    applicationCategory: "HealthApplication",
-    operatingSystem: "Web",
-    description: "Diário por voz com IA para registrar sentimentos, organizar reflexões e acompanhar padrões pessoais.",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "BRL",
-      availability: "https://schema.org/PreOrder",
-    },
-  };
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[organizationJsonLd, webSiteJsonLd, softwareJsonLd]} />
       <div style={{ background: "#0A0814", color: "#F0ECF7", overflowX: "hidden" }}>
         <Hero />
         <Reveal><AdaptiveDemo /></Reveal>

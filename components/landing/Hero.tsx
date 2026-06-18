@@ -425,8 +425,8 @@ export function Hero() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
             <div className={styles.navText} style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
-              <a href="#manifesto" className={styles.navLink}>Manifesto</a>
-              <a href="#privacidade" className={styles.navLink}>Privacidade</a>
+              <a href="/manifesto" className={styles.navLink}>Manifesto</a>
+              <a href="/privacidade" className={styles.navLink}>Privacidade</a>
             </div>
             <a href="#lista" className={styles.pill}>Entrar na lista</a>
           </div>

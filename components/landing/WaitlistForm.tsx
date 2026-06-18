@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ShareInvite } from "./ShareInvite";
 import styles from "./Landing.module.css";
+import { trackAurora } from "@/lib/analytics/client";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const REF = /^[A-Za-z0-9]{6,16}$/;
@@ -60,11 +61,13 @@ export function WaitlistForm() {
     const val = inputRef.current?.value.trim() ?? "";
     if (!EMAIL.test(val)) {
       setInvalid(true);
+      trackAurora("waitlist_submit_error", { source: "landing", mode: "invalid_email" });
       inputRef.current?.focus();
       return;
     }
     setInvalid(false);
     setSubmitting(true);
+    trackAurora("waitlist_submit_attempt", { source: "landing", has_referral: Boolean(referralCode) });
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
@@ -77,6 +80,7 @@ export function WaitlistForm() {
       });
       if (!res.ok) {
         setInvalid(true);
+        trackAurora("waitlist_submit_error", { source: "landing", mode: String(res.status) });
         return;
       }
       const data = (await res.json()) as {
@@ -85,16 +89,19 @@ export function WaitlistForm() {
         statusToken?: string;
       };
       if (data.mode === "created" && data.referralCode && data.statusToken) {
+        trackAurora("waitlist_submit_success", { source: "landing", mode: "created", has_referral: Boolean(referralCode) });
         setDone({
           mode: "created",
           referralCode: data.referralCode,
           statusToken: data.statusToken,
         });
       } else {
+        trackAurora("waitlist_submit_success", { source: "landing", mode: "email_sent", has_referral: Boolean(referralCode) });
         setDone({ mode: "email_sent" });
       }
     } catch {
       setInvalid(true);
+      trackAurora("waitlist_submit_error", { source: "landing", mode: "network" });
     } finally {
       setSubmitting(false);
     }
