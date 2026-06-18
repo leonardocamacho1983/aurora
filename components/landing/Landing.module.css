@@ -1716,11 +1716,24 @@
 @media (max-width: 520px) {
   .heroPostInvite {
     justify-content: flex-start;
+    padding-top: 112px !important;
   }
 
   .heroPostInvite .heroInviteGreeting {
-    margin-bottom: 12px;
-    padding: 12px 14px;
+    width: min(100%, 330px);
+    margin-bottom: 18px;
+    padding: 10px 14px;
+    border-radius: 18px;
+  }
+
+  .heroPostInvite .heroInviteGreeting span {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .heroPostInvite .heroInviteGreeting strong {
+    margin-top: 3px;
+    font-size: 12px;
   }
 
   .heroPostInvite .heroEyebrow {
@@ -1750,25 +1763,62 @@
 
 .arrivalPage {
   min-height: 100svh;
+  position: relative;
   display: grid;
   place-items: center;
-  padding: clamp(20px, 4vw, 48px);
+  padding: clamp(18px, 3vw, 34px);
   background:
-    radial-gradient(ellipse 70% 70% at 50% 0%, rgba(169, 155, 217, 0.14), transparent 62%),
-    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(236, 182, 210, 0.08), transparent 68%),
+    radial-gradient(ellipse 90% 70% at 50% 108%, rgba(236, 182, 210, 0.1), transparent 68%),
+    radial-gradient(ellipse 80% 58% at 50% 0%, rgba(169, 155, 217, 0.11), transparent 64%),
     #070512;
   color: #f0ecf7;
   overflow: hidden;
 }
 
+.arrivalMoon {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  width: min(92vw, 860px);
+  height: min(92vw, 860px);
+  border-radius: 999px;
+  transform: translate(-50%, -47%) scale(0.82);
+  opacity: 0.72;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(244, 182, 160, 0.88), transparent 28%),
+    radial-gradient(circle at 67% 32%, rgba(201, 162, 212, 0.78), transparent 34%),
+    radial-gradient(circle at 70% 72%, rgba(143, 164, 214, 0.72), transparent 35%),
+    radial-gradient(circle at 30% 76%, rgba(127, 208, 196, 0.68), transparent 34%),
+    linear-gradient(140deg, rgba(201, 162, 212, 0.7), rgba(143, 164, 214, 0.66) 55%, rgba(127, 208, 196, 0.62));
+  filter: blur(62px) saturate(1.02);
+  animation: arrivalMoonRise 1.25s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.arrivalPage::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 46% at 50% 53%, rgba(8, 6, 15, 0.12), rgba(8, 6, 15, 0.46) 58%, rgba(8, 6, 15, 0.9) 100%),
+    linear-gradient(180deg, rgba(7, 5, 18, 0.72), transparent 38%, rgba(7, 5, 18, 0.82));
+}
+
 .arrivalShell {
-  width: min(100%, 980px);
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1120px);
+  min-height: calc(100svh - clamp(36px, 6vw, 68px));
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 18px;
 }
 
 .arrivalBrand {
-  justify-self: center;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 11px;
@@ -1778,7 +1828,7 @@
 }
 
 .arrivalBrand span,
-.arrivalOrb {
+.arrivalMoon {
   background:
     radial-gradient(circle at 32% 26%, #f4b6a0 0%, transparent 52%),
     radial-gradient(circle at 72% 30%, #c9a2d4 0%, transparent 56%),
@@ -1795,29 +1845,26 @@
 }
 
 .arrivalCard {
-  min-height: min(760px, calc(100svh - 112px));
+  width: min(100%, 900px);
+  min-height: 0;
+  align-self: center;
+  justify-self: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: clamp(24px, 5vw, 54px);
-  border-radius: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: clamp(12px, 1.5vw, 18px);
+  padding: clamp(18px, 3.8vw, 46px);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
   background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(236, 182, 210, 0.12), transparent 68%),
-    rgba(14, 12, 26, 0.72);
+    radial-gradient(ellipse 82% 60% at 50% 0%, rgba(236, 182, 210, 0.12), transparent 64%),
+    radial-gradient(ellipse 70% 52% at 50% 100%, rgba(127, 208, 196, 0.055), transparent 70%),
+    linear-gradient(180deg, rgba(14, 12, 26, 0.58), rgba(7, 5, 18, 0.42));
   box-shadow: 0 40px 90px -54px rgba(0, 0, 0, 0.9);
   text-align: center;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-}
-
-.arrivalOrb {
-  width: 68px;
-  height: 68px;
-  border-radius: 999px;
-  box-shadow: 0 0 42px rgba(236, 182, 210, 0.35);
 }
 
 .arrivalKicker,
@@ -1832,7 +1879,7 @@
   margin: 0;
   max-width: 680px;
   color: #f8f6fc;
-  font: 450 clamp(2.4rem, 5vw, 58px)/1.04 var(--font-serif);
+  font: 450 clamp(2.15rem, 4.35vw, 52px)/1.04 var(--font-serif);
   letter-spacing: -0.026em;
   text-wrap: balance;
 }
@@ -1863,10 +1910,10 @@
 
 .arrivalQuestion,
 .arrivalDone {
-  width: min(100%, 620px);
+  width: min(100%, 680px);
   display: grid;
-  gap: 13px;
-  padding: clamp(18px, 3vw, 26px);
+  gap: 12px;
+  padding: clamp(16px, 2.5vw, 24px);
   border-radius: 24px;
   border: 1px solid rgba(236, 182, 210, 0.16);
   background:
@@ -1888,7 +1935,7 @@
 .arrivalQuestion strong,
 .arrivalDone strong {
   color: #f8f6fc;
-  font: 450 clamp(1.55rem, 3vw, 32px)/1.15 var(--font-serif);
+  font: 450 clamp(1.5rem, 2.6vw, 30px)/1.13 var(--font-serif);
   letter-spacing: -0.01em;
 }
 
@@ -1960,6 +2007,20 @@
   color: #f8f6fc;
 }
 
+@keyframes arrivalMoonRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -36%) scale(0.18);
+    filter: blur(34px) saturate(0.8);
+  }
+
+  100% {
+    opacity: 0.72;
+    transform: translate(-50%, -47%) scale(0.82);
+    filter: blur(62px) saturate(1.02);
+  }
+}
+
 .ctaInviteReturn {
   width: min(100%, 560px);
   display: flex;
@@ -1997,37 +2058,35 @@
 @media (max-width: 640px) {
   .arrivalPage {
     padding: 0;
-    overflow: auto;
+    overflow: hidden;
   }
 
   .arrivalShell {
     min-height: 100svh;
-    gap: 14px;
+    grid-template-rows: auto 1fr;
+    gap: 10px;
+    padding: 18px 20px 18px;
   }
 
   .arrivalBrand {
-    margin-top: 22px;
+    margin-top: 0;
+    justify-self: start;
   }
 
   .arrivalCard {
-    min-height: auto;
+    width: 100%;
+    min-height: 0;
     flex: 1;
-    justify-content: flex-start;
+    align-self: stretch;
+    justify-self: stretch;
+    justify-content: center;
     gap: 12px;
-    padding: 18px 20px 26px;
-    border-radius: 28px 28px 0 0;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-  }
-
-  .arrivalOrb {
-    width: 48px;
-    height: 48px;
+    padding: 18px 18px 20px;
+    border-radius: 28px;
   }
 
   .arrivalCard h1 {
-    font-size: clamp(1.95rem, 10vw, 2.8rem);
+    font-size: clamp(1.85rem, 9.3vw, 2.55rem);
   }
 
   .arrivalCard > p {
@@ -2038,8 +2097,17 @@
   .arrivalQuestion,
   .arrivalDone {
     gap: 10px;
-    padding: 16px;
+    padding: 15px;
     text-align: left;
+  }
+
+  .arrivalQuestion strong,
+  .arrivalDone strong {
+    font-size: clamp(1.35rem, 6.5vw, 1.8rem);
+  }
+
+  .arrivalProgress {
+    height: 6px;
   }
 
   .arrivalStepTop {
@@ -2065,6 +2133,15 @@
   .arrivalFooter {
     flex-direction: column;
     justify-content: center;
+    gap: 10px;
+  }
+
+  .arrivalMoon {
+    top: 54%;
+    width: 118vw;
+    height: 118vw;
+    opacity: 0.62;
+    filter: blur(54px) saturate(1);
   }
 
   .ctaInviteReturn {

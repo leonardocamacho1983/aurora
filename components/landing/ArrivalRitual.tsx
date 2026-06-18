@@ -130,6 +130,7 @@ export function ArrivalRitual() {
 
   return (
     <main className={styles.arrivalPage}>
+      <div className={styles.arrivalMoon} aria-hidden="true" />
       <section className={styles.arrivalShell}>
         <a className={styles.arrivalBrand} href="/?sala=convite">
           <span aria-hidden="true" />
@@ -137,7 +138,6 @@ export function ArrivalRitual() {
         </a>
 
         <div className={styles.arrivalCard}>
-          <div className={styles.arrivalOrb} aria-hidden="true" />
           <span className={styles.arrivalKicker}>Ritual de Chegada</span>
           <h1>{question ? "Vamos preparar sua Aurora." : "Pronto. A Aurora já tem seus primeiros sinais."}</h1>
           <p>
