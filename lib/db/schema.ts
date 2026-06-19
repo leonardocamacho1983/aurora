@@ -28,6 +28,8 @@ export const users = pgTable("users", {
   locale: text("locale").default("pt-BR").notNull(),
   role: text("role").default("user").notNull(), // 'user' | 'admin'
   plan: text("plan").default("free").notNull(), // 'free' | 'plus'
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+  onboardingContext: jsonb("onboarding_context").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
