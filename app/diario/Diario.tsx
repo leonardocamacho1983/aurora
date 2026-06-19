@@ -38,14 +38,14 @@ const ORB_STATE: Record<Phase, OrbState> = {
 
 const HELPER: Record<Phase, string> = {
   idle: "Toque para falar",
-  recording: "Gravando… toque para parar",
-  reflecting: "Refletindo…",
+  recording: "Gravando. Toque para parar",
+  reflecting: "A Aurora está organizando sua fala",
   reflection: "",
   crisis: "",
   error: "Algo deu errado",
 };
 
-export function Diario() {
+export function Diario({ userEmail = "" }: { userEmail?: string }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
   const [mood, setMood] = useState<string | null>(null);
@@ -152,36 +152,56 @@ export function Diario() {
     }
   }
 
+  const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
+  const isActive = phase === "recording" || phase === "reflecting";
+
   return (
     <main className={styles.stage}>
+      <nav className={styles.nav} aria-label="Navegação do diário">
+        <Link href="/" className={styles.brand}>
+          <span className={styles.brandOrb} aria-hidden="true" />
+          <span>Aurora</span>
+        </Link>
+        <div className={styles.navLinks}>
+          <Link href="/timeline">Linha</Link>
+          <Link href="/account">{accountLabel}</Link>
+        </div>
+      </nav>
+
       {phase !== "reflection" ? (
         <div className={styles.center}>
+          <div className={styles.copy}>
+            <p className={styles.kicker}>{isActive ? "Agora" : "Diário por voz"}</p>
+            <h1 className="font-serif">{PROMPT_DO_DIA}</h1>
+            <p>
+              Fale por alguns minutos. Não precisa organizar antes, encontrar a frase certa ou explicar tudo.
+            </p>
+          </div>
+
           {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
-            <p
-              className="font-serif"
-              style={{ fontSize: "clamp(1.1rem, 1rem + 0.6vw, 1.35rem)", color: "var(--ink)", maxWidth: "24ch", margin: 0 }}
-            >
-              {PROMPT_DO_DIA}
+            <div className={styles.orbStage}>
+              <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
+            </div>
+          )}
+
+          {HELPER[phase] && (
+            <p className={phase === "recording" ? styles.liveHelper : styles.helper}>
+              {HELPER[phase]}
             </p>
           )}
 
-          <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
-
-          {HELPER[phase] && <p style={{ color: "var(--ink-soft)", margin: 0 }}>{HELPER[phase]}</p>}
-
           {phase === "error" && errorMsg && (
-            <p role="alert" style={{ color: "var(--alert)", margin: 0 }}>
+            <p role="alert" className={styles.error}>
               {errorMsg}
             </p>
           )}
 
           {phase === "idle" && (
-            <Link
-              href="/timeline"
-              style={{ color: "var(--ink-faint)", fontSize: "0.9rem", textDecoration: "none" }}
-            >
-              Linha do tempo
-            </Link>
+            <div className={styles.quickGrid} aria-label="O que acontece no diário">
+              <span>Sem digitar</span>
+              <span>Registro privado</span>
+              <Link href="/timeline">Ver linha do tempo</Link>
+            </div>
           )}
         </div>
       ) : (
@@ -193,39 +213,16 @@ export function Diario() {
 
             <div className={styles.card}>
               <div className={styles.cardContent}>
+                <p className={styles.kicker}>Reflexão</p>
                 <div
-                  className="font-serif"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--space-4)",
-                    fontSize: "clamp(1.05rem, 0.95rem + 0.45vw, 1.2rem)",
-                    lineHeight: 1.6,
-                    color: "var(--ink)",
-                  }}
+                  className={`font-serif ${styles.reflectionText}`}
                 >
                   {reflection && renderProse(reflection)}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "var(--space-3)",
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div className={styles.metaRow}>
                   {mood ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "var(--space-2)",
-                        color: "var(--ink-soft)",
-                        fontSize: "0.9rem",
-                      }}
-                    >
+                    <span className={styles.mood}>
                       <span
                         aria-hidden="true"
                         style={{
@@ -241,26 +238,17 @@ export function Diario() {
                     <span />
                   )}
 
-                  <button
-                    type="button"
-                    onClick={resetToIdle}
-                    style={{
-                      minHeight: 44,
-                      padding: "var(--space-2) var(--space-3)",
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--ink-faint)",
-                      fontSize: "0.9rem",
-                      cursor: "pointer",
-                    }}
-                  >
+                  <Link href="/timeline" className={styles.softLink}>Ver linha do tempo</Link>
+                </div>
+
+                <div className={styles.actionRow}>
+                  <button type="button" onClick={onOrbClick} className={styles.primaryAction}>
+                    Falar mais
+                  </button>
+                  <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
                     Concluir
                   </button>
                 </div>
-
-                <p style={{ color: "var(--ink-faint)", fontSize: "0.85rem", margin: 0 }}>
-                  Toque no orb para continuar falando.
-                </p>
               </div>
             </div>
           </div>

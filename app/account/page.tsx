@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../login/actions";
+import styles from "./Account.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -15,40 +17,26 @@ export default async function AccountPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "var(--space-4)",
-        padding: "var(--space-5)",
-        textAlign: "center",
-      }}
-    >
-      <h1 className="font-serif" style={{ fontSize: "clamp(1.3rem, 1.1rem + 0.6vw, 1.6rem)", margin: 0 }}>
-        Conta
-      </h1>
-      <p style={{ color: "var(--ink-soft)", margin: 0 }}>{user.email}</p>
+    <main className={styles.stage}>
+      <section className={styles.card}>
+        <Link href="/diario" className={styles.brand}>
+          <span className={styles.brandOrb} aria-hidden="true" />
+          <span>Aurora</span>
+        </Link>
+        <p className={styles.kicker}>Conta</p>
+        <h1 className="font-serif">Seu acesso está ativo.</h1>
+        <p className={styles.email}>{user.email}</p>
+        <div className={styles.actions}>
+          <Link href="/diario" className={styles.primary}>Voltar ao diário</Link>
+          <Link href="/timeline" className={styles.secondary}>Linha do tempo</Link>
+        </div>
 
-      <form action={signOut}>
-        <button
-          style={{
-            minHeight: 44,
-            padding: "var(--space-3) var(--space-5)",
-            borderRadius: "var(--r-pill)",
-            border: "1px solid var(--hairline)",
-            background: "var(--raised)",
-            color: "var(--ink)",
-            fontSize: "1rem",
-            cursor: "pointer",
-          }}
-          type="submit"
-        >
-          Sair
-        </button>
-      </form>
+        <form action={signOut}>
+          <button className={styles.signOut} type="submit">
+            Sair
+          </button>
+        </form>
+      </section>
     </main>
   );
 }

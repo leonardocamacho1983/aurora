@@ -9,8 +9,8 @@ type Mode = "signin" | "signup";
 
 function SubmitButton({ mode }: { mode: Mode }) {
   const { pending } = useFormStatus();
-  const idle = mode === "signin" ? "Entrar" : "Criar conta";
-  const busy = mode === "signin" ? "Entrando…" : "Criando conta…";
+  const idle = mode === "signin" ? "Entrar na minha Aurora" : "Criar minha Aurora";
+  const busy = mode === "signin" ? "Entrando..." : "Criando...";
   return (
     <button type="submit" className={styles.submit} disabled={pending}>
       {pending ? busy : idle}
@@ -26,7 +26,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
     <>
       {message === "check-email" && (
         <p className={styles.notice}>
-          Enviamos um link de confirmação para o seu email. Confirme para entrar.
+          Enviamos um link de confirmacao. Abra seu email para ativar o acesso.
         </p>
       )}
       {error && (
@@ -43,7 +43,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
             type="email"
             name="email"
             autoComplete="email"
-            placeholder="voce@exemplo.com"
+            placeholder="seu@email.com"
             required
           />
         </label>
@@ -69,20 +69,20 @@ export function LoginForm({ error, message }: { error?: string; message?: string
               {showPw ? "Ocultar" : "Mostrar"}
             </button>
           </div>
-          {mode === "signup" && <span className={styles.hint}>Mínimo de 6 caracteres.</span>}
+          {mode === "signup" && <span className={styles.hint}>Use pelo menos 6 caracteres.</span>}
         </label>
 
         <SubmitButton mode={mode} />
       </form>
 
       <p className={styles.toggle}>
-        {mode === "signin" ? "Ainda não tem conta?" : "Já tem uma conta?"}{" "}
+        {mode === "signin" ? "Primeira vez no app?" : "Ja criou sua conta?"}{" "}
         <button
           type="button"
           className={styles.toggleBtn}
           onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
         >
-          {mode === "signin" ? "Criar conta" : "Entrar"}
+          {mode === "signin" ? "Criar acesso" : "Entrar"}
         </button>
       </p>
     </>

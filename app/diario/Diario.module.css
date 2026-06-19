@@ -1,135 +1,347 @@
 .stage {
   position: relative;
-  min-height: 100dvh;
+  min-height: 100svh;
   overflow-x: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 56% at 50% 12%, rgba(169, 155, 217, 0.16), transparent 66%),
+    radial-gradient(ellipse 72% 42% at 50% 94%, rgba(127, 208, 196, 0.08), transparent 70%),
+    linear-gradient(180deg, #0e0a1b 0%, #080612 58%, #05040a 100%);
 }
 
-/* Início / gravando / refletindo: orb centralizado, "sobe" pra cena */
-.center {
-  --orb-size: clamp(200px, 70vw, 300px);
-  min-height: 100dvh;
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.26) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 80% 16%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 74%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.5px);
+  background-size: 320px 320px, 420px 420px, 280px 280px;
+  opacity: 0.42;
+}
+
+.nav {
+  position: relative;
+  z-index: 3;
+  min-height: 68px;
+  padding: max(14px, env(safe-area-inset-top)) clamp(18px, 5vw, 36px) 12px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
-  padding: var(--space-5);
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand,
+.navLinks {
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.35rem, 6vw, 1.8rem);
+  line-height: 1;
+}
+
+.brandOrb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--aurora);
+  box-shadow: 0 0 24px rgba(201, 162, 212, 0.46);
+}
+
+.navLinks {
+  gap: 8px;
+}
+
+.navLinks a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.center {
+  --orb-size: clamp(220px, 68vw, 360px);
+  position: relative;
+  z-index: 1;
+  min-height: calc(100svh - 68px);
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(16px, 3.5vh, 28px);
+  padding: clamp(18px, 5vw, 32px) clamp(18px, 5vw, 32px) max(24px, env(safe-area-inset-bottom));
   text-align: center;
 }
 
-@media (max-width: 480px) {
-  .center {
-    gap: var(--space-4);
-  }
+.copy {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
 }
 
-/* Resultado: orb como SOL atrás do card */
+.kicker {
+  margin: 0;
+  color: var(--accent);
+  font-size: clamp(0.68rem, 2.4vw, 0.78rem);
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.copy h1 {
+  max-width: 10ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2.4rem, 13vw, 5.8rem);
+  font-weight: 450;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.copy p {
+  max-width: 35rem;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 2.8vw, 1.15rem);
+  line-height: 1.62;
+}
+
+.orbStage {
+  display: grid;
+  place-items: center;
+  margin-block: -4px;
+  filter: drop-shadow(0 0 54px rgba(201, 162, 212, 0.22));
+}
+
+.helper,
+.liveHelper {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.liveHelper {
+  color: var(--ink);
+}
+
+.error {
+  max-width: 30rem;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  color: var(--ink);
+  background: rgba(197, 132, 104, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.quickGrid {
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quickGrid span,
+.quickGrid a {
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
 .composition {
-  min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+  min-height: calc(100svh - 68px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-5);
+  padding: clamp(18px, 5vw, 36px) clamp(18px, 5vw, 36px) max(24px, env(safe-area-inset-bottom));
 }
+
 .inner {
   position: relative;
-  width: 100%;
-  max-width: 1000px;
+  width: min(1040px, 100%);
   display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
-/* o sol escorrega pra esquerda; metade fica atrás do card */
 .sun {
-  --orb-size: 440px;
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  --orb-size: clamp(210px, 58vw, 320px);
+  position: relative;
   z-index: 1;
+  margin-bottom: -68px;
 }
 
-/* card entra da metade do orb até a direita, sobressaindo e iluminado */
 .card {
   position: relative;
   z-index: 2;
-  margin-left: clamp(170px, 30%, 340px);
-  width: min(560px, 72%);
-  background: var(--glass-bg-warm);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border-radius: var(--r-lg);
-  padding: var(--space-7) var(--space-6);
+  width: min(100%, 620px);
   overflow: hidden;
+  border-radius: 28px;
+  padding: clamp(72px, 16vw, 112px) clamp(20px, 5vw, 34px) clamp(22px, 5vw, 34px);
+  background: rgba(17, 14, 31, 0.72);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
-    -60px 0 150px -50px rgba(169, 155, 217, 0.5),
-    0 2px 60px rgba(0, 0, 0, 0.45);
+    0 28px 90px -52px rgba(0, 0, 0, 0.9),
+    0 -34px 120px -58px rgba(244, 182, 160, 0.5);
 }
-/* a luz do orb lavando a borda esquerda do card */
+
 .card::before {
   content: "";
   position: absolute;
-  left: -8%;
-  top: 0;
-  bottom: 0;
-  width: 55%;
-  background: radial-gradient(
-    ellipse at left center,
-    rgba(201, 162, 212, 0.16),
-    transparent 72%
-  );
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 48% at 50% 0%, rgba(244, 182, 160, 0.18), transparent 70%),
+    radial-gradient(ellipse 52% 40% at 16% 30%, rgba(127, 208, 196, 0.08), transparent 72%);
   pointer-events: none;
 }
+
 .cardContent {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 20px;
 }
 
-@media (max-width: 760px) {
-  .sun {
-    --orb-size: 280px;
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
-    margin-bottom: -16%;
+.reflectionText {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--ink);
+  font-size: clamp(1.12rem, 4vw, 1.42rem);
+  line-height: 1.55;
+}
+
+.metaRow,
+.mood,
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metaRow {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.mood {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.softLink {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.actionRow {
+  align-items: stretch;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 52px;
+  border-radius: 999px;
+  padding: 0 22px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryAction {
+  flex: 1 1 auto;
+  border: none;
+  background: var(--accent);
+  color: #1b1830;
+  box-shadow: 0 16px 42px -20px rgba(169, 155, 217, 0.8);
+}
+
+.secondaryAction {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-soft);
+}
+
+@media (min-width: 900px) {
+  .center {
+    --orb-size: clamp(280px, 26vw, 420px);
   }
+
+  .copy h1 {
+    max-width: 12ch;
+  }
+
   .inner {
+    min-height: 620px;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .sun {
+    --orb-size: 430px;
+    position: absolute;
+    left: 4%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-bottom: 0;
+  }
+
+  .card {
+    margin-left: clamp(180px, 24vw, 320px);
+    padding-top: 42px;
+    box-shadow:
+      -70px 0 150px -56px rgba(169, 155, 217, 0.46),
+      0 28px 90px -52px rgba(0, 0, 0, 0.86);
+  }
+
+  .card::before {
+    background: radial-gradient(ellipse 58% 80% at 0% 50%, rgba(201, 162, 212, 0.18), transparent 72%);
+  }
+}
+
+@media (max-width: 430px) {
+  .navLinks a {
+    padding-inline: 10px;
+    font-size: 0.82rem;
+  }
+
+  .quickGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionRow {
     flex-direction: column;
   }
-  .card {
-    margin-left: 0;
-    width: 100%;
-    max-width: 540px;
-  }
-  .card::before {
-    left: 0;
-    top: -8%;
-    bottom: auto;
-    width: 100%;
-    height: 45%;
-    background: radial-gradient(
-      ellipse at center top,
-      rgba(201, 162, 212, 0.16),
-      transparent 72%
-    );
-  }
-}
 
-@media (max-width: 480px) {
-  .composition {
-    padding: var(--space-4);
-  }
-  .card {
-    padding: var(--space-5) var(--space-4);
-  }
-  .cardContent {
-    gap: var(--space-4);
-  }
-  .sun {
-    --orb-size: 220px;
+  .secondaryAction {
+    width: 100%;
   }
 }

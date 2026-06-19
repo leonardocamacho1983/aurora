@@ -1,218 +1,307 @@
-/* Entardecer vertical: topo (hoje) morno → fundo (memória antiga) azul profundo.
-   A temperatura é o fundo; os cards são vidro fosco e deixam a luz atravessar. */
 .stage {
-  min-height: 100dvh;
-  background: linear-gradient(
-    180deg,
-    var(--temp-dawn) 0%,
-    var(--temp-mid) 42%,
-    var(--temp-dusk) 100%
-  );
+  min-height: 100svh;
   position: relative;
+  overflow-x: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 72% 46% at 50% 0%, rgba(244, 182, 160, 0.14), transparent 70%),
+    radial-gradient(ellipse 90% 64% at 50% 100%, rgba(127, 208, 196, 0.08), transparent 72%),
+    linear-gradient(180deg, #100c1d 0%, #090713 52%, #05040b 100%);
 }
-/* amanhecer: luz quente assentando no topo, perto do hero */
+
 .stage::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60vh;
-  background: var(--glow-warm);
+  inset: 0;
   pointer-events: none;
+  background-image:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.26) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 76% 24%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 84% 68%, rgba(255, 255, 255, 0.16) 0 1px, transparent 1.5px);
+  background-size: 320px 320px, 420px 420px, 300px 300px;
+  opacity: 0.38;
 }
 
 .inner {
   position: relative;
   z-index: 1;
-  max-width: 1000px;
+  width: min(1120px, 100%);
   margin: 0 auto;
-  padding: var(--space-7) var(--space-5) var(--space-8);
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 5vw, 40px) max(28px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: clamp(18px, 4vw, 28px);
 }
 
 .top {
+  min-height: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: 16px;
 }
-.kicker {
-  color: var(--ink-faint);
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
+
+.topCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.brand {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  line-height: 1;
+}
+
+.brandOrb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--aurora);
+  box-shadow: 0 0 24px rgba(201, 162, 212, 0.46);
+}
+
+.kicker,
+.label {
+  color: var(--accent);
+  font-size: clamp(0.68rem, 2.3vw, 0.8rem);
+  font-weight: 800;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   margin: 0;
 }
+
+.label {
+  color: var(--ink-faint);
+  letter-spacing: 0.12em;
+}
+
 .usage {
   color: var(--ink-faint);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   margin: 0;
 }
 
-/* Botão "Nova entrada" — alude ao orb (gradiente aurora + glow) */
-.orbButton {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--aurora);
-  border: none;
-  cursor: pointer;
-  flex: 0 0 auto;
-  box-shadow: 0 0 42px -8px rgba(169, 155, 217, 0.65);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.orbButton::after {
-  content: "+";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: #1b1830;
-  font-size: 1.5rem;
-  line-height: 1;
-}
-.orbButton:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 56px -6px rgba(169, 155, 217, 0.8);
+.orbButton,
+.primaryLink {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
 }
 
-/* Hero — a entrada mais recente (palavra do usuário, ainda quente) */
-.hero {
+.orbButton {
+  position: relative;
+  min-width: 98px;
+  padding: 0 18px;
+  color: #1b1830;
+  background: var(--accent);
+  box-shadow: 0 16px 42px -18px rgba(169, 155, 217, 0.8);
+}
+
+.orbButton::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--aurora);
+}
+
+.empty,
+.hero,
+.mainInsight,
+.card,
+.skeleton {
   position: relative;
   overflow: hidden;
-  border-radius: var(--r-lg);
-  padding: var(--space-7) var(--space-6);
-  background: var(--glass-bg-warm);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  background: rgba(17, 14, 31, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
 }
-@media (max-width: 480px) {
-  .inner {
-    padding: var(--space-5) var(--space-4) var(--space-6);
-    gap: var(--space-5);
-  }
-  .hero {
-    padding: var(--space-5) var(--space-4);
-  }
-  .card {
-    padding: var(--space-4);
-  }
-  .mainInsight {
-    padding: var(--space-5);
-  }
-  .heroText {
-    line-height: 1.3;
-  }
+
+.empty {
+  min-height: calc(100svh - 150px);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: clamp(28px, 8vw, 72px);
+  text-align: center;
 }
-.hero::before {
+
+.empty h1 {
+  max-width: 10ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2.6rem, 14vw, 6rem);
+  font-weight: 450;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.empty p {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.primaryLink {
+  margin-top: 8px;
+  padding: 0 24px;
+  color: #1b1830;
+  background: var(--accent);
+}
+
+.hero {
+  padding: clamp(22px, 6vw, 42px);
+  box-shadow: 0 28px 90px -56px rgba(0, 0, 0, 0.9);
+}
+
+.hero::before,
+.mainInsight::before,
+.empty::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--glow-warm-strong);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(244, 182, 160, 0.16), transparent 72%),
+    radial-gradient(ellipse 54% 46% at 14% 30%, rgba(127, 208, 196, 0.08), transparent 72%);
   pointer-events: none;
 }
+
 .heroBody {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 16px;
 }
+
 .heroText {
-  font-size: var(--fraunces-display);
-  line-height: 1.35;
-  color: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 12px;
+  color: var(--ink);
+  font-size: clamp(1.65rem, 8vw, 3.5rem);
+  line-height: 1.15;
 }
 
-/* Insight principal — voz da Aurora, distinta (tinta aurora) */
 .mainInsight {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--r-lg);
-  padding: var(--space-6);
-  background: linear-gradient(135deg, rgba(169, 155, 217, 0.16), rgba(127, 208, 196, 0.08));
-  border: 1px solid var(--glass-border);
+  padding: clamp(22px, 6vw, 36px);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-}
-.mainInsightText {
-  font-size: var(--fraunces-lead);
-  line-height: 1.5;
-  color: var(--ink);
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(169, 155, 217, 0.16), rgba(127, 208, 196, 0.08));
 }
 
-/* Board — insights secundários + histórico, misturados */
+.mainInsightText {
+  position: relative;
+  z-index: 1;
+  color: var(--ink);
+  font-size: clamp(1.35rem, 5vw, 2.1rem);
+  line-height: 1.35;
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  gap: 12px;
   align-items: start;
 }
+
 .card {
-  border-radius: var(--r-md);
-  padding: var(--space-5);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 12px;
 }
-/* card de insight (voz da Aurora) — visualmente distinto do histórico */
+
 .insightCard {
   background: linear-gradient(140deg, rgba(169, 155, 217, 0.13), rgba(34, 30, 51, 0.4));
 }
-.insightText {
-  font-size: var(--fraunces-body);
-  line-height: 1.5;
+
+.insightText,
+.trecho {
   color: var(--ink);
+  font-size: clamp(1.05rem, 3.8vw, 1.24rem);
+  line-height: 1.5;
   margin: 0;
 }
 
 .entryHead {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 9px;
 }
+
 .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex: 0 0 auto;
 }
+
 .date {
   color: var(--ink-faint);
-  font-size: 0.8rem;
-}
-/* histórico = palavra do usuário, Fraunces íntima */
-.trecho {
-  font-size: var(--fraunces-body);
-  line-height: 1.5;
-  color: var(--ink);
-  margin: 0;
-}
-
-.label {
-  color: var(--ink-faint);
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.82rem;
 }
 
 .skeleton {
-  border-radius: var(--r-lg);
-  padding: var(--space-6);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  padding: 22px;
   color: var(--ink-faint);
+}
+
+@media (min-width: 760px) {
+  .board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1080px) {
+  .board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .inner {
+    padding-top: 28px;
+  }
+}
+
+@media (max-width: 430px) {
+  .top {
+    align-items: flex-start;
+  }
+
+  .orbButton {
+    min-width: 0;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+  }
+
+  .orbButton::before {
+    margin: 0;
+  }
 }

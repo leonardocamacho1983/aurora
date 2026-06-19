@@ -68,7 +68,7 @@ async function InsightsBlock({ week }: { week: InsightSource[] }) {
   return (
     <>
       <section className={styles.mainInsight}>
-        <span className={styles.label}>padrão da semana</span>
+        <span className={styles.label}>leitura da semana</span>
         <div className={`font-serif ${styles.mainInsightText}`}>{renderProse(main)}</div>
       </section>
 
@@ -123,8 +123,12 @@ export default async function TimelinePage() {
     <main className={styles.stage}>
       <div className={styles.inner}>
         <div className={styles.top}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-            <p className={styles.kicker}>Linha do tempo</p>
+          <div className={styles.topCopy}>
+            <Link href="/" className={styles.brand}>
+              <span className={styles.brandOrb} aria-hidden="true" />
+              <span>Aurora</span>
+            </Link>
+            <p className={styles.kicker}>Sua linha do tempo</p>
             {weekRows.length > 0 && (
               <p className={styles.usage}>
                 {weekRows.length}{" "}
@@ -133,20 +137,25 @@ export default async function TimelinePage() {
               </p>
             )}
           </div>
-          <Link href="/diario" className={styles.orbButton} aria-label="Nova entrada" />
+          <Link href="/diario" className={styles.orbButton} aria-label="Nova entrada">
+            <span>Falar</span>
+          </Link>
         </div>
 
         {rows.length === 0 ? (
-          <p style={{ color: "var(--ink-soft)" }}>
-            Ainda não há entradas. Toque no orb pra começar.
-          </p>
+          <section className={styles.empty}>
+            <p className={styles.label}>primeiro registro</p>
+            <h1 className="font-serif">Sua linha começa quando você fala.</h1>
+            <p>Toque no orb, grave alguns minutos e deixe a Aurora organizar o primeiro ponto.</p>
+            <Link href="/diario" className={styles.primaryLink}>Começar pelo diário</Link>
+          </section>
         ) : (
           <>
             {/* Hero — palavra mais recente, ainda quente */}
             {latest && (
               <section className={styles.hero}>
                 <div className={styles.heroBody}>
-                  <span className={styles.label}>{formatDate(latest.createdAt)} · você disse</span>
+                  <span className={styles.label}>{formatDate(latest.createdAt)} · você trouxe</span>
                   <div className={`font-serif ${styles.heroText}`}>
                     {renderProse(latest.transcript ?? latest.reflection ?? "")}
                   </div>
@@ -169,7 +178,7 @@ export default async function TimelinePage() {
 
             {/* Histórico — palavra do usuário, esfriando */}
             {rest.length > 0 && (
-              <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+              <section className={styles.history}>
                 <span className={styles.label}>histórico</span>
                 <div className={styles.board}>
                   {rest.map((e) => (

@@ -13,5 +13,5 @@ export default async function DiarioPage() {
     redirect("/login");
   }
 
-  return <Diario />;
+  return <Diario userEmail={user.email ?? ""} />;
 }

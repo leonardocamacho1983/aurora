@@ -1,0 +1,137 @@
+.stage {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: max(22px, env(safe-area-inset-top)) clamp(18px, 5vw, 40px) max(22px, env(safe-area-inset-bottom));
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 72% 48% at 50% 0%, rgba(169, 155, 217, 0.16), transparent 68%),
+    radial-gradient(ellipse 60% 42% at 50% 100%, rgba(244, 182, 160, 0.1), transparent 72%),
+    linear-gradient(180deg, #100c1d 0%, #080612 58%, #05040a 100%);
+}
+
+.card {
+  width: min(100%, 520px);
+  position: relative;
+  overflow: hidden;
+  border-radius: 30px;
+  padding: clamp(24px, 6vw, 42px);
+  text-align: center;
+  background: rgba(17, 14, 31, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 28px 90px -52px rgba(0, 0, 0, 0.9);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -30% 12% auto;
+  height: 58%;
+  background: radial-gradient(ellipse at center top, rgba(244, 182, 160, 0.18), transparent 72%);
+  pointer-events: none;
+}
+
+.brand,
+.kicker,
+.card h1,
+.email,
+.actions,
+.card form {
+  position: relative;
+  z-index: 1;
+}
+
+.brand {
+  width: fit-content;
+  margin: 0 auto 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.brandOrb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--aurora);
+  box-shadow: 0 0 24px rgba(201, 162, 212, 0.46);
+}
+
+.kicker {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2.25rem, 11vw, 4.4rem);
+  font-weight: 450;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.email {
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.primary,
+.secondary,
+.signOut {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 20px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.primary {
+  color: #1b1830;
+  background: var(--accent);
+}
+
+.secondary,
+.signOut {
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card form {
+  margin-top: 14px;
+}
+
+.signOut {
+  width: 100%;
+  cursor: pointer;
+}
+
+@media (min-width: 560px) {
+  .actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
