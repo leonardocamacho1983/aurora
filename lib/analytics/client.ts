@@ -1,6 +1,9 @@
 "use client";
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;
+type TrackOptions = {
+  distinctId?: string;
+};
 
 const CLIENT_ID_KEY = "aurora_client_id";
 const REF_KEY = "aurora_ref";
@@ -28,6 +31,11 @@ function clientId() {
   } catch {
     return "anonymous";
   }
+}
+
+export function getAuroraClientId() {
+  if (typeof window === "undefined") return "anonymous";
+  return clientId();
 }
 
 function readStoredRef(): string {
@@ -82,14 +90,14 @@ export function getAuroraAttribution() {
   };
 }
 
-export function trackAurora(eventName: string, properties: EventProperties = {}) {
+export function trackAurora(eventName: string, properties: EventProperties = {}, options: TrackOptions = {}) {
   if (typeof window === "undefined") return;
   const isMobile =
     typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 760px)").matches : window.innerWidth <= 760;
 
   const payload = {
     eventName,
-    distinctId: clientId(),
+    distinctId: options.distinctId || clientId(),
     properties: {
       ...properties,
       path: window.location.pathname,

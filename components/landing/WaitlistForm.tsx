@@ -2,7 +2,7 @@
 
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 import styles from "./Landing.module.css";
-import { getAuroraAttribution, trackAurora } from "@/lib/analytics/client";
+import { getAuroraAttribution, getAuroraClientId, trackAurora } from "@/lib/analytics/client";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const REF = /^[A-Za-z0-9]{6,16}$/;
@@ -87,7 +87,8 @@ export function WaitlistForm() {
     }
     setInvalid(false);
     setSubmitting(true);
-    trackAurora("waitlist_submit_attempt", { source: "landing", has_referral: Boolean(referralCode) });
+    const submitDistinctId = getAuroraClientId();
+    trackAurora("waitlist_submit_attempt", { source: "landing", has_referral: Boolean(referralCode) }, { distinctId: submitDistinctId });
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
@@ -101,7 +102,7 @@ export function WaitlistForm() {
       });
       if (!res.ok) {
         setInvalid(true);
-        trackAurora("waitlist_submit_error", { source: "landing", mode: String(res.status) });
+        trackAurora("waitlist_submit_error", { source: "landing", mode: String(res.status) }, { distinctId: submitDistinctId });
         return;
       }
       const data = (await res.json()) as {
@@ -116,7 +117,7 @@ export function WaitlistForm() {
           mode: "created",
           has_referral: Boolean(referralCode),
           referral_code: data.referralCode,
-        });
+        }, { distinctId: submitDistinctId });
         setDone({
           mode: "created",
           email: val,
@@ -124,12 +125,16 @@ export function WaitlistForm() {
           statusToken: data.statusToken,
         });
       } else {
-        trackAurora("waitlist_submit_success", { source: "landing", mode: "email_sent", has_referral: Boolean(referralCode) });
+        trackAurora(
+          "waitlist_submit_success",
+          { source: "landing", mode: "email_sent", has_referral: Boolean(referralCode) },
+          { distinctId: submitDistinctId },
+        );
         setDone({ mode: "email_sent", email: val });
       }
     } catch {
       setInvalid(true);
-      trackAurora("waitlist_submit_error", { source: "landing", mode: "network" });
+      trackAurora("waitlist_submit_error", { source: "landing", mode: "network" }, { distinctId: submitDistinctId });
     } finally {
       setSubmitting(false);
     }
