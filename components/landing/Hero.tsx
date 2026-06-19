@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { HeroInviteNextStep } from "./HeroInviteNextStep";
 import { WaitlistForm } from "./WaitlistForm";
 import { drawHero, makeDawnField, HSET, smooth } from "@/lib/landing/dawn";
+import { trackAurora } from "@/lib/analytics/client";
 import styles from "./Landing.module.css";
 
 // Tempo "base" do design (9.9s). S desacelera tudo p/ respirar.
@@ -223,6 +224,7 @@ export function Hero() {
           heroT = HEND;
           playing = false;
           paint();
+          trackAurora("teaser_completed", { source: "hero" });
           completeIntro();
           return;
         }
@@ -265,6 +267,7 @@ export function Hero() {
     startFnRef.current = (withSound: boolean) => {
       if (started) return;
       started = true;
+      trackAurora("teaser_started", { source: "hero", sound_on: withSound && soundOnRef.current });
       clearTimeout(fallbackTimer);
       // dissolve do veil; o amanhecer surge por baixo
       setVeilFading(true);
@@ -273,6 +276,7 @@ export function Hero() {
     };
 
     skipFnRef.current = () => {
+      trackAurora("teaser_skipped", { source: "hero" });
       heroT = HEND;
       playing = false;
       paint();
@@ -282,6 +286,7 @@ export function Hero() {
 
     replayFnRef.current = () => {
       if (raf) cancelAnimationFrame(raf);
+      trackAurora("teaser_replayed", { source: "hero" });
       begin(true);
     };
 
@@ -294,6 +299,7 @@ export function Hero() {
       } catch {
         /* ignore */
       }
+      trackAurora("teaser_sound_toggled", { source: "hero", sound_on: next });
       if (!audio) return;
       if (next && playing) {
         audio.muted = false;
@@ -309,6 +315,11 @@ export function Hero() {
     let seen = false;
     try {
       const url = new URL(window.location.href);
+      trackAurora("landing_viewed", {
+        source: "hero",
+        has_referral: Boolean(url.searchParams.get("ref")),
+        mode: url.searchParams.get("sala") === "convite" ? "invite_return" : "default",
+      });
       if (url.searchParams.get("ref")) {
         sessionStorage.setItem("aurora_hero_seen", "1");
         setReferralArrival(true);
@@ -369,6 +380,7 @@ export function Hero() {
       fallbackTimer = window.setTimeout(() => {
         if (!started) {
           started = true;
+          trackAurora("teaser_auto_started", { source: "hero" });
           setVeilFading(true);
           veilTimer = window.setTimeout(() => setShowVeil(false), 1150);
           begin(false);

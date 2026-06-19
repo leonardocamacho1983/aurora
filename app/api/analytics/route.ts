@@ -4,6 +4,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ALLOWED_EVENTS = new Set([
+  "landing_viewed",
+  "teaser_started",
+  "teaser_auto_started",
+  "teaser_skipped",
+  "teaser_replayed",
+  "teaser_completed",
+  "teaser_sound_toggled",
   "launch_page_viewed",
   "waitlist_submit_attempt",
   "waitlist_submit_success",
@@ -14,6 +21,8 @@ const ALLOWED_EVENTS = new Set([
   "arrival_ritual_step_completed",
   "arrival_ritual_completed",
   "launch_cta_clicked",
+  "referral_room_viewed",
+  "referral_home_return_clicked",
 ]);
 
 const ALLOWED_PROPERTY_KEYS = new Set([
@@ -21,15 +30,23 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   "category",
   "source",
   "has_referral",
+  "referral_code",
   "mode",
   "step",
   "field",
   "confirmed",
   "confirmed_count",
   "path",
+  "search",
   "referrer",
   "viewport",
   "label",
+  "sound_on",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
 ]);
 
 type AnalyticsBody = {

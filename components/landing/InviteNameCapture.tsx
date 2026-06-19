@@ -6,6 +6,7 @@ import styles from "./Landing.module.css";
 type InviteNameCaptureProps = {
   confirmedCount: number;
   confirmed: boolean;
+  referralCode: string;
   statusToken: string;
 };
 
@@ -31,7 +32,7 @@ async function saveProfile(statusToken: string, name: string) {
   }
 }
 
-export function InviteNameCapture({ confirmedCount, confirmed, statusToken }: InviteNameCaptureProps) {
+export function InviteNameCapture({ confirmedCount, confirmed, referralCode, statusToken }: InviteNameCaptureProps) {
   const [name, setName] = useState("");
   const [savedName, setSavedName] = useState("");
 
@@ -60,6 +61,7 @@ export function InviteNameCapture({ confirmedCount, confirmed, statusToken }: In
           name: nextName,
           confirmedCount,
           confirmed,
+          referralCode,
           statusToken,
           savedAt: Date.now(),
         }),

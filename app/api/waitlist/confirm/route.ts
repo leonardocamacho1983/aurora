@@ -6,6 +6,7 @@ import { sendFriendJoinedEmail, sendMilestoneEmail } from "@/lib/email/waitlist"
 import { siteUrl, statusUrl } from "@/lib/referral/urls";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { currentMilestone } from "@/lib/referral/milestones";
+import { analyticsEmailId, captureAuroraServer } from "@/lib/analytics/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,12 @@ export async function GET(request: Request) {
       source: row.referredByCode ? "referral" : "email",
       metadata: row.referredByCode ? { referredByCode: row.referredByCode } : undefined,
     });
+    await captureAuroraServer("waitlist_signup_confirmed", analyticsEmailId(row.email), {
+      source: row.referredByCode ? "referral" : "email",
+      has_referral: Boolean(row.referredByCode),
+      referral_code: row.referralCode,
+      referred_by_code: row.referredByCode ?? null,
+    });
   }
 
   if (!wasAlreadyConfirmed && row.referredByCode) {
@@ -56,6 +63,10 @@ export async function GET(request: Request) {
     const referrer = referrerRows[0];
     if (referrer) {
       const confirmedCount = await countConfirmedReferrals(db, referrer.referralCode);
+      await captureAuroraServer("referral_confirmed", `ref_${referrer.referralCode}`, {
+        referral_code: referrer.referralCode,
+        confirmed_count: confirmedCount,
+      });
       await sendFriendJoinedEmail({ row: referrer, confirmedCount, baseUrl });
 
       const milestone = currentMilestone(confirmedCount);
@@ -79,6 +90,11 @@ export async function GET(request: Request) {
           eventName: "milestone_reached",
           source: "confirm_route",
           metadata: { milestone: milestone.count, confirmedCount },
+        });
+        await captureAuroraServer("referral_milestone_reached", `ref_${referrer.referralCode}`, {
+          referral_code: referrer.referralCode,
+          milestone: milestone.count,
+          confirmed_count: confirmedCount,
         });
       }
     }

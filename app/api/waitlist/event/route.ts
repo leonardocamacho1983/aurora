@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents } from "@/lib/db/schema";
+import { captureAuroraServer } from "@/lib/analytics/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
     waitlistId: row.id,
     eventName: parsed.data.eventName,
     source: parsed.data.source ?? "share_invite",
+  });
+  await captureAuroraServer(parsed.data.eventName, `ref_${parsed.data.referralCode}`, {
+    source: parsed.data.source ?? "share_invite",
+    referral_code: parsed.data.referralCode,
   });
 
   return NextResponse.json({ status: "ok" });

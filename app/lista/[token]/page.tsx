@@ -9,6 +9,7 @@ import { referralUrl } from "@/lib/referral/urls";
 import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
 import { ReferralHomeLink } from "@/components/landing/ReferralHomeLink";
 import { ShareInvite } from "@/components/landing/ShareInvite";
+import { TrackPageView } from "@/components/analytics/TrackPageView";
 import styles from "@/components/landing/Landing.module.css";
 
 export const runtime = "nodejs";
@@ -82,6 +83,16 @@ export default async function WaitlistStatusPage({ params }: Props) {
 
   return (
     <main className={styles.referralPage}>
+      <TrackPageView
+        eventName="referral_room_viewed"
+        page="waitlist_room"
+        category="referral"
+        properties={{
+          confirmed,
+          confirmed_count: confirmedCount,
+          referral_code: row.referralCode,
+        }}
+      />
       <section className={styles.referralShell}>
         <div className={styles.referralIntro}>
           <div className={styles.referralOrb} aria-hidden="true" />
@@ -94,6 +105,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
           <InviteNameCapture
             confirmed={confirmed}
             confirmedCount={confirmedCount}
+            referralCode={row.referralCode}
             statusToken={row.statusToken}
           />
 
@@ -152,6 +164,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
             <ReferralHomeLink
               confirmed={confirmed}
               confirmedCount={confirmedCount}
+              referralCode={row.referralCode}
               statusToken={row.statusToken}
             />
           </div>

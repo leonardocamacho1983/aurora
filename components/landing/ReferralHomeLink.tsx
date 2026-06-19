@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import styles from "./Landing.module.css";
+import { trackAurora } from "@/lib/analytics/client";
 
 type ReferralHomeLinkProps = {
   confirmed: boolean;
   confirmedCount: number;
+  referralCode: string;
   statusToken: string;
 };
 
 const NAME_KEY = "aurora_guest_name";
 const CONTEXT_KEY = "aurora_invite_context";
 
-export function ReferralHomeLink({ confirmed, confirmedCount, statusToken }: ReferralHomeLinkProps) {
+export function ReferralHomeLink({ confirmed, confirmedCount, referralCode, statusToken }: ReferralHomeLinkProps) {
   function prepareHome() {
     try {
       const name = localStorage.getItem(NAME_KEY)?.trim() ?? "";
@@ -23,6 +25,7 @@ export function ReferralHomeLink({ confirmed, confirmedCount, statusToken }: Ref
           name,
           confirmed,
           confirmedCount,
+          referralCode,
           statusToken,
           savedAt: Date.now(),
         }),
@@ -30,6 +33,12 @@ export function ReferralHomeLink({ confirmed, confirmedCount, statusToken }: Ref
     } catch {
       /* ignore */
     }
+    trackAurora("referral_home_return_clicked", {
+      source: "referral_room",
+      confirmed,
+      confirmed_count: confirmedCount,
+      referral_code: referralCode,
+    });
   }
 
   return (

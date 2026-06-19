@@ -8,6 +8,7 @@ import { trackAurora } from "@/lib/analytics/client";
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const REF = /^[A-Za-z0-9]{6,16}$/;
 const REF_KEY = "aurora_ref";
+const INVITE_CONTEXT_KEY = "aurora_invite_context";
 const REF_TTL = 30 * 24 * 60 * 60 * 1000;
 
 type DoneState =
@@ -32,6 +33,23 @@ function readStoredRef(): string {
 function storeRef(code: string) {
   try {
     localStorage.setItem(REF_KEY, JSON.stringify({ code, expires: Date.now() + REF_TTL }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function storeInviteContext(referralCode: string, statusToken: string) {
+  try {
+    localStorage.setItem(
+      INVITE_CONTEXT_KEY,
+      JSON.stringify({
+        referralCode,
+        statusToken,
+        confirmed: false,
+        confirmedCount: 0,
+        savedAt: Date.now(),
+      }),
+    );
   } catch {
     /* ignore */
   }
@@ -89,7 +107,13 @@ export function WaitlistForm() {
         statusToken?: string;
       };
       if (data.mode === "created" && data.referralCode && data.statusToken) {
-        trackAurora("waitlist_submit_success", { source: "landing", mode: "created", has_referral: Boolean(referralCode) });
+        storeInviteContext(data.referralCode, data.statusToken);
+        trackAurora("waitlist_submit_success", {
+          source: "landing",
+          mode: "created",
+          has_referral: Boolean(referralCode),
+          referral_code: data.referralCode,
+        });
         setDone({
           mode: "created",
           referralCode: data.referralCode,

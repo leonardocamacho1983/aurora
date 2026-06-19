@@ -7,6 +7,7 @@ import {
   profileValues,
   waitlistProfilePatchSchema,
 } from "@/lib/referral/profile";
+import { captureAuroraServer } from "@/lib/analytics/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const rows = await db
-    .select({ id: waitlist.id })
+    .select({ id: waitlist.id, referralCode: waitlist.referralCode })
     .from(waitlist)
     .where(eq(waitlist.statusToken, parsed.data.statusToken))
     .limit(1);
@@ -62,6 +63,12 @@ export async function POST(request: Request) {
     eventName: "profile_updated",
     source: parsed.data.source ?? "unknown",
     metadata: { fields },
+  });
+  await captureAuroraServer("waitlist_profile_updated", `ref_${row.referralCode}`, {
+    source: parsed.data.source ?? "unknown",
+    referral_code: row.referralCode,
+    fields: fields.join(","),
+    field_count: fields.length,
   });
 
   return NextResponse.json({ status: "ok", fields });

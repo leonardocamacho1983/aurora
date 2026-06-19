@@ -7,6 +7,7 @@ import { createUniqueReferralCode } from "@/lib/referral/code";
 import { isRateLimited } from "@/lib/referral/rate-limit";
 import { siteUrl } from "@/lib/referral/urls";
 import { sendConfirmEmail, sendStatusEmail } from "@/lib/email/waitlist";
+import { analyticsEmailId, captureAuroraServer } from "@/lib/analytics/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,11 @@ async function emailExisting(row: {
   await db.insert(waitlistEvents).values({
     waitlistId: row.id,
     eventName: row.confirmedAt ? "status_email_sent" : "confirm_email_resent",
+    source: "waitlist_form",
+  });
+  await captureAuroraServer("waitlist_existing_email_requested", analyticsEmailId(row.email), {
+    referral_code: row.referralCode,
+    confirmed: Boolean(row.confirmedAt),
     source: "waitlist_form",
   });
 }
@@ -154,6 +160,12 @@ export async function POST(request: Request) {
       eventName: "signup_created",
       source: referrer ? "referral" : "landing",
       metadata: referrer ? { referredByCode: referrer.referralCode } : undefined,
+    });
+    await captureAuroraServer("waitlist_signup_created", analyticsEmailId(row.email), {
+      source: referrer ? "referral" : "landing",
+      has_referral: Boolean(referrer),
+      referral_code: row.referralCode,
+      referred_by_code: referrer?.referralCode ?? null,
     });
 
     return NextResponse.json({
