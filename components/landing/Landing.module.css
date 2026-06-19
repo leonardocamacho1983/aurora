@@ -246,6 +246,29 @@
   background: rgba(236, 182, 210, 0.12);
 }
 
+.waitlistResendButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a99bd9;
+  font: 700 12px var(--font-sans);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.waitlistResendButton:hover {
+  color: #ecb6d2;
+}
+
+.waitlistResendButton:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
 .shareInvite {
   width: 100%;
   display: grid;
@@ -1252,8 +1275,8 @@
 }
 
 .referralShellReady {
-  grid-template-columns: minmax(320px, 0.72fr) minmax(700px, 1.28fr);
-  gap: clamp(30px, 4.4vw, 70px);
+  grid-template-columns: minmax(280px, 0.62fr) minmax(680px, 1.38fr);
+  gap: clamp(26px, 4vw, 58px);
 }
 
 .referralIntro,
@@ -1277,7 +1300,7 @@
 }
 
 .referralShellReady .referralActionPanel {
-  gap: 12px;
+  gap: 14px;
 }
 
 .referralShell::before {
@@ -1337,9 +1360,36 @@
   text-wrap: pretty;
 }
 
+.referralShellReady .referralIntro h1 {
+  max-width: 580px;
+  font-size: clamp(2.8rem, 4.7vw, 62px);
+}
+
+.referralShellReady .referralIntro > p {
+  max-width: 500px;
+  color: #d6d0e4;
+}
+
+.referralShellReady .referralSharePanel {
+  order: 1;
+}
+
+.referralShellReady .referralProgressPanel {
+  order: 2;
+}
+
+.referralShellReady .inviteNameCard {
+  order: 3;
+}
+
+.referralShellReady .referralSecondary {
+  order: 4;
+}
+
 .inviteNameCard,
 .referralProgressCard,
-.referralCelebration {
+.referralCelebration,
+.referralProgressPanel {
   width: 100%;
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1421,6 +1471,60 @@
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
   gap: 14px;
+}
+
+.referralProgressPanel {
+  display: grid;
+  grid-template-columns: minmax(118px, 0.34fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  background:
+    radial-gradient(ellipse 75% 120% at 0% 0%, rgba(127, 208, 196, 0.08), transparent 66%),
+    rgba(255, 255, 255, 0.024);
+  border-color: rgba(127, 208, 196, 0.12);
+}
+
+.referralProgressCount {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: 8px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.referralProgressCount strong {
+  color: #f8f6fc;
+  font: 450 clamp(38px, 4vw, 54px)/0.95 var(--font-serif);
+}
+
+.referralProgressCount span {
+  color: #a9a2bb;
+  font: 700 11px/1.2 var(--font-sans);
+  text-align: center;
+}
+
+.referralProgressCopy span {
+  display: block;
+  color: #a99bd9;
+  font: 800 10px var(--font-sans);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.referralProgressCopy p {
+  margin: 5px 0 0;
+  color: #d8d3e6;
+  font: 400 13px/1.45 var(--font-sans);
+}
+
+.referralProgressCopy em {
+  display: block;
+  margin-top: 8px;
+  color: #948fa8;
+  font: 600 11px/1.35 var(--font-sans);
+  font-style: normal;
 }
 
 .referralProgressTop {
@@ -1672,7 +1776,7 @@
 
   .referralShellReady {
     gap: 36px;
-    grid-template-columns: minmax(290px, 0.7fr) minmax(640px, 1.3fr);
+    grid-template-columns: minmax(260px, 0.62fr) minmax(640px, 1.38fr);
   }
 
   .referralIntro,
@@ -1690,7 +1794,7 @@
   }
 
   .referralShellReady .referralIntro h1 {
-    font-size: clamp(2.2rem, 3.8vw, 46px);
+    font-size: clamp(2.1rem, 3.55vw, 44px);
   }
 
   .referralIntro > p {
@@ -1700,7 +1804,8 @@
 
   .inviteNameCard,
   .referralProgressCard,
-  .referralCelebration {
+  .referralCelebration,
+  .referralProgressPanel {
     padding: 13px;
   }
 
@@ -1754,7 +1859,8 @@
   }
 
   .referralDashboard,
-  .inviteNameCard {
+  .inviteNameCard,
+  .referralProgressPanel {
     grid-template-columns: 1fr;
   }
 
@@ -1816,7 +1922,7 @@
 
   .referralShellReady {
     gap: 14px;
-    padding: 24px 22px;
+    padding: 26px 20px 28px;
   }
 
   .referralIntro,
@@ -1834,8 +1940,8 @@
   }
 
   .referralShellReady .referralOrb {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
   }
 
   .referralShellReady .referralKicker {
@@ -1844,8 +1950,8 @@
   }
 
   .referralShellReady .referralIntro h1 {
-    font-size: clamp(2rem, 10.4vw, 2.65rem);
-    line-height: 1.04;
+    font-size: clamp(2.05rem, 10vw, 2.85rem);
+    line-height: 1.02;
   }
 
   .referralIntro > p {
@@ -1854,12 +1960,12 @@
   }
 
   .referralShellReady .referralIntro > p {
-    font-size: 14px;
-    line-height: 1.42;
+    font-size: 15px;
+    line-height: 1.48;
   }
 
   .referralActionHeader strong {
-    font-size: clamp(25px, 8vw, 33px);
+    font-size: clamp(24px, 7.4vw, 31px);
   }
 
   .referralActionHeader p {
@@ -1883,6 +1989,7 @@
   .referralProgressCard,
   .referralCelebration,
   .referralSharePanel,
+  .referralProgressPanel,
   .referralConfirmPanel {
     border-radius: 24px;
     padding: 20px;
@@ -1890,8 +1997,21 @@
 
   .referralShellReady .referralProgressCard,
   .referralShellReady .referralCelebration,
-  .referralShellReady .referralSharePanel {
+  .referralShellReady .referralSharePanel,
+  .referralShellReady .referralProgressPanel {
     padding: 16px;
+  }
+
+  .referralProgressCount {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: baseline;
+    padding: 0;
+    background: transparent;
+  }
+
+  .referralProgressCount strong {
+    font-size: 44px;
   }
 
   .referralShellReady .referralMilestone {

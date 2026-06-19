@@ -13,8 +13,8 @@ const GMAIL_SEARCH_URL = "https://mail.google.com/mail/u/0/#search/Aurora";
 const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 
 type DoneState =
-  | { mode: "created"; referralCode: string; statusToken: string }
-  | { mode: "email_sent" };
+  | { mode: "created"; email: string; referralCode: string; statusToken: string }
+  | { mode: "email_sent"; email: string };
 
 function readStoredRef(): string {
   try {
@@ -62,6 +62,7 @@ export function WaitlistForm() {
   const [referralCode, setReferralCode] = useState("");
   const [invalid, setInvalid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
   const [done, setDone] = useState<DoneState | null>(null);
 
   useEffect(() => {
@@ -118,12 +119,13 @@ export function WaitlistForm() {
         });
         setDone({
           mode: "created",
+          email: val,
           referralCode: data.referralCode,
           statusToken: data.statusToken,
         });
       } else {
         trackAurora("waitlist_submit_success", { source: "landing", mode: "email_sent", has_referral: Boolean(referralCode) });
-        setDone({ mode: "email_sent" });
+        setDone({ mode: "email_sent", email: val });
       }
     } catch {
       setInvalid(true);
@@ -147,6 +149,28 @@ export function WaitlistForm() {
         provider,
         mode: doneState.mode,
       });
+    }
+
+    async function resendEmail() {
+      setResending(true);
+      trackAurora("waitlist_resend_clicked", {
+        source: "waitlist_success",
+        mode: doneState.mode,
+      });
+      try {
+        await fetch("/api/waitlist", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            email: doneState.email,
+            ref: referralCode || undefined,
+            hp: "",
+            attribution: getAuroraAttribution(),
+          }),
+        });
+      } finally {
+        setResending(false);
+      }
     }
 
     return (
@@ -181,6 +205,14 @@ export function WaitlistForm() {
             Já confirmei, abrir minha sala
           </a>
         ) : null}
+        <button
+          type="button"
+          className={styles.waitlistResendButton}
+          onClick={resendEmail}
+          disabled={resending}
+        >
+          {resending ? "Reenviando..." : "Reenviar email"}
+        </button>
       </div>
     );
   }

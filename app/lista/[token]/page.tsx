@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistProfile } from "@/lib/db/schema";
-import { MILESTONES, progressFor } from "@/lib/referral/milestones";
+import { progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
 import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
@@ -24,12 +24,13 @@ const GMAIL_SEARCH_URL = "https://mail.google.com/mail/u/0/#search/Aurora";
 const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 
 function pluralPessoa(count: number): string {
-  return count === 1 ? "pessoa entrou" : "pessoas entraram";
+  return count === 1 ? "pessoa confirmada" : "pessoas confirmadas";
 }
 
-function nextGestureText(remaining: number): string {
-  if (remaining <= 1) return "Falta só uma confirmação para o próximo marco.";
-  return `Faltam ${remaining} confirmações para o próximo marco.`;
+function nextGestureText(remaining: number, nextTitle?: string): string {
+  const next = nextTitle ? ` para ${nextTitle.toLowerCase()}` : "";
+  if (remaining <= 1) return `Falta só uma confirmação${next}.`;
+  return `Faltam ${remaining} confirmações${next}.`;
 }
 
 function firstName(name?: string | null): string {
@@ -107,12 +108,12 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const hasReferrals = confirmedCount > 0;
   const title = !confirmed
     ? "Confirme seu email para ativar sua sala."
-    : "Convide pessoas queridas para conhecer a Aurora.";
+    : "Convidar pessoas queridas";
   const body = !confirmed
     ? "O link de confirmação está na sua caixa de entrada. Ele guarda seu lugar e ativa seus convites."
     : hasReferrals
-      ? `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. ${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação.`
-      : `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. O próximo gesto é compartilhar seu convite.`;
+      ? `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. ${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação.`
+      : `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. O próximo gesto é mandar este convite para alguém que você quer por perto.`;
 
   return (
     <main className={styles.referralPage}>
@@ -128,8 +129,8 @@ export default async function WaitlistStatusPage({ params }: Props) {
       />
       <section className={`${styles.referralShell} ${confirmed ? styles.referralShellReady : ""}`}>
         <div className={styles.referralIntro}>
-          <div className={styles.referralOrb} aria-hidden="true" />
-          <p className={styles.referralKicker}>Sua sala Aurora</p>
+          {!confirmed ? <div className={styles.referralOrb} aria-hidden="true" /> : null}
+          <p className={styles.referralKicker}>{confirmed ? "Sua sala de convite" : "Sua sala Aurora"}</p>
           <h1 className="font-serif">{title}</h1>
           <p>{body}</p>
         </div>
@@ -142,9 +143,9 @@ export default async function WaitlistStatusPage({ params }: Props) {
               <div className={styles.referralSharePanel}>
                 <div className={styles.referralActionHeader}>
                   <span>Gesto principal</span>
-                  <strong>Envie seu convite agora</strong>
+                  <strong>Convide uma pessoa agora</strong>
                   <p>
-                    Escolha uma pessoa querida. Quando ela confirma o email, seu acesso fica mais perto.
+                    Escolha alguém querido e envie pelo WhatsApp. Quando a pessoa confirma o email, a indicação entra no seu contador.
                   </p>
                 </div>
                 <ShareInvite
@@ -153,50 +154,27 @@ export default async function WaitlistStatusPage({ params }: Props) {
                 />
               </div>
 
-              <div className={styles.referralDashboard}>
-                <div className={styles.referralProgressCard}>
-                  <div className={styles.referralProgressTop}>
-                    <span>{confirmedCount} confirmados</span>
-                    <span>
-                      {progress.next
-                        ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
-                        : "todos os marcos desbloqueados"}
-                    </span>
-                  </div>
+              <div className={styles.referralProgressPanel}>
+                <div className={styles.referralProgressCount}>
+                  <strong>{confirmedCount}</strong>
+                  <span>{pluralPessoa(confirmedCount)}</span>
+                </div>
+                <div className={styles.referralProgressCopy}>
+                  <span>{progress.current ? "Marco atual" : "Primeiro marco"}</span>
+                  <p>
+                    {progress.current
+                      ? progress.current.description
+                      : "Com 5 confirmações, seu acesso antecipado fica mais perto."}
+                  </p>
                   <div className={styles.referralTrack} aria-hidden="true">
                     <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
                   </div>
-                  <p className={styles.referralProgressHint}>
+                  <em>
                     {progress.next
-                      ? nextGestureText(progress.remaining)
+                      ? nextGestureText(progress.remaining, progress.next.shortTitle)
                       : "Todos os marcos desta fase foram liberados."}
-                  </p>
-                  <div className={styles.referralMilestones}>
-                    {MILESTONES.map((m) => (
-                      <div
-                        key={m.count}
-                        className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
-                      >
-                        <span>{m.count}</span>
-                        <strong>{m.shortTitle}</strong>
-                      </div>
-                    ))}
-                  </div>
+                  </em>
                 </div>
-
-                {progress.current ? (
-                  <div className={styles.referralCelebration}>
-                    <span>Marco desbloqueado</span>
-                    <strong>{progress.current.title}</strong>
-                    <p>{progress.current.description}</p>
-                  </div>
-                ) : (
-                  <div className={styles.referralCelebration}>
-                    <span>Primeiro marco</span>
-                    <strong>5 confirmações aproximam seu acesso</strong>
-                    <p>Um jeito leve de trazer gente boa para perto e ajudar a Aurora amanhecer.</p>
-                  </div>
-                )}
               </div>
 
               <InviteNameCapture

@@ -43,7 +43,7 @@ export function ReferralHomeLink({ confirmed, confirmedCount, referralCode, stat
 
   return (
     <Link href="/?sala=convite" onClick={prepareHome} className={styles.referralSecondary}>
-      {confirmed ? "Depois, preparar minha Aurora" : "Voltar para a página da Aurora"}
+      {confirmed ? "Preparar minha Aurora" : "Voltar para a página da Aurora"}
     </Link>
   );
 }
