@@ -24,6 +24,68 @@ const SEARCH_HOSTS = [
   "chatgpt.",
 ];
 
+const UTM_KEYS = new Set(["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]);
+
+const SOURCE_ALIASES: Record<string, string> = {
+  fb: "facebook",
+  face: "facebook",
+  facebook: "facebook",
+  ig: "instagram",
+  insta: "instagram",
+  instagram: "instagram",
+  linkedin: "linkedin",
+  ln: "linkedin",
+  newsletter: "newsletter",
+  email: "newsletter",
+  threads: "threads",
+  tiktok: "tiktok",
+  twitter: "x",
+  x: "x",
+  wa: "whatsapp",
+  whats: "whatsapp",
+  whatsapp: "whatsapp",
+  youtube: "youtube",
+  yt: "youtube",
+};
+
+const MEDIUM_ALIASES: Record<string, string> = {
+  bio: "bio",
+  "bio-link": "bio",
+  bio_link: "bio",
+  dm: "dm",
+  direct_message: "dm",
+  direct: "dm",
+  email: "email",
+  lista: "email",
+  post: "post",
+  reels: "reel",
+  reel: "reel",
+  story: "story",
+  stories: "story",
+  status: "status",
+  whatsapp: "dm",
+};
+
+function canonicalToken(value: string) {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " e ")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80);
+}
+
+export function normalizeUtmValue(key: string, value: string) {
+  const token = canonicalToken(value);
+  if (!token) return "";
+  if (key === "utm_source") return SOURCE_ALIASES[token] || token;
+  if (key === "utm_medium") return MEDIUM_ALIASES[token] || token;
+  return token;
+}
+
 export function safeHost(value: string | null | undefined) {
   if (!value) return "";
   try {
@@ -67,7 +129,12 @@ export function sanitizeAnalyticsProperties(
       typeof value === "boolean" ||
       value === null
     ) {
-      output[key] = typeof value === "string" ? value.slice(0, 220) : value;
+      output[key] =
+        typeof value === "string" && UTM_KEYS.has(key)
+          ? normalizeUtmValue(key, value)
+          : typeof value === "string"
+            ? value.slice(0, 220)
+            : value;
     }
   }
 

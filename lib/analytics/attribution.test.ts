@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyTrafficSource, sanitizeAnalyticsProperties } from "./attribution";
+import { classifyTrafficSource, normalizeUtmValue, sanitizeAnalyticsProperties } from "./attribution";
 
 const allowed = new Set(["utm_source", "utm_medium", "referral_code", "referrer", "path"]);
 
@@ -36,6 +36,28 @@ describe("analytics attribution", () => {
       path: "/manifesto",
       referrer: "https://www.google.com/search?q=aurora",
       source_type: "search",
+    });
+  });
+
+  it("normalizes UTM values before saving analytics", () => {
+    expect(normalizeUtmValue("utm_source", "IG")).toBe("instagram");
+    expect(normalizeUtmValue("utm_medium", "Stories")).toBe("story");
+    expect(normalizeUtmValue("utm_campaign", "Lançamento Aurora 2026")).toBe("lancamento_aurora_2026");
+
+    expect(
+      sanitizeAnalyticsProperties(
+        {
+          utm_source: "WhatsApp",
+          utm_medium: "Direct Message",
+          utm_campaign: "Lista de Espera",
+        },
+        new Set(["utm_source", "utm_medium", "utm_campaign"]),
+      ),
+    ).toEqual({
+      utm_source: "whatsapp",
+      utm_medium: "dm",
+      utm_campaign: "lista_de_espera",
+      source_type: "campaign",
     });
   });
 });
