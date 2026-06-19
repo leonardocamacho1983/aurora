@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import styles from "./Landing.module.css";
 import { getAuroraAttribution, trackAurora } from "@/lib/analytics/client";
 
@@ -143,12 +143,24 @@ export function WaitlistForm() {
       ? "Enviamos o link de confirmação. Ele ativa sua sala de convite e guarda seu lugar na lista."
       : "Reenviamos seu link da Aurora. Ele leva você para confirmar sua presença ou abrir sua sala de convite.";
 
-    function trackInbox(provider: string) {
+    function openInbox(provider: string, href: string, event: MouseEvent<HTMLAnchorElement>) {
+      event.preventDefault();
+      const inboxWindow = window.open("about:blank", "_blank");
+      if (inboxWindow) {
+        inboxWindow.opener = null;
+      }
       trackAurora("waitlist_inbox_clicked", {
         source: "waitlist_success",
         provider,
         mode: doneState.mode,
       });
+      window.setTimeout(() => {
+        if (inboxWindow) {
+          inboxWindow.location.replace(href);
+          return;
+        }
+        window.location.href = href;
+      }, 140);
     }
 
     async function resendEmail() {
@@ -184,10 +196,10 @@ export function WaitlistForm() {
           Se não aparecer, procure por Aurora ou veja a aba Promoções ou Spam.
         </div>
         <div className={styles.waitlistInboxActions}>
-          <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={() => trackInbox("gmail")}>
+          <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("gmail", GMAIL_SEARCH_URL, event)}>
             Abrir Gmail
           </a>
-          <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer" onClick={() => trackInbox("outlook")}>
+          <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("outlook", OUTLOOK_INBOX_URL, event)}>
             Abrir Outlook
           </a>
         </div>
