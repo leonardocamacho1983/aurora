@@ -57,6 +57,20 @@ type MilestoneRow = {
   unlocked20: number;
 };
 
+type DailyRow = {
+  day: string;
+  signups: number;
+  confirmed: number;
+  referred: number;
+};
+
+type HealthRow = {
+  stalePending: number;
+  dirtyRows: number;
+  brokenReferrals: number;
+  legacyInviteEvents: number;
+};
+
 function rows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
   if (result && typeof result === "object" && "rows" in result) {
@@ -100,6 +114,14 @@ function compactNumber(value: number) {
   return new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
+function formatDay(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
 function PrivateScreen({ configured }: { configured: boolean }) {
   return (
     <main className={styles.private}>
@@ -141,6 +163,53 @@ function MetricCard({
       <div className={styles.metricLabel}>{label}</div>
       <div className={styles.metricNote}>{note}</div>
     </article>
+  );
+}
+
+function FunnelStep({
+  label,
+  value,
+  total,
+  note,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  note: string;
+}) {
+  const pct = total ? Math.round((value / total) * 100) : 0;
+
+  return (
+    <article className={styles.funnelStep}>
+      <div>
+        <strong>{label}</strong>
+        <span>{note}</span>
+      </div>
+      <div className={styles.funnelValue}>
+        <b>{compactNumber(value)}</b>
+        <em>{pct}%</em>
+      </div>
+      <div className={styles.bar}>
+        <span style={{ width: `${Math.min(100, pct)}%` }} />
+      </div>
+    </article>
+  );
+}
+
+function SignalRow({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "neutral";
+}) {
+  return (
+    <div className={`${styles.signalRow} ${styles[tone]}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
@@ -277,6 +346,47 @@ async function getDashboardData() {
     `),
   );
 
+  const dailyRows = rows<DailyRow>(
+    await db.execute(sql`
+      with days as (
+        select generate_series(
+          date_trunc('day', now()) - interval '13 days',
+          date_trunc('day', now()),
+          interval '1 day'
+        )::date as day
+      )
+      select
+        days.day::text as day,
+        count(w.id) filter (where date_trunc('day', w.created_at) = days.day)::int as signups,
+        count(w.id) filter (where date_trunc('day', w.confirmed_at) = days.day)::int as confirmed,
+        count(w.id) filter (
+          where date_trunc('day', w.created_at) = days.day
+            and w.referred_by_code is not null
+        )::int as referred
+      from days
+      left join waitlist w
+        on date_trunc('day', w.created_at) = days.day
+        or date_trunc('day', w.confirmed_at) = days.day
+      group by days.day
+      order by days.day asc
+    `),
+  );
+
+  const [health] = rows<HealthRow>(
+    await db.execute(sql`
+      select
+        (select count(*)::int from waitlist where confirmed_at is null and created_at < now() - interval '24 hours') as "stalePending",
+        (select count(*)::int from waitlist where lower(email) like '%test%' or lower(email) like '%leonardocamacho%') as "dirtyRows",
+        (
+          select count(*)::int
+          from waitlist child
+          left join waitlist parent on parent.referral_code = child.referred_by_code
+          where child.referred_by_code is not null and parent.id is null
+        ) as "brokenReferrals",
+        (select count(*)::int from waitlist_events where event_name = 'invite_link_copied') as "legacyInviteEvents"
+    `),
+  );
+
   return {
     summary: {
       total: asNumber(summary?.total),
@@ -307,6 +417,13 @@ async function getDashboardData() {
     recentEvents,
     rhythmRows,
     presenceRows,
+    dailyRows,
+    health: {
+      stalePending: asNumber(health?.stalePending),
+      dirtyRows: asNumber(health?.dirtyRows),
+      brokenReferrals: asNumber(health?.brokenReferrals),
+      legacyInviteEvents: asNumber(health?.legacyInviteEvents),
+    },
   };
 }
 
@@ -337,6 +454,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const targetProgress = Math.min(100, Math.round((qualified / neededQualified) * 10000) / 100);
   const projectedMrr = qualified * assumedPrice * assumedPaidConversion;
   const exportHref = `/api/waitlist/export?token=${encodeURIComponent(adminToken)}`;
+  const highestDailyValue = Math.max(
+    1,
+    ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
+  );
+  const inviteToConfirmedRate = percent(data.summary.confirmedReferred, shareEvents.unique);
+  const dataHealthGood =
+    data.health.dirtyRows === 0 &&
+    data.health.brokenReferrals === 0 &&
+    data.health.legacyInviteEvents === 0;
 
   return (
     <main className={styles.page}>
@@ -383,13 +509,32 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Norte do lançamento</h2>
-            <p>Os números que mostram se a Aurora está sendo entendida, desejada e compartilhada.</p>
+            <p>Os números que mostram se a Aurora está sendo entendida, desejada, confirmada e compartilhada.</p>
           </div>
           <div className={styles.grid}>
             <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} />
             <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${data.summary.pending} ainda precisam confirmar`} />
             <MetricCard value={compactNumber(data.summary.confirmedReferred)} label="Entradas por convite" note={`${percent(data.summary.confirmedReferred, data.summary.confirmed)} dos confirmados vieram por indicação`} />
             <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual de Chegada`} />
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Funil fundador</h2>
+            <p>Da primeira inscrição ao sinal mais forte de intenção: completar o Ritual de Chegada.</p>
+          </div>
+          <div className={styles.funnel}>
+            <FunnelStep label="Inscrição" value={data.summary.total} total={data.summary.total} note="Entrou na lista de espera" />
+            <FunnelStep label="Confirmação" value={data.summary.confirmed} total={data.summary.total} note="Double opt-in concluído" />
+            <FunnelStep label="Convite acionado" value={shareEvents.unique} total={data.summary.confirmed} note="Fez algum gesto de compartilhamento" />
+            <FunnelStep
+              label="Indicação aceita"
+              value={data.summary.confirmedReferred}
+              total={Math.max(1, shareEvents.unique)}
+              note={`${inviteToConfirmedRate} por pessoas que compartilharam`}
+            />
+            <FunnelStep label="Ritual completo" value={data.profile.complete} total={data.summary.confirmed} note="Respondeu todas as perguntas de chegada" />
           </div>
         </section>
 
@@ -402,6 +547,89 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <MetricCard value={compactNumber(shareEvents.total)} label="Gestos de compartilhamento" note={`${shareEvents.unique} pessoas acionaram algum convite`} />
             <MetricCard value={ratio(data.summary.confirmedReferred, data.summary.confirmed)} label="K-factor confirmado" note="Convites confirmados por pessoa confirmada" />
             <MetricCard value={compactNumber(data.milestones.unlocked5)} label="Acesso antecipado desbloqueado" note={`${data.milestones.unlocked10} chegaram ao marco de 10`} />
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Últimos 14 dias</h2>
+            <p>Ritmo diário para perceber se uma publicação, conversa ou ajuste de copy mudou o comportamento.</p>
+          </div>
+          <div className={styles.sparkCard}>
+            {data.dailyRows.map((row) => {
+              const signups = asNumber(row.signups);
+              const confirmed = asNumber(row.confirmed);
+              const referred = asNumber(row.referred);
+
+              return (
+                <div className={styles.dayColumn} key={row.day}>
+                  <div className={styles.dayBars}>
+                    <span className={styles.signupBar} style={{ height: `${Math.max(5, (signups / highestDailyValue) * 100)}%` }} />
+                    <span className={styles.confirmedBar} style={{ height: `${Math.max(5, (confirmed / highestDailyValue) * 100)}%` }} />
+                    <span className={styles.referredBar} style={{ height: `${Math.max(5, (referred / highestDailyValue) * 100)}%` }} />
+                  </div>
+                  <span>{formatDay(row.day)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className={styles.legend}>
+            <span><i className={styles.signupDot} /> inscrições</span>
+            <span><i className={styles.confirmedDot} /> confirmações</span>
+            <span><i className={styles.referredDot} /> convites</span>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Diagnóstico do fundador</h2>
+            <p>Leitura rápida do que merece atenção antes de acelerar tráfego, conteúdo ou PR.</p>
+          </div>
+          <div className={styles.split}>
+            <div className={styles.signalCard}>
+              <SignalRow
+                label="Confirmação de email"
+                value={`${percent(data.summary.confirmed, data.summary.total)} confirmados`}
+                tone={data.summary.total === 0 || data.summary.confirmed / data.summary.total >= 0.65 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Pendentes acima de 24h"
+                value={`${data.health.stalePending} pessoas`}
+                tone={data.health.stalePending === 0 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Compartilhamento"
+                value={`${shareEvents.unique} pessoas compartilharam`}
+                tone={shareEvents.unique >= Math.max(1, Math.floor(data.summary.confirmed * 0.25)) ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Ritual de Chegada"
+                value={`${percent(data.profile.complete, data.summary.confirmed)} completo`}
+                tone={data.summary.confirmed === 0 || data.profile.complete / data.summary.confirmed >= 0.35 ? "good" : "warn"}
+              />
+            </div>
+            <div className={styles.signalCard}>
+              <SignalRow
+                label="Linhas de teste no banco"
+                value={`${data.health.dirtyRows}`}
+                tone={data.health.dirtyRows === 0 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Referrals quebrados"
+                value={`${data.health.brokenReferrals}`}
+                tone={data.health.brokenReferrals === 0 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Evento legado de copy"
+                value={`${data.health.legacyInviteEvents}`}
+                tone={data.health.legacyInviteEvents === 0 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Saúde geral"
+                value={dataHealthGood ? "limpa" : "pedindo revisão"}
+                tone={dataHealthGood ? "good" : "warn"}
+              />
+            </div>
           </div>
         </section>
 

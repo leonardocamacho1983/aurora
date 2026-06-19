@@ -262,6 +262,175 @@
   background: linear-gradient(90deg, #7fd0c4, #c9a2d4, #ecb6d2);
 }
 
+.funnel {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.funnelStep {
+  min-height: 148px;
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 22% 0%, rgba(236, 182, 210, 0.1), transparent 38%),
+    rgba(14, 12, 26, 0.66);
+}
+
+.funnelStep strong,
+.funnelStep span {
+  display: block;
+}
+
+.funnelStep strong {
+  color: #f0ecf7;
+  font: 750 14px/1.25 Inter, sans-serif;
+}
+
+.funnelStep span {
+  margin-top: 6px;
+  color: #8c86a2;
+  font: 500 12px/1.45 Inter, sans-serif;
+}
+
+.funnelValue {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.funnelValue b {
+  color: #f8f6fc;
+  font: 800 24px/1 Inter, sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.funnelValue em {
+  color: #a99bd9;
+  font: 700 12px/1 Inter, sans-serif;
+  font-style: normal;
+}
+
+.sparkCard,
+.signalCard {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 48% 0%, rgba(236, 182, 210, 0.09), transparent 32%),
+    rgba(14, 12, 26, 0.68);
+}
+
+.sparkCard {
+  height: 260px;
+  display: grid;
+  grid-template-columns: repeat(14, minmax(32px, 1fr));
+  align-items: end;
+  gap: 10px;
+  padding: 22px;
+  overflow-x: auto;
+}
+
+.dayColumn {
+  min-width: 32px;
+  display: grid;
+  gap: 10px;
+  align-items: end;
+  color: #817b96;
+  font: 700 10px/1 Inter, sans-serif;
+  text-align: center;
+}
+
+.dayBars {
+  height: 180px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 3px;
+}
+
+.dayBars span {
+  width: 7px;
+  min-height: 5px;
+  border-radius: 999px 999px 2px 2px;
+}
+
+.signupBar,
+.signupDot {
+  background: #a99bd9;
+}
+
+.confirmedBar,
+.confirmedDot {
+  background: #7fd0c4;
+}
+
+.referredBar,
+.referredDot {
+  background: #ecb6d2;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  color: #928ca8;
+  font: 600 12px/1.4 Inter, sans-serif;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.signalCard {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.signalRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(7, 5, 18, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.signalRow span {
+  color: #b3adc4;
+  font: 600 13px/1.35 Inter, sans-serif;
+}
+
+.signalRow strong {
+  color: #f0ecf7;
+  font: 800 13px/1.25 Inter, sans-serif;
+  text-align: right;
+}
+
+.good strong {
+  color: #7fd0c4;
+}
+
+.warn strong {
+  color: #ecb6d2;
+}
+
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -369,6 +538,10 @@
   .gridThree {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .funnel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -384,6 +557,32 @@
   .grid,
   .gridThree {
     grid-template-columns: 1fr;
+  }
+
+  .funnel {
+    grid-template-columns: 1fr;
+  }
+
+  .funnelStep {
+    min-height: 126px;
+  }
+
+  .sparkCard {
+    height: 220px;
+    padding: 18px;
+  }
+
+  .dayBars {
+    height: 140px;
+  }
+
+  .signalRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .signalRow strong {
+    text-align: left;
   }
 
   .wide {
