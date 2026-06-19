@@ -20,6 +20,8 @@ type Props = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GMAIL_SEARCH_URL = "https://mail.google.com/mail/u/0/#search/Aurora";
+const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 
 function pluralPessoa(count: number): string {
   return count === 1 ? "pessoa entrou" : "pessoas entraram";
@@ -48,6 +50,29 @@ function InvalidState() {
   );
 }
 
+function ConfirmEmailPanel() {
+  return (
+    <div className={styles.referralConfirmPanel}>
+      <span>Próximo passo</span>
+      <strong>Abra o email da Aurora e confirme sua presença.</strong>
+      <p>
+        Esse clique ativa sua sala de convite e faz suas indicações começarem a contar.
+      </p>
+      <p className={styles.referralConfirmHint}>
+        Se não aparecer, procure por Aurora ou veja a aba Promoções ou Spam.
+      </p>
+      <div className={styles.waitlistInboxActions}>
+        <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer">
+          Abrir Gmail
+        </a>
+        <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer">
+          Abrir Outlook
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function WaitlistStatusPage({ params }: Props) {
   const { token } = await params;
   if (!UUID.test(token)) return <InvalidState />;
@@ -71,15 +96,13 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const confirmed = Boolean(row.confirmedAt);
   const hasReferrals = confirmedCount > 0;
   const title = !confirmed
-    ? "Confirme seu email para guardar seu lugar."
-    : hasReferrals
-      ? "Seu convite já começou a amanhecer."
-      : "Seu acesso está confirmado.";
+    ? "Confirme seu email para ativar sua sala."
+    : "Leve a Aurora para pessoas queridas.";
   const body = !confirmed
-    ? "Enviamos um email de confirmação. Depois disso, seu convite passa a contar."
+    ? "O link de confirmação está na sua caixa de entrada. Ele guarda seu lugar e ativa seus convites."
     : hasReferrals
-      ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação. Continue trazendo pessoas queridas para conhecer a Aurora.`
-      : "A Aurora vai avisar quando chegar sua vez. Você também pode trazer pessoas queridas para conhecer a Aurora e desbloquear acesso antecipado e cortesias.";
+      ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação. Continue trazendo para perto pessoas que podem gostar de conhecer a Aurora.`
+      : "Compartilhe seu convite com pessoas que você gostaria de ver por perto quando a Aurora abrir.";
 
   return (
     <main className={styles.referralPage}>
@@ -102,72 +125,87 @@ export default async function WaitlistStatusPage({ params }: Props) {
         </div>
 
         <div className={styles.referralActionPanel}>
-          <InviteNameCapture
-            confirmed={confirmed}
-            confirmedCount={confirmedCount}
-            referralCode={row.referralCode}
-            statusToken={row.statusToken}
-          />
+          {!confirmed ? (
+            <ConfirmEmailPanel />
+          ) : (
+            <>
+              <div className={styles.referralSharePanel}>
+                <ShareInvite
+                  referralCode={row.referralCode}
+                  inviteUrl={inviteUrl}
+                  label="Seu convite pessoal"
+                />
+              </div>
 
-          <div className={styles.referralDashboard}>
-            <div className={styles.referralProgressCard}>
-              <div className={styles.referralProgressTop}>
-                <span>{confirmedCount} confirmados</span>
-                <span>
-                  {progress.next
-                    ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
-                    : "todos os marcos desbloqueados"}
-                </span>
-              </div>
-              <div className={styles.referralTrack} aria-hidden="true">
-                <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
-              </div>
-              <p className={styles.referralProgressHint}>
-                {progress.next
-                  ? nextGestureText(progress.remaining)
-                  : "Todos os marcos desta fase foram liberados."}
-              </p>
-              <div className={styles.referralMilestones}>
-                {MILESTONES.map((m) => (
-                  <div
-                    key={m.count}
-                    className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
-                  >
-                    <span>{m.count}</span>
-                    <strong>{m.shortTitle}</strong>
+              <div className={styles.referralDashboard}>
+                <div className={styles.referralProgressCard}>
+                  <div className={styles.referralProgressTop}>
+                    <span>{confirmedCount} confirmados</span>
+                    <span>
+                      {progress.next
+                        ? `faltam ${progress.remaining} para ${progress.next.shortTitle}`
+                        : "todos os marcos desbloqueados"}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className={styles.referralTrack} aria-hidden="true">
+                    <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
+                  </div>
+                  <p className={styles.referralProgressHint}>
+                    {progress.next
+                      ? nextGestureText(progress.remaining)
+                      : "Todos os marcos desta fase foram liberados."}
+                  </p>
+                  <div className={styles.referralMilestones}>
+                    {MILESTONES.map((m) => (
+                      <div
+                        key={m.count}
+                        className={`${styles.referralMilestone} ${confirmedCount >= m.count ? styles.referralMilestoneDone : ""}`}
+                      >
+                        <span>{m.count}</span>
+                        <strong>{m.shortTitle}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            {progress.current ? (
-              <div className={styles.referralCelebration}>
-                <span>Marco desbloqueado</span>
-                <strong>{progress.current.title}</strong>
-                <p>{progress.current.description}</p>
+                {progress.current ? (
+                  <div className={styles.referralCelebration}>
+                    <span>Marco desbloqueado</span>
+                    <strong>{progress.current.title}</strong>
+                    <p>{progress.current.description}</p>
+                  </div>
+                ) : (
+                  <div className={styles.referralCelebration}>
+                    <span>Próximo gesto</span>
+                    <strong>Leve a Aurora para 5 pessoas queridas</strong>
+                    <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={styles.referralCelebration}>
-                <span>{confirmed ? "Próximo gesto" : "Depois de confirmar"}</span>
-                <strong>Leve a Aurora para 5 pessoas queridas</strong>
-                <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
-              </div>
-            )}
-          </div>
 
-          <div className={styles.referralSharePanel}>
-            <ShareInvite
-              referralCode={row.referralCode}
-              inviteUrl={inviteUrl}
-              label="Seu convite para pessoas queridas"
-            />
+              <InviteNameCapture
+                confirmed={confirmed}
+                confirmedCount={confirmedCount}
+                referralCode={row.referralCode}
+                statusToken={row.statusToken}
+              />
+
+              <ReferralHomeLink
+                confirmed={confirmed}
+                confirmedCount={confirmedCount}
+                referralCode={row.referralCode}
+                statusToken={row.statusToken}
+              />
+            </>
+          )}
+          {!confirmed ? (
             <ReferralHomeLink
               confirmed={confirmed}
               confirmedCount={confirmedCount}
               referralCode={row.referralCode}
               statusToken={row.statusToken}
             />
-          </div>
+          ) : null}
         </div>
       </section>
     </main>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ShareInvite } from "./ShareInvite";
 import styles from "./Landing.module.css";
 import { getAuroraAttribution, trackAurora } from "@/lib/analytics/client";
 
@@ -10,6 +9,8 @@ const REF = /^[A-Za-z0-9]{6,16}$/;
 const REF_KEY = "aurora_ref";
 const INVITE_CONTEXT_KEY = "aurora_invite_context";
 const REF_TTL = 30 * 24 * 60 * 60 * 1000;
+const GMAIL_SEARCH_URL = "https://mail.google.com/mail/u/0/#search/Aurora";
+const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 
 type DoneState =
   | { mode: "created"; referralCode: string; statusToken: string }
@@ -133,25 +134,52 @@ export function WaitlistForm() {
   }
 
   if (done) {
-    const created = done.mode === "created";
+    const doneState = done;
+    const created = doneState.mode === "created";
+    const title = created ? "Agora confirme seu email" : "Enviamos seu link novamente";
+    const body = created
+      ? "Enviamos um link para ativar sua sala Aurora e guardar seu lugar na lista."
+      : "Procure o email da Aurora para confirmar seu acesso ou abrir sua sala pessoal.";
+
+    function trackInbox(provider: string) {
+      trackAurora("waitlist_inbox_clicked", {
+        source: "waitlist_success",
+        provider,
+        mode: doneState.mode,
+      });
+    }
+
     return (
       <div className={styles.waitlistSuccess}>
         <div className={styles.waitlistSuccessHeader}>
           <span aria-hidden="true" />
-          <strong>{created ? "Você está na lista." : "Te enviamos seu link."}</strong>
+          <strong>{title}</strong>
         </div>
-        <p>
-          {created
-            ? "Confirme seu email para ativar seus convites. Enquanto isso, seu link já pode chegar a pessoas queridas."
-            : "Se esse email já estava na Aurora, a sala de convite chegou na sua caixa de entrada."}
-        </p>
+        <p>{body}</p>
+        <div className={styles.waitlistSuccessNote}>
+          Se não aparecer, procure por Aurora ou veja a aba Promoções ou Spam.
+        </div>
+        <div className={styles.waitlistInboxActions}>
+          <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={() => trackInbox("gmail")}>
+            Abrir Gmail
+          </a>
+          <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer" onClick={() => trackInbox("outlook")}>
+            Abrir Outlook
+          </a>
+        </div>
         {created ? (
-          <>
-            <ShareInvite referralCode={done.referralCode} compact label="Seu convite já nasceu" />
-            <a href={`/lista/${done.statusToken}`} className={styles.waitlistStatusLink}>
-              Abrir minha sala Aurora
-            </a>
-          </>
+          <a
+            href={`/lista/${doneState.statusToken}`}
+            className={styles.waitlistStatusLink}
+            onClick={() => {
+              trackAurora("waitlist_status_link_clicked", {
+                source: "waitlist_success",
+                mode: "created",
+              });
+            }}
+          >
+            Depois de confirmar, abrir minha sala Aurora
+          </a>
         ) : null}
       </div>
     );

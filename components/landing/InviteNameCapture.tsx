@@ -48,7 +48,7 @@ export function InviteNameCapture({ confirmedCount, confirmed, referralCode, sta
 
   const signedByText = savedName
     ? `As mensagens que você compartilhar podem aparecer assinadas como ${savedName}.`
-    : "Ao sabermos seu nome, a mensagem que você compartilha fica assinada por você, mais pessoal e mais calorosa.";
+    : "Diga o nome que você prefere usar. A Aurora usa isso para te receber melhor e deixar seus convites mais humanos.";
 
   function save() {
     const nextName = cleanName(name);
