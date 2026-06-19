@@ -71,6 +71,18 @@ type HealthRow = {
   legacyInviteEvents: number;
 };
 
+type TrafficSummaryRow = {
+  pageviews: number;
+  visitors: number;
+  ctaClicks: number;
+  clientSignupSuccess: number;
+};
+
+type BreakdownRow = {
+  label: string;
+  total: number;
+};
+
 function rows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
   if (result && typeof result === "object" && "rows" in result) {
@@ -210,6 +222,32 @@ function SignalRow({
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function BreakdownList({ title, rows }: { title: string; rows: BreakdownRow[] }) {
+  const total = rows.reduce((sum, row) => sum + asNumber(row.total), 0);
+
+  return (
+    <article className={styles.signalCard}>
+      <h3 className={styles.cardTitle}>{title}</h3>
+      {rows.length ? (
+        rows.map((row) => {
+          const rowTotal = asNumber(row.total);
+          return (
+            <div className={styles.breakdownRow} key={`${title}-${row.label}`}>
+              <div>
+                <strong>{row.label}</strong>
+                <span>{percent(rowTotal, total)} do volume</span>
+              </div>
+              <b>{compactNumber(rowTotal)}</b>
+            </div>
+          );
+        })
+      ) : (
+        <p className={styles.emptyState}>Ainda sem dados suficientes.</p>
+      )}
+    </article>
   );
 }
 
@@ -387,6 +425,74 @@ async function getDashboardData() {
     `),
   );
 
+  const [traffic] = rows<TrafficSummaryRow>(
+    await db.execute(sql`
+      select
+        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
+        count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess"
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+    `),
+  );
+
+  const topPages = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'path', ''), nullif(metadata->>'page', ''), 'sem página') as label,
+        count(*)::int as total
+      from waitlist_events
+      where event_name = 'launch_page_viewed'
+        and created_at >= now() - interval '30 days'
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
+  const trafficSources = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
+        count(*)::int as total
+      from waitlist_events
+      where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
+        and created_at >= now() - interval '30 days'
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
+  const topCtas = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'label', ''), nullif(metadata->>'source', ''), nullif(source, ''), 'sem label') as label,
+        count(*)::int as total
+      from waitlist_events
+      where event_name = 'launch_cta_clicked'
+        and created_at >= now() - interval '30 days'
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
+  const signupSources = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
+        count(*)::int as total
+      from waitlist_events
+      where event_name = 'signup_created'
+        and created_at >= now() - interval '30 days'
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
   return {
     summary: {
       total: asNumber(summary?.total),
@@ -424,6 +530,16 @@ async function getDashboardData() {
       brokenReferrals: asNumber(health?.brokenReferrals),
       legacyInviteEvents: asNumber(health?.legacyInviteEvents),
     },
+    traffic: {
+      pageviews: asNumber(traffic?.pageviews),
+      visitors: asNumber(traffic?.visitors),
+      ctaClicks: asNumber(traffic?.ctaClicks),
+      clientSignupSuccess: asNumber(traffic?.clientSignupSuccess),
+    },
+    topPages,
+    trafficSources,
+    topCtas,
+    signupSources,
   };
 }
 
@@ -459,6 +575,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
   );
   const inviteToConfirmedRate = percent(data.summary.confirmedReferred, shareEvents.unique);
+  const visitorToSignupRate = percent(data.summary.signups30, data.traffic.visitors);
+  const ctaClickRate = percent(data.traffic.ctaClicks, data.traffic.visitors);
   const dataHealthGood =
     data.health.dirtyRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -547,6 +665,41 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <MetricCard value={compactNumber(shareEvents.total)} label="Gestos de compartilhamento" note={`${shareEvents.unique} pessoas acionaram algum convite`} />
             <MetricCard value={ratio(data.summary.confirmedReferred, data.summary.confirmed)} label="K-factor confirmado" note="Convites confirmados por pessoa confirmada" />
             <MetricCard value={compactNumber(data.milestones.unlocked5)} label="Acesso antecipado desbloqueado" note={`${data.milestones.unlocked10} chegaram ao marco de 10`} />
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Tráfego e conversão</h2>
+            <p>Leitura first-party para entender de onde vem a atenção e onde ela vira cadastro.</p>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard
+              value={compactNumber(data.traffic.pageviews)}
+              label="Pageviews nos últimos 30 dias"
+              note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`}
+            />
+            <MetricCard
+              value={visitorToSignupRate}
+              label="Visitante para cadastro"
+              note={`${compactNumber(data.summary.signups30)} cadastros no período`}
+            />
+            <MetricCard
+              value={ctaClickRate}
+              label="Visitante para clique em CTA"
+              note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`}
+            />
+            <MetricCard
+              value={compactNumber(data.traffic.clientSignupSuccess)}
+              label="Sucessos no client"
+              note="Confirmações de envio capturadas no navegador"
+            />
+          </div>
+          <div className={styles.quadSplit}>
+            <BreakdownList title="Páginas mais vistas" rows={data.topPages} />
+            <BreakdownList title="Fontes de tráfego" rows={data.trafficSources} />
+            <BreakdownList title="CTAs mais acionados" rows={data.topCtas} />
+            <BreakdownList title="Origem dos cadastros" rows={data.signupSources} />
           </div>
         </section>
 

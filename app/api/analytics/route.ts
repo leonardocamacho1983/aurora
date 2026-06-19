@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { waitlistEvents } from "@/lib/db/schema";
+import { sanitizeAnalyticsProperties } from "@/lib/analytics/attribution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +50,10 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   "utm_campaign",
   "utm_content",
   "utm_term",
+  "source_type",
+  "language",
+  "timezone",
+  "is_mobile",
 ]);
 
 type AnalyticsBody = {
@@ -72,25 +79,6 @@ function posthogToken() {
   );
 }
 
-function sanitizeProperties(input: unknown) {
-  if (!input || typeof input !== "object") return {};
-  const output: Record<string, string | number | boolean | null> = {};
-
-  for (const [key, value] of Object.entries(input)) {
-    if (!ALLOWED_PROPERTY_KEYS.has(key)) continue;
-    if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean" ||
-      value === null
-    ) {
-      output[key] = typeof value === "string" ? value.slice(0, 160) : value;
-    }
-  }
-
-  return output;
-}
-
 export async function POST(request: Request) {
   let body: AnalyticsBody;
   try {
@@ -103,6 +91,26 @@ export async function POST(request: Request) {
   const distinctId = typeof body.distinctId === "string" ? body.distinctId : "anonymous";
   if (!ALLOWED_EVENTS.has(eventName)) {
     return NextResponse.json({ status: "ignored" });
+  }
+
+  const properties = sanitizeAnalyticsProperties(body.properties, ALLOWED_PROPERTY_KEYS);
+
+  try {
+    await db.insert(waitlistEvents).values({
+      eventName,
+      source:
+        typeof properties.source === "string"
+          ? properties.source
+          : typeof properties.source_type === "string"
+            ? properties.source_type
+            : "client_analytics",
+      metadata: {
+        ...properties,
+        distinctId: distinctId.slice(0, 80),
+      },
+    });
+  } catch (error) {
+    console.error("/api/analytics db error:", error);
   }
 
   const token = posthogToken();
@@ -119,7 +127,7 @@ export async function POST(request: Request) {
         event: eventName,
         distinct_id: distinctId,
         properties: {
-          ...sanitizeProperties(body.properties),
+          ...properties,
           app: "aurora",
         },
       }),

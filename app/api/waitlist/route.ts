@@ -7,6 +7,7 @@ import { createUniqueReferralCode } from "@/lib/referral/code";
 import { isRateLimited } from "@/lib/referral/rate-limit";
 import { siteUrl } from "@/lib/referral/urls";
 import { sendConfirmEmail, sendStatusEmail } from "@/lib/email/waitlist";
+import { sanitizeAnalyticsProperties } from "@/lib/analytics/attribution";
 import { analyticsEmailId, captureAuroraServer } from "@/lib/analytics/server";
 
 export const runtime = "nodejs";
@@ -19,7 +20,21 @@ type Body = {
   email?: unknown;
   ref?: unknown;
   hp?: unknown;
+  attribution?: unknown;
 };
+
+const ATTRIBUTION_KEYS = new Set([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "referral_code",
+  "referrer",
+  "first_referrer",
+  "first_path",
+  "landing_path",
+]);
 
 function clientKey(h: Headers): string {
   return (
@@ -94,6 +109,7 @@ export async function POST(request: Request) {
   const rawRef = typeof body.ref === "string" ? body.ref.trim() : "";
   const ref = REF.test(rawRef) ? rawRef : "";
   const baseUrl = siteUrl(request.url);
+  const attribution = sanitizeAnalyticsProperties(body.attribution, ATTRIBUTION_KEYS);
 
   try {
     const existingRows = await db
@@ -159,13 +175,19 @@ export async function POST(request: Request) {
       waitlistId: row.id,
       eventName: "signup_created",
       source: referrer ? "referral" : "landing",
-      metadata: referrer ? { referredByCode: referrer.referralCode } : undefined,
+      metadata: {
+        ...attribution,
+        referredByCode: referrer?.referralCode ?? null,
+      },
     });
     await captureAuroraServer("waitlist_signup_created", analyticsEmailId(row.email), {
       source: referrer ? "referral" : "landing",
       has_referral: Boolean(referrer),
       referral_code: row.referralCode,
       referred_by_code: referrer?.referralCode ?? null,
+      source_type: typeof attribution.source_type === "string" ? attribution.source_type : null,
+      utm_source: typeof attribution.utm_source === "string" ? attribution.utm_source : null,
+      utm_campaign: typeof attribution.utm_campaign === "string" ? attribution.utm_campaign : null,
     });
 
     return NextResponse.json({

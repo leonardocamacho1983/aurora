@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ShareInvite } from "./ShareInvite";
 import styles from "./Landing.module.css";
-import { trackAurora } from "@/lib/analytics/client";
+import { getAuroraAttribution, trackAurora } from "@/lib/analytics/client";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const REF = /^[A-Za-z0-9]{6,16}$/;
@@ -94,6 +94,7 @@ export function WaitlistForm() {
           email: val,
           ref: referralCode || undefined,
           hp: hpRef.current?.value ?? "",
+          attribution: getAuroraAttribution(),
         }),
       });
       if (!res.ok) {

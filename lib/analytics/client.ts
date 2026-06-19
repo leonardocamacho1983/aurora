@@ -5,6 +5,7 @@ type EventProperties = Record<string, string | number | boolean | null | undefin
 const CLIENT_ID_KEY = "aurora_client_id";
 const REF_KEY = "aurora_ref";
 const INVITE_CONTEXT_KEY = "aurora_invite_context";
+const FIRST_TOUCH_KEY = "aurora_first_touch";
 
 function clientId() {
   try {
@@ -52,8 +53,39 @@ function readSearchProperties() {
   };
 }
 
+function readFirstTouch() {
+  try {
+    const existing = localStorage.getItem(FIRST_TOUCH_KEY);
+    if (existing) return JSON.parse(existing) as EventProperties;
+
+    const firstTouch = {
+      first_path: window.location.pathname,
+      first_referrer: document.referrer ? new URL(document.referrer).hostname : "",
+      ...readSearchProperties(),
+      saved_at: new Date().toISOString(),
+    };
+    localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(firstTouch));
+    return firstTouch;
+  } catch {
+    return {};
+  }
+}
+
+export function getAuroraAttribution() {
+  if (typeof window === "undefined") return {};
+  const firstTouch = readFirstTouch();
+  return {
+    ...firstTouch,
+    ...readSearchProperties(),
+    referrer: document.referrer ? new URL(document.referrer).hostname : "",
+    landing_path: window.location.pathname,
+  };
+}
+
 export function trackAurora(eventName: string, properties: EventProperties = {}) {
   if (typeof window === "undefined") return;
+  const isMobile =
+    typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 760px)").matches : window.innerWidth <= 760;
 
   const payload = {
     eventName,
@@ -64,6 +96,9 @@ export function trackAurora(eventName: string, properties: EventProperties = {})
       search: window.location.search.slice(0, 160),
       referrer: document.referrer ? new URL(document.referrer).hostname : "",
       viewport: `${window.innerWidth}x${window.innerHeight}`,
+      language: navigator.language || "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      is_mobile: isMobile,
       ...readSearchProperties(),
     },
   };
