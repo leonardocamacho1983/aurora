@@ -99,6 +99,8 @@ bio_en
 
 ## Links prontos
 
+Use estes links quando quiser que tudo apareça no bloco `Campanha launch_waitlist` do Founder Cockpit.
+
 ### Instagram bio
 
 ```txt
@@ -114,7 +116,7 @@ https://www.faleaurora.com/?utm_source=instagram&utm_medium=story&utm_campaign=l
 ### WhatsApp pessoal
 
 ```txt
-https://www.faleaurora.com/?utm_source=whatsapp&utm_medium=dm&utm_campaign=founder_drop&utm_content=mensagem_pessoal
+https://www.faleaurora.com/?utm_source=whatsapp&utm_medium=dm&utm_campaign=launch_waitlist&utm_content=mensagem_pessoal
 ```
 
 ### Grupo de WhatsApp
@@ -126,7 +128,7 @@ https://www.faleaurora.com/?utm_source=whatsapp&utm_medium=dm&utm_campaign=launc
 ### LinkedIn post
 
 ```txt
-https://www.faleaurora.com/?utm_source=linkedin&utm_medium=post&utm_campaign=manifesto&utm_content=post_oraculo
+https://www.faleaurora.com/?utm_source=linkedin&utm_medium=post&utm_campaign=launch_waitlist&utm_content=post_fundador
 ```
 
 ### Newsletter
@@ -147,9 +149,47 @@ https://www.faleaurora.com/para-terapeutas?utm_source=whatsapp&utm_medium=dm&utm
 https://www.faleaurora.com/manifesto?utm_source=linkedin&utm_medium=post&utm_campaign=manifesto&utm_content=a_luz_e_a_voz
 ```
 
+### Manifesto dentro da campanha de lançamento
+
+```txt
+https://www.faleaurora.com/manifesto?utm_source=linkedin&utm_medium=post&utm_campaign=launch_waitlist&utm_content=manifesto_luz_voz
+```
+
 ### Talk Aurora coming soon
 
 ```txt
+https://www.talkaurora.com/?utm_source=instagram&utm_medium=bio&utm_campaign=coming_soon_global&utm_content=profile
+```
+
+## Bateria de teste de campanha
+
+Antes de divulgar em volume, faça um teste rápido com os links oficiais:
+
+1. Abra cada link em uma aba anônima.
+2. Espere a página carregar e clique no CTA principal.
+3. Para testar cadastro, use emails descartáveis reconhecíveis, como `aurora.launchtest+instagram@leonardocamacho.com`.
+4. Espere 1 a 2 minutos.
+5. Abra o Founder Cockpit e confira o bloco `Campanha launch_waitlist`.
+
+O que deve aparecer:
+
+```txt
+Instagram bio -> canal instagram, peça perfil
+Instagram stories -> canal instagram, peça stories_01
+WhatsApp pessoal -> canal whatsapp, peça mensagem_pessoal
+Grupo de WhatsApp -> canal whatsapp, peça grupo_amigos
+LinkedIn post -> canal linkedin, peça post_fundador
+```
+
+Depois do teste, limpe os emails de teste pelo endpoint administrativo para não contaminar conversão real.
+
+## Links para campanhas separadas
+
+Quando a intenção for medir narrativa, profissionais ou expansão global fora do bloco `launch_waitlist`, use campanhas próprias:
+
+```txt
+https://www.faleaurora.com/manifesto?utm_source=linkedin&utm_medium=post&utm_campaign=manifesto&utm_content=a_luz_e_a_voz
+https://www.faleaurora.com/para-terapeutas?utm_source=whatsapp&utm_medium=dm&utm_campaign=professionals&utm_content=convite_terapeutas
 https://www.talkaurora.com/?utm_source=instagram&utm_medium=bio&utm_campaign=coming_soon_global&utm_content=profile
 ```
 

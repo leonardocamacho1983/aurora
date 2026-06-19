@@ -78,6 +78,10 @@ type TrafficSummaryRow = {
   clientSignupSuccess: number;
 };
 
+type CampaignSummaryRow = TrafficSummaryRow & {
+  signups: number;
+};
+
 type BreakdownRow = {
   label: string;
   total: number;
@@ -493,6 +497,65 @@ async function getDashboardData() {
     `),
   );
 
+  const [launchCampaign] = rows<CampaignSummaryRow>(
+    await db.execute(sql`
+      select
+        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
+        count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess",
+        count(*) filter (where event_name = 'signup_created')::int as "signups"
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+        and metadata->>'utm_campaign' = 'launch_waitlist'
+    `),
+  );
+
+  const launchCampaignSources = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'utm_source', ''), nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
+        count(*)::int as total
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+        and metadata->>'utm_campaign' = 'launch_waitlist'
+        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
+  const launchCampaignContent = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'utm_content', ''), 'sem peça') as label,
+        count(*)::int as total
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+        and metadata->>'utm_campaign' = 'launch_waitlist'
+        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
+  const launchCampaignCtas = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(metadata->>'label', ''), nullif(metadata->>'source', ''), 'sem label') as label,
+        count(*)::int as total
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+        and metadata->>'utm_campaign' = 'launch_waitlist'
+        and event_name = 'launch_cta_clicked'
+      group by 1
+      order by count(*) desc
+      limit 8
+    `),
+  );
+
   return {
     summary: {
       total: asNumber(summary?.total),
@@ -540,6 +603,16 @@ async function getDashboardData() {
     trafficSources,
     topCtas,
     signupSources,
+    launchCampaign: {
+      pageviews: asNumber(launchCampaign?.pageviews),
+      visitors: asNumber(launchCampaign?.visitors),
+      ctaClicks: asNumber(launchCampaign?.ctaClicks),
+      clientSignupSuccess: asNumber(launchCampaign?.clientSignupSuccess),
+      signups: asNumber(launchCampaign?.signups),
+    },
+    launchCampaignSources,
+    launchCampaignContent,
+    launchCampaignCtas,
   };
 }
 
@@ -577,6 +650,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const inviteToConfirmedRate = percent(data.summary.confirmedReferred, shareEvents.unique);
   const visitorToSignupRate = percent(data.summary.signups30, data.traffic.visitors);
   const ctaClickRate = percent(data.traffic.ctaClicks, data.traffic.visitors);
+  const launchCampaignSignupRate = percent(data.launchCampaign.signups, data.launchCampaign.visitors);
+  const launchCampaignClickRate = percent(data.launchCampaign.ctaClicks, data.launchCampaign.visitors);
   const dataHealthGood =
     data.health.dirtyRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -665,6 +740,40 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <MetricCard value={compactNumber(shareEvents.total)} label="Gestos de compartilhamento" note={`${shareEvents.unique} pessoas acionaram algum convite`} />
             <MetricCard value={ratio(data.summary.confirmedReferred, data.summary.confirmed)} label="K-factor confirmado" note="Convites confirmados por pessoa confirmada" />
             <MetricCard value={compactNumber(data.milestones.unlocked5)} label="Acesso antecipado desbloqueado" note={`${data.milestones.unlocked10} chegaram ao marco de 10`} />
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Campanha launch_waitlist</h2>
+            <p>Recorte limpo dos links oficiais do lançamento. Use este bloco para testar bio, stories, WhatsApp e LinkedIn.</p>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard
+              value={compactNumber(data.launchCampaign.visitors)}
+              label="Visitantes da campanha"
+              note={`${compactNumber(data.launchCampaign.pageviews)} pageviews marcados com launch_waitlist`}
+            />
+            <MetricCard
+              value={launchCampaignClickRate}
+              label="Visitante para CTA"
+              note={`${compactNumber(data.launchCampaign.ctaClicks)} cliques em CTA da campanha`}
+            />
+            <MetricCard
+              value={compactNumber(data.launchCampaign.signups)}
+              label="Cadastros da campanha"
+              note={`${compactNumber(data.launchCampaign.clientSignupSuccess)} sucessos capturados no client`}
+            />
+            <MetricCard
+              value={launchCampaignSignupRate}
+              label="Visitante para cadastro"
+              note="Conversão dos links oficiais para inscrição criada"
+            />
+          </div>
+          <div className={styles.gridThree}>
+            <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} />
+            <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} />
+            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} />
           </div>
         </section>
 
