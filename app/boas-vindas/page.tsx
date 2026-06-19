@@ -157,7 +157,7 @@ export default async function BoasVindasPage() {
           <button type="submit" name="intent" value="complete" className={styles.primary}>
             Começar meu primeiro registro
           </button>
-          <button type="submit" name="intent" value="skip" className={styles.secondary}>
+          <button type="submit" name="intent" value="skip" className={styles.secondary} formNoValidate>
             Pular e começar a falar
           </button>
         </form>
