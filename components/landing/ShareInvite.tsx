@@ -56,7 +56,7 @@ export function ShareInvite({
     try {
       await navigator.clipboard.writeText(url);
       trackInvite("invite_copied", referralCode);
-      trackAurora("invite_link_copied", {
+      trackAurora("invite_copied", {
         source: compact ? "waitlist_success" : "referral_room",
         referral_code: referralCode,
       });

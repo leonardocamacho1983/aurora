@@ -15,7 +15,7 @@ const ALLOWED_EVENTS = new Set([
   "waitlist_submit_attempt",
   "waitlist_submit_success",
   "waitlist_submit_error",
-  "invite_link_copied",
+  "invite_copied",
   "invite_shared",
   "invite_whatsapp_clicked",
   "arrival_ritual_step_completed",
