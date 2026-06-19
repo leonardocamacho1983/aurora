@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { waitlist } from "@/lib/db/schema";
+import { waitlist, waitlistProfile } from "@/lib/db/schema";
 import { MILESTONES, progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
@@ -30,6 +30,10 @@ function pluralPessoa(count: number): string {
 function nextGestureText(remaining: number): string {
   if (remaining <= 1) return "Falta só uma confirmação para o próximo marco.";
   return `Faltam ${remaining} confirmações para o próximo marco.`;
+}
+
+function firstName(name?: string | null): string {
+  return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
 
 function InvalidState() {
@@ -87,6 +91,12 @@ export default async function WaitlistStatusPage({ params }: Props) {
   if (!row) return <InvalidState />;
 
   const confirmedCount = await countConfirmedReferrals(db, row.referralCode);
+  const profileRows = await db
+    .select({ name: waitlistProfile.name })
+    .from(waitlistProfile)
+    .where(eq(waitlistProfile.waitlistId, row.id))
+    .limit(1);
+  const profileName = firstName(profileRows[0]?.name);
   const progress = progressFor(confirmedCount);
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
@@ -97,12 +107,12 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const hasReferrals = confirmedCount > 0;
   const title = !confirmed
     ? "Confirme seu email para ativar sua sala."
-    : "Leve a Aurora para pessoas queridas.";
+    : "Convide pessoas queridas para conhecer a Aurora.";
   const body = !confirmed
     ? "O link de confirmação está na sua caixa de entrada. Ele guarda seu lugar e ativa seus convites."
     : hasReferrals
-      ? `${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação. Continue trazendo para perto pessoas que podem gostar de conhecer a Aurora.`
-      : "Compartilhe seu convite com pessoas que você gostaria de ver por perto quando a Aurora abrir.";
+      ? `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. ${confirmedCount} ${pluralPessoa(confirmedCount)} pela sua indicação.`
+      : `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. O próximo gesto é compartilhar seu convite.`;
 
   return (
     <main className={styles.referralPage}>
@@ -116,7 +126,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
           referral_code: row.referralCode,
         }}
       />
-      <section className={styles.referralShell}>
+      <section className={`${styles.referralShell} ${confirmed ? styles.referralShellReady : ""}`}>
         <div className={styles.referralIntro}>
           <div className={styles.referralOrb} aria-hidden="true" />
           <p className={styles.referralKicker}>Sua sala Aurora</p>
@@ -130,10 +140,16 @@ export default async function WaitlistStatusPage({ params }: Props) {
           ) : (
             <>
               <div className={styles.referralSharePanel}>
+                <div className={styles.referralActionHeader}>
+                  <span>Gesto principal</span>
+                  <strong>Envie seu convite agora</strong>
+                  <p>
+                    Escolha uma pessoa querida. Quando ela confirma o email, seu acesso fica mais perto.
+                  </p>
+                </div>
                 <ShareInvite
                   referralCode={row.referralCode}
                   inviteUrl={inviteUrl}
-                  label="Seu convite pessoal"
                 />
               </div>
 
@@ -176,9 +192,9 @@ export default async function WaitlistStatusPage({ params }: Props) {
                   </div>
                 ) : (
                   <div className={styles.referralCelebration}>
-                    <span>Próximo gesto</span>
-                    <strong>Leve a Aurora para 5 pessoas queridas</strong>
-                    <p>Quando 5 convites forem confirmados, seu acesso amanhece antes.</p>
+                    <span>Primeiro marco</span>
+                    <strong>5 confirmações aproximam seu acesso</strong>
+                    <p>Um jeito leve de trazer gente boa para perto e ajudar a Aurora amanhecer.</p>
                   </div>
                 )}
               </div>

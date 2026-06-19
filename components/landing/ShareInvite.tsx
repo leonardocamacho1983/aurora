@@ -89,7 +89,7 @@ export function ShareInvite({
       {label ? <div className={styles.shareLabel}>{label}</div> : null}
       {!compact ? (
         <p className={styles.shareHint}>
-          Convide pessoas que você gostaria de ver por perto quando a Aurora amanhecer.
+          Envie pelo WhatsApp ou copie o link. Cada confirmação entra no seu contador.
         </p>
       ) : null}
       <div className={styles.shareUrl} aria-label="Seu link de convite">
