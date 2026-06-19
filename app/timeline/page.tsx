@@ -132,7 +132,7 @@ export default async function TimelinePage() {
             {weekRows.length > 0 && (
               <p className={styles.usage}>
                 {weekRows.length}{" "}
-                {weekRows.length === 1 ? "entrada" : "entradas"} · {wordsThisWeek}{" "}
+                {weekRows.length === 1 ? "registro" : "registros"} · {wordsThisWeek}{" "}
                 {wordsThisWeek === 1 ? "palavra" : "palavras"} esta semana
               </p>
             )}
@@ -145,8 +145,8 @@ export default async function TimelinePage() {
         {rows.length === 0 ? (
           <section className={styles.empty}>
             <p className={styles.label}>primeiro registro</p>
-            <h1 className="font-serif">Sua linha começa quando você fala.</h1>
-            <p>Toque no orb, grave alguns minutos e deixe a Aurora organizar o primeiro ponto.</p>
+            <h1 className="font-serif">Sua linha começa com uma fala.</h1>
+            <p>Grave alguns minutos no diário. A Aurora organiza o primeiro ponto quando você terminar.</p>
             <Link href="/diario" className={styles.primaryLink}>Começar pelo diário</Link>
           </section>
         ) : (
@@ -179,7 +179,10 @@ export default async function TimelinePage() {
             {/* Histórico — palavra do usuário, esfriando */}
             {rest.length > 0 && (
               <section className={styles.history}>
-                <span className={styles.label}>histórico</span>
+                <div className={styles.sectionHead}>
+                  <span className={styles.label}>histórico</span>
+                  <p>Registros anteriores, em ordem do mais recente para o mais antigo.</p>
+                </div>
                 <div className={styles.board}>
                   {rest.map((e) => (
                     <article key={e.id} className={styles.card}>

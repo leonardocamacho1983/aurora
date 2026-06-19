@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getOnboardingContext } from "@/lib/onboarding/context";
 import { signOut } from "../login/actions";
 import styles from "./Account.module.css";
 
@@ -16,16 +17,38 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
+  const onboarding = await getOnboardingContext(user.id, user.email ?? "");
+  const signals = [
+    onboarding.profile.name ? ["Nome", onboarding.profile.name] : null,
+    onboarding.profile.presence ? ["Presença", onboarding.profile.presence] : null,
+    onboarding.profile.moment ? ["Primeiro tema", onboarding.profile.moment] : null,
+  ].filter(Boolean) as string[][];
+
   return (
     <main className={styles.stage}>
-      <section className={styles.card}>
+      <section className={styles.shell}>
         <Link href="/diario" className={styles.brand}>
           <span className={styles.brandOrb} aria-hidden="true" />
           <span>Aurora</span>
         </Link>
-        <p className={styles.kicker}>Conta</p>
-        <h1 className="font-serif">Seu acesso está ativo.</h1>
-        <p className={styles.email}>{user.email}</p>
+
+        <div className={styles.copy}>
+          <p className={styles.kicker}>Conta</p>
+          <h1 className="font-serif">Seu acesso está ativo.</h1>
+          <p className={styles.email}>{user.email}</p>
+        </div>
+
+        {signals.length > 0 && (
+          <div className={styles.signals} aria-label="Sinais usados pela Aurora">
+            {signals.map(([label, value]) => (
+              <span key={label}>
+                <small>{label}</small>
+                {value}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className={styles.actions}>
           <Link href="/diario" className={styles.primary}>Voltar ao diário</Link>
           <Link href="/timeline" className={styles.secondary}>Linha do tempo</Link>

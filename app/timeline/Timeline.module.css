@@ -25,16 +25,16 @@
 .inner {
   position: relative;
   z-index: 1;
-  width: min(1120px, 100%);
+  width: min(980px, 100%);
   margin: 0 auto;
   padding: max(18px, env(safe-area-inset-top)) clamp(18px, 5vw, 40px) max(28px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: clamp(18px, 4vw, 28px);
+  gap: clamp(16px, 3vw, 24px);
 }
 
 .top {
-  min-height: 66px;
+  min-height: 62px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -55,7 +55,7 @@
   color: var(--ink);
   text-decoration: none;
   font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  font-size: clamp(1.22rem, 4.6vw, 1.55rem);
   line-height: 1;
 }
 
@@ -90,7 +90,7 @@
 
 .orbButton,
 .primaryLink {
-  min-height: 48px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +124,7 @@
 .skeleton {
   position: relative;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 22px;
   background: rgba(17, 14, 31, 0.68);
   border: 1px solid rgba(255, 255, 255, 0.1);
   -webkit-backdrop-filter: blur(22px);
@@ -132,20 +132,20 @@
 }
 
 .empty {
-  min-height: calc(100svh - 150px);
+  min-height: calc(100svh - 170px);
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 16px;
-  padding: clamp(28px, 8vw, 72px);
+  gap: 14px;
+  padding: clamp(26px, 7vw, 58px);
   text-align: center;
 }
 
 .empty h1 {
-  max-width: 10ch;
+  max-width: 12ch;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(2.6rem, 14vw, 6rem);
+  font-size: clamp(2.05rem, 10vw, 3.7rem);
   font-weight: 450;
   line-height: 0.98;
   letter-spacing: -0.035em;
@@ -166,7 +166,7 @@
 }
 
 .hero {
-  padding: clamp(22px, 6vw, 42px);
+  padding: clamp(20px, 5vw, 34px);
   box-shadow: 0 28px 90px -56px rgba(0, 0, 0, 0.9);
 }
 
@@ -187,7 +187,7 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .heroText {
@@ -195,12 +195,12 @@
   flex-direction: column;
   gap: 12px;
   color: var(--ink);
-  font-size: clamp(1.65rem, 8vw, 3.5rem);
-  line-height: 1.15;
+  font-size: clamp(1.28rem, 5.6vw, 2.35rem);
+  line-height: 1.25;
 }
 
 .mainInsight {
-  padding: clamp(22px, 6vw, 36px);
+  padding: clamp(20px, 5vw, 30px);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -211,14 +211,25 @@
   position: relative;
   z-index: 1;
   color: var(--ink);
-  font-size: clamp(1.35rem, 5vw, 2.1rem);
-  line-height: 1.35;
+  font-size: clamp(1.16rem, 4vw, 1.65rem);
+  line-height: 1.42;
 }
 
 .history {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.sectionHead {
+  display: grid;
+  gap: 6px;
+}
+
+.sectionHead p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
 }
 
 .board {
@@ -229,7 +240,7 @@
 }
 
 .card {
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -242,7 +253,7 @@
 .insightText,
 .trecho {
   color: var(--ink);
-  font-size: clamp(1.05rem, 3.8vw, 1.24rem);
+  font-size: clamp(1rem, 3.2vw, 1.14rem);
   line-height: 1.5;
   margin: 0;
 }
@@ -279,7 +290,7 @@
 
 @media (min-width: 1080px) {
   .board {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .inner {

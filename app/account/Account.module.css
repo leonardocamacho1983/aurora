@@ -1,95 +1,96 @@
 .stage {
   min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding: max(22px, env(safe-area-inset-top)) clamp(18px, 5vw, 40px) max(22px, env(safe-area-inset-bottom));
   color: var(--ink);
   background:
-    radial-gradient(ellipse 72% 48% at 50% 0%, rgba(169, 155, 217, 0.16), transparent 68%),
-    radial-gradient(ellipse 60% 42% at 50% 100%, rgba(244, 182, 160, 0.1), transparent 72%),
+    radial-gradient(ellipse 70% 44% at 50% 0%, rgba(169, 155, 217, 0.14), transparent 68%),
+    radial-gradient(ellipse 62% 40% at 50% 100%, rgba(127, 208, 196, 0.07), transparent 72%),
     linear-gradient(180deg, #100c1d 0%, #080612 58%, #05040a 100%);
 }
 
-.card {
-  width: min(100%, 520px);
-  position: relative;
-  overflow: hidden;
-  border-radius: 30px;
-  padding: clamp(24px, 6vw, 42px);
-  text-align: center;
-  background: rgba(17, 14, 31, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(22px);
-  backdrop-filter: blur(22px);
-  box-shadow: 0 28px 90px -52px rgba(0, 0, 0, 0.9);
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  inset: -30% 12% auto;
-  height: 58%;
-  background: radial-gradient(ellipse at center top, rgba(244, 182, 160, 0.18), transparent 72%);
-  pointer-events: none;
-}
-
-.brand,
-.kicker,
-.card h1,
-.email,
-.actions,
-.card form {
-  position: relative;
-  z-index: 1;
+.shell {
+  width: min(100%, 620px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
 }
 
 .brand {
   width: fit-content;
-  margin: 0 auto 28px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   color: var(--ink);
   text-decoration: none;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 1.65rem;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
   line-height: 1;
 }
 
 .brandOrb {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--aurora);
-  box-shadow: 0 0 24px rgba(201, 162, 212, 0.46);
+  box-shadow: 0 0 22px rgba(201, 162, 212, 0.42);
+}
+
+.copy {
+  display: grid;
+  gap: 10px;
 }
 
 .kicker {
-  margin: 0 0 12px;
+  margin: 0;
   color: var(--accent);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
-.card h1 {
+.copy h1 {
+  max-width: 12ch;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(2.25rem, 11vw, 4.4rem);
+  font-size: clamp(2.05rem, 10vw, 3.6rem);
   font-weight: 450;
-  line-height: 1;
-  letter-spacing: -0.035em;
+  line-height: 1.03;
 }
 
 .email {
-  margin: 16px 0 0;
+  margin: 0;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
 
+.signals {
+  display: grid;
+  gap: 8px;
+}
+
+.signals span {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border-radius: 18px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.signals small {
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .actions {
-  margin-top: 28px;
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
@@ -105,13 +106,13 @@
   border-radius: 999px;
   padding: 0 20px;
   text-decoration: none;
-  font-size: 1rem;
-  font-weight: 800;
+  font: 800 0.98rem var(--font-sans);
 }
 
 .primary {
   color: #1b1830;
   background: var(--accent);
+  box-shadow: 0 18px 46px -24px rgba(169, 155, 217, 0.85);
 }
 
 .secondary,
@@ -121,17 +122,18 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.card form {
-  margin-top: 14px;
-}
-
 .signOut {
   width: 100%;
   cursor: pointer;
 }
 
-@media (min-width: 560px) {
+@media (min-width: 620px) {
+  .shell {
+    padding-inline: 32px;
+  }
+
+  .signals,
   .actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
