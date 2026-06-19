@@ -221,10 +221,29 @@
 }
 
 .waitlistStatusLink {
-  margin-top: 2px;
-  font: 600 13px var(--font-sans);
-  color: #ecb6d2;
+  width: min(100%, 360px);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(236, 182, 210, 0.28);
+  background: rgba(236, 182, 210, 0.075);
+  color: #f3c2dd;
+  font: 700 13px var(--font-sans);
   text-decoration: none;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.waitlistStatusLink:hover {
+  transform: translateY(-1px);
+  border-color: rgba(236, 182, 210, 0.42);
+  background: rgba(236, 182, 210, 0.12);
 }
 
 .shareInvite {

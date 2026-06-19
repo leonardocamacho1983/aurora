@@ -136,10 +136,10 @@ export function WaitlistForm() {
   if (done) {
     const doneState = done;
     const created = doneState.mode === "created";
-    const title = created ? "Agora confirme seu email" : "Enviamos seu link novamente";
+    const title = created ? "Agora confirme seu email" : "Confira seu email";
     const body = created
-      ? "Enviamos um link para ativar sua sala Aurora e guardar seu lugar na lista."
-      : "Procure o email da Aurora para confirmar seu acesso ou abrir sua sala pessoal.";
+      ? "Enviamos o link de confirmação. Ele ativa sua sala de convite e guarda seu lugar na lista."
+      : "Reenviamos seu link da Aurora. Ele leva você para confirmar sua presença ou abrir sua sala de convite.";
 
     function trackInbox(provider: string) {
       trackAurora("waitlist_inbox_clicked", {
@@ -178,7 +178,7 @@ export function WaitlistForm() {
               });
             }}
           >
-            Depois de confirmar, abrir minha sala Aurora
+            Já confirmei, abrir minha sala
           </a>
         ) : null}
       </div>
