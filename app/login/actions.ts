@@ -26,7 +26,7 @@ export async function signIn(formData: FormData) {
   if (error) {
     redirect(`/login?error=${encodeURIComponent(friendly(error.message))}`);
   }
-  redirect("/diario");
+  redirect("/boas-vindas");
 }
 
 export async function signUp(formData: FormData) {
@@ -41,7 +41,7 @@ export async function signUp(formData: FormData) {
   }
   // Confirmação de email desativada → já vem com sessão → entra direto.
   if (data.session) {
-    redirect("/diario");
+    redirect("/boas-vindas");
   }
   redirect("/login?message=check-email");
 }

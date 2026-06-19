@@ -8,6 +8,7 @@ import {
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
 import { renderProse } from "@/lib/render-prose";
+import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
 
 type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
@@ -17,7 +18,7 @@ type ReflectResponse =
   | { status: "crisis"; risk: "high"; type: string; resources: CrisisResourcesData; entryId: string }
   | { error: string };
 
-const PROMPT_DO_DIA = "O que está vivo em você agora?";
+const DEFAULT_PROMPT = "O que está vivo em você agora?";
 
 const MOOD_COLOR: Record<string, string> = {
   leve: "var(--mood-leve)",
@@ -45,7 +46,13 @@ const HELPER: Record<Phase, string> = {
   error: "Algo deu errado",
 };
 
-export function Diario({ userEmail = "" }: { userEmail?: string }) {
+export function Diario({
+  userEmail = "",
+  onboarding,
+}: {
+  userEmail?: string;
+  onboarding?: OnboardingProfile;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
   const [mood, setMood] = useState<string | null>(null);
@@ -154,6 +161,13 @@ export function Diario({ userEmail = "" }: { userEmail?: string }) {
 
   const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
   const isActive = phase === "recording" || phase === "reflecting";
+  const firstName = onboarding?.name?.split(" ")[0] ?? "";
+  const prompt = onboarding?.moment
+    ? `Quer começar por ${onboarding.moment}?`
+    : DEFAULT_PROMPT;
+  const helperCopy = onboarding?.presence
+    ? `A Aurora vai começar com uma presença ${onboarding.presence.toLowerCase()}.`
+    : "Fale por alguns minutos. Não precisa organizar antes.";
 
   return (
     <main className={styles.stage}>
@@ -172,10 +186,8 @@ export function Diario({ userEmail = "" }: { userEmail?: string }) {
         <div className={styles.center}>
           <div className={styles.copy}>
             <p className={styles.kicker}>{isActive ? "Agora" : "Diário por voz"}</p>
-            <h1 className="font-serif">{PROMPT_DO_DIA}</h1>
-            <p>
-              Fale por alguns minutos. Não precisa organizar antes, encontrar a frase certa ou explicar tudo.
-            </p>
+            <h1 className="font-serif">{firstName ? `${firstName}, ${prompt}` : prompt}</h1>
+            <p>{helperCopy}</p>
           </div>
 
           {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
