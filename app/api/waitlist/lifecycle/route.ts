@@ -48,15 +48,19 @@ function maskEmail(email: string) {
   return `${name.slice(0, 2)}***@${domain}`;
 }
 
-function isAuthorized(request: Request) {
-  const url = new URL(request.url);
-  const adminToken = process.env.WAITLIST_ADMIN_TOKEN?.trim();
+function isCronAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
 
-  if (adminToken && url.searchParams.get("token") === adminToken) return true;
-  if (cronSecret && bearer === cronSecret) return true;
+  if (!cronSecret) return false;
+  return bearer === cronSecret;
+}
 
+function isAdminAuthorized(request: Request) {
+  const url = new URL(request.url);
+  const adminToken = process.env.WAITLIST_ADMIN_TOKEN?.trim();
+
+  if (adminToken && url.searchParams.get("token") === adminToken) return true;
   return false;
 }
 
@@ -272,7 +276,12 @@ async function getCandidates(limit: number) {
 }
 
 async function runLifecycle(request: Request) {
-  if (!isAuthorized(request)) {
+  if (request.method === "GET" && !process.env.CRON_SECRET?.trim()) {
+    return NextResponse.json({ error: "cron not configured" }, { status: 503 });
+  }
+
+  const authorized = request.method === "GET" ? isCronAuthorized(request) : isAdminAuthorized(request);
+  if (!authorized) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

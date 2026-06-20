@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "db:test": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke:waitlist": "node scripts/smoke-waitlist.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.84",

@@ -19,7 +19,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [x] Diario contextualizado criado como primeira experiencia de produto.
 - [x] Admin revisado para leitura operacional de waitlist, email e rede de convites.
 - [x] Cadencia inicial de emails de lifecycle implementada.
-- [ ] Webhook Resend para delivered, opened, clicked, bounced e complained.
+- [ ] Webhook Resend ativo em producao para delivered, opened, clicked, bounced e complained.
 - [ ] Timeline/account redesenhados com o mesmo nivel de qualidade do diario.
 - [ ] Billing/modelo de negocios definido.
 - [ ] Compliance internacional revisado antes de escala global.
@@ -121,8 +121,9 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [x] PostHog configurado para eventos principais da waitlist.
 - [x] Eventos de pos-cadastro instrumentados: inbox, status link e resend.
 - [x] Lifecycle emails iniciais implementados via rota protegida.
-- [ ] Configurar `CRON_SECRET` no Vercel para cron automatico seguro.
-- [ ] Configurar webhook Resend para metricas de entrega, abertura, clique, bounce e complaint.
+- [x] Proteger rota de lifecycle para cron automatico com `CRON_SECRET`.
+- [x] Implementar endpoint assinado do webhook Resend para metricas de entrega, abertura, clique, bounce e complaint.
+- [ ] Configurar `CRON_SECRET` e `RESEND_WEBHOOK_SECRET` no Vercel e cadastrar endpoint no Resend.
 - [ ] Criar A/B tests no PostHog para copy pos-cadastro, CTA da landing e sala de convite.
 - [ ] Garantir que variantes de experimentos sejam persistentes por usuario/navegador.
 - [ ] Criar dashboard de ativacao do produto alem da waitlist.

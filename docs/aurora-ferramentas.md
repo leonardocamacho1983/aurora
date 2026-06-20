@@ -22,7 +22,7 @@ Ja existe ou ja esta em uso:
 - [ ] `talkaurora.com` como frente EN/global futura.
 - [ ] Sentry ou equivalente para erro real de producao.
 - [ ] Monitor sintetico externo para funis criticos.
-- [ ] Webhook Resend para delivered/opened/clicked/bounced/complained.
+- [ ] Webhook Resend ativo em producao para delivered/opened/clicked/bounced/complained.
 - [ ] Ferramenta de consentimento/privacidade madura para escala internacional.
 
 ## Principios de decisao
@@ -131,19 +131,20 @@ Ferramentas a observar:
 ### Agora
 
 - [x] Resend envia confirmacao, status, milestone e lifecycle inicial.
-- [ ] Criar webhook Resend para eventos:
-  - [ ] `delivered`
-  - [ ] `opened`
-  - [ ] `clicked`
-  - [ ] `bounced`
-  - [ ] `complained`
-- [ ] Criar tabela ou evento interno seguro para email:
-  - [ ] tipo do email
-  - [ ] provider
-  - [ ] status
-  - [ ] timestamp
-  - [ ] erro tecnico, quando houver
-  - [ ] sem conteudo do email
+- [x] Criar endpoint assinado para webhook Resend:
+  - [x] `delivered`
+  - [x] `opened`
+  - [x] `clicked`
+  - [x] `bounced`
+  - [x] `complained`
+- [ ] Configurar o endpoint no Resend e salvar `RESEND_WEBHOOK_SECRET` no Vercel.
+- [x] Criar tabela ou evento interno seguro para email:
+  - [x] tipo do email
+  - [x] provider
+  - [x] status
+  - [x] timestamp
+  - [x] erro tecnico, quando houver
+  - [x] sem conteudo do email
 - [ ] Criar admin de email com:
   - [ ] enviados
   - [ ] falhas
@@ -225,7 +226,7 @@ Regra:
 ### Fase 1: agora, antes de mais trafego
 
 - [ ] Sentry.
-- [ ] Resend Webhooks.
+- [ ] Resend Webhooks ativos em producao.
 - [ ] PostHog flags/experiments basicos.
 - [ ] Supabase Security Advisors/RLS review.
 - [ ] Monitor simples com Checkly ou OpenStatus.
@@ -262,7 +263,7 @@ Regra:
 - [ ] Nao trocar Resend agora.
 - [ ] Nao trocar PostHog agora.
 - [ ] Instalar/configurar Sentry antes de abrir mais produto.
-- [ ] Configurar Resend Webhooks antes de aumentar cadencia de email.
+- [ ] Configurar Resend Webhooks no Resend/Vercel antes de aumentar cadencia de email.
 - [ ] Usar Supabase Queues/Cron apenas quando jobs forem automatizados de verdade.
 - [ ] Tratar Bemi/Metabase/Basedash como avaliacao, nao urgencia.
 

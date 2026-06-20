@@ -112,6 +112,11 @@ type EmailRow = {
   milestoneFailed: number;
   lifecycleSent: number;
   lifecycleFailed: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  complained: number;
 };
 
 type FlaggedRow = {
@@ -393,7 +398,12 @@ async function getDashboardData() {
         count(*) filter (where event_name = 'milestone_email_sent')::int as "milestoneSent",
         count(*) filter (where event_name = 'milestone_email_send_failed')::int as "milestoneFailed",
         count(*) filter (where event_name like 'lifecycle_%_email_sent')::int as "lifecycleSent",
-        count(*) filter (where event_name like 'lifecycle_%_email_send_failed')::int as "lifecycleFailed"
+        count(*) filter (where event_name like 'lifecycle_%_email_send_failed')::int as "lifecycleFailed",
+        count(*) filter (where event_name = 'email_delivered')::int as "delivered",
+        count(*) filter (where event_name = 'email_opened')::int as "opened",
+        count(*) filter (where event_name = 'email_clicked')::int as "clicked",
+        count(*) filter (where event_name = 'email_bounced')::int as "bounced",
+        count(*) filter (where event_name = 'email_complained')::int as "complained"
       from waitlist_events
       where created_at >= now() - interval '30 days'
     `),
@@ -730,6 +740,11 @@ async function getDashboardData() {
       milestoneFailed: asNumber(email?.milestoneFailed),
       lifecycleSent: asNumber(email?.lifecycleSent),
       lifecycleFailed: asNumber(email?.lifecycleFailed),
+      delivered: asNumber(email?.delivered),
+      opened: asNumber(email?.opened),
+      clicked: asNumber(email?.clicked),
+      bounced: asNumber(email?.bounced),
+      complained: asNumber(email?.complained),
     },
     engagedPeople,
     recentProfiles,
@@ -861,8 +876,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           <SignalRow
             label="Emails enviados"
             value={`${emailSent}`}
-            note="Abertura, clique, bounce e complaint ainda dependem de webhook Resend"
-            tone={emailFailures === 0 ? "good" : "warn"}
+            note={`${data.email.delivered} delivered, ${data.email.bounced} bounces, ${data.email.complained} complaints`}
+            tone={emailFailures === 0 && data.email.bounced === 0 && data.email.complained === 0 ? "good" : "warn"}
           />
         </section>
 
@@ -882,7 +897,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Email</h2>
-            <p>Envios transacionais da waitlist. Abertura, clique, bounce e complaint ainda não estão configurados.</p>
+            <p>Envios transacionais da waitlist e sinais recebidos pelo webhook do Resend.</p>
           </div>
           <div className={styles.grid}>
             <MetricCard
@@ -915,9 +930,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               note={`${data.email.lifecycleFailed} falhas em emails de lifecycle`}
               tone={data.email.lifecycleFailed ? "warn" : "neutral"}
             />
+            <MetricCard
+              value={compactNumber(data.email.delivered)}
+              label="Delivered"
+              note={`${data.email.opened} aberturas e ${data.email.clicked} cliques registrados`}
+              tone="neutral"
+            />
+            <MetricCard
+              value={compactNumber(data.email.bounced)}
+              label="Bounces"
+              note={`${data.email.complained} complaints nos últimos 30 dias`}
+              tone={data.email.bounced || data.email.complained ? "warn" : "good"}
+            />
           </div>
           <div className={styles.noteCard}>
-            Webhook Resend pendente: delivered, opened, clicked, bounced e complained ainda não existem no banco.
+            Webhook Resend: eventos assinados são gravados sem conteúdo do email e sem armazenar destinatário em metadata.
           </div>
         </section>
 
