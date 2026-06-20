@@ -613,6 +613,7 @@ async function getDashboardData() {
         from waitlist_events
         where created_at >= now() - interval '30 days'
           and metadata->>'utm_campaign' = 'launch_waitlist'
+          and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       ),
       page_distinct as (
         select distinct metadata->>'distinctId' as distinct_id
