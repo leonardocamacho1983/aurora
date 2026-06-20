@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Aurora Founder Cockpit",
+  title: "Aurora Cockpit",
   robots: {
     index: false,
     follow: false,
@@ -31,8 +31,6 @@ type CountRow = {
 };
 
 type ProfileRow = {
-  totalProfiles: number;
-  names: number;
   started: number;
   complete: number;
 };
@@ -41,20 +39,6 @@ type EventSummaryRow = {
   eventName: string;
   total: number;
   uniquePeople: number;
-};
-
-type TopReferrerRow = {
-  email: string;
-  name: string | null;
-  referralCode: string;
-  confirmedReferrals: number;
-};
-
-type MilestoneRow = {
-  unlocked5: number;
-  unlocked10: number;
-  unlocked15: number;
-  unlocked20: number;
 };
 
 type DailyRow = {
@@ -66,9 +50,11 @@ type DailyRow = {
 
 type HealthRow = {
   stalePending: number;
-  dirtyRows: number;
+  internalEmails: number;
+  testRows: number;
   brokenReferrals: number;
   legacyInviteEvents: number;
+  eventsWithoutDistinctId: number;
 };
 
 type TrafficSummaryRow = {
@@ -78,13 +64,66 @@ type TrafficSummaryRow = {
   clientSignupSuccess: number;
 };
 
-type CampaignSummaryRow = TrafficSummaryRow & {
+type CampaignSummaryRow = {
+  pageviews: number;
+  visitors: number;
+  ctaClicks: number;
+  clientSignupSuccess: number;
   signups: number;
+  signupsWithoutPageview: number;
 };
 
 type BreakdownRow = {
   label: string;
   total: number;
+};
+
+type TopReferrerRow = {
+  email: string;
+  name: string | null;
+  referralCode: string;
+  totalInvites: number;
+  confirmedInvites: number;
+  lastConfirmedAt: Date | null;
+  milestoneNotified: number;
+  roomViews: number;
+  shareActions: number;
+};
+
+type NetworkRow = {
+  activeInviters: number;
+  invitedTotal: number;
+  invitedConfirmed: number;
+  oneInvite: number;
+  twoToFour: number;
+  fivePlus: number;
+};
+
+type EmailRow = {
+  confirmSent: number;
+  confirmFailed: number;
+  statusSent: number;
+  statusFailed: number;
+  friendSent: number;
+  friendFailed: number;
+  milestoneSent: number;
+  milestoneFailed: number;
+};
+
+type FlaggedRow = {
+  email: string;
+  reason: string;
+  createdAt: Date;
+};
+
+type EngagedRow = {
+  email: string;
+  name: string | null;
+  referralCode: string;
+  confirmedInvites: number;
+  shareActions: number;
+  roomViews: number;
+  ritualComplete: boolean;
 };
 
 function rows<T>(result: unknown): T[] {
@@ -102,6 +141,11 @@ function asNumber(value: unknown) {
 function percent(value: number, total: number) {
   if (!total) return "0%";
   return `${Math.round((value / total) * 100)}%`;
+}
+
+function percentOrNA(value: number, total: number, fallback = "sem base") {
+  if (!total) return fallback;
+  return percent(value, total);
 }
 
 function ratio(value: number, total: number, precision = 2) {
@@ -166,15 +210,15 @@ function MetricCard({
   value,
   label,
   note,
-  wide,
+  tone = "neutral",
 }: {
   value: string;
   label: string;
   note: string;
-  wide?: boolean;
+  tone?: "neutral" | "warn" | "good";
 }) {
   return (
-    <article className={`${styles.card} ${wide ? styles.wide : ""}`}>
+    <article className={`${styles.card} ${styles[tone]}`}>
       <div className={styles.metricValue}>{value}</div>
       <div className={styles.metricLabel}>{label}</div>
       <div className={styles.metricNote}>{note}</div>
@@ -182,54 +226,29 @@ function MetricCard({
   );
 }
 
-function FunnelStep({
-  label,
-  value,
-  total,
-  note,
-}: {
-  label: string;
-  value: number;
-  total: number;
-  note: string;
-}) {
-  const pct = total ? Math.round((value / total) * 100) : 0;
-
-  return (
-    <article className={styles.funnelStep}>
-      <div>
-        <strong>{label}</strong>
-        <span>{note}</span>
-      </div>
-      <div className={styles.funnelValue}>
-        <b>{compactNumber(value)}</b>
-        <em>{pct}%</em>
-      </div>
-      <div className={styles.bar}>
-        <span style={{ width: `${Math.min(100, pct)}%` }} />
-      </div>
-    </article>
-  );
-}
-
 function SignalRow({
   label,
   value,
+  note,
   tone = "neutral",
 }: {
   label: string;
   value: string;
+  note?: string;
   tone?: "good" | "warn" | "neutral";
 }) {
   return (
     <div className={`${styles.signalRow} ${styles[tone]}`}>
-      <span>{label}</span>
+      <span>
+        {label}
+        {note ? <small>{note}</small> : null}
+      </span>
       <strong>{value}</strong>
     </div>
   );
 }
 
-function BreakdownList({ title, rows }: { title: string; rows: BreakdownRow[] }) {
+function BreakdownList({ title, rows, empty = "Ainda sem dados suficientes." }: { title: string; rows: BreakdownRow[]; empty?: string }) {
   const total = rows.reduce((sum, row) => sum + asNumber(row.total), 0);
 
   return (
@@ -249,7 +268,7 @@ function BreakdownList({ title, rows }: { title: string; rows: BreakdownRow[] })
           );
         })
       ) : (
-        <p className={styles.emptyState}>Ainda sem dados suficientes.</p>
+        <p className={styles.emptyState}>{empty}</p>
       )}
     </article>
   );
@@ -275,8 +294,6 @@ async function getDashboardData() {
   const [profile] = rows<ProfileRow>(
     await db.execute(sql`
       select
-        count(*)::int as "totalProfiles",
-        count(*) filter (where nullif(trim(name), '') is not null)::int as "names",
         count(*) filter (
           where nullif(trim(name), '') is not null
              or nullif(trim(moment), '') is not null
@@ -312,32 +329,111 @@ async function getDashboardData() {
         w.email,
         wp.name,
         w.referral_code as "referralCode",
-        count(r.id)::int as "confirmedReferrals"
+        count(distinct r.id)::int as "totalInvites",
+        count(distinct r.id) filter (where r.confirmed_at is not null)::int as "confirmedInvites",
+        max(r.confirmed_at) as "lastConfirmedAt",
+        w.milestone_notified as "milestoneNotified",
+        count(distinct room_events.id)::int as "roomViews",
+        count(distinct share_events.id)::int as "shareActions"
       from waitlist w
       left join waitlist_profile wp on wp.waitlist_id = w.id
-      left join waitlist r on r.referred_by_code = w.referral_code and r.confirmed_at is not null
+      left join waitlist r on r.referred_by_code = w.referral_code
+      left join waitlist_events room_events
+        on room_events.waitlist_id = w.id and room_events.event_name = 'referral_room_viewed'
+      left join waitlist_events share_events
+        on share_events.waitlist_id = w.id
+        and share_events.event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared')
       group by w.id, wp.name
-      order by count(r.id) desc, w.created_at asc
+      having count(distinct r.id) > 0 or count(distinct share_events.id) > 0
+      order by count(distinct r.id) filter (where r.confirmed_at is not null) desc, count(distinct r.id) desc, count(distinct share_events.id) desc
       limit 10
     `),
   );
 
-  const [milestones] = rows<MilestoneRow>(
+  const [network] = rows<NetworkRow>(
     await db.execute(sql`
       with ref_counts as (
         select
           w.id,
-          count(r.id)::int as confirmed_referrals
+          count(r.id)::int as invited_total,
+          count(r.id) filter (where r.confirmed_at is not null)::int as invited_confirmed
         from waitlist w
-        left join waitlist r on r.referred_by_code = w.referral_code and r.confirmed_at is not null
+        left join waitlist r on r.referred_by_code = w.referral_code
         group by w.id
       )
       select
-        count(*) filter (where confirmed_referrals >= 5)::int as "unlocked5",
-        count(*) filter (where confirmed_referrals >= 10)::int as "unlocked10",
-        count(*) filter (where confirmed_referrals >= 15)::int as "unlocked15",
-        count(*) filter (where confirmed_referrals >= 20)::int as "unlocked20"
+        count(*) filter (where invited_total > 0)::int as "activeInviters",
+        coalesce(sum(invited_total), 0)::int as "invitedTotal",
+        coalesce(sum(invited_confirmed), 0)::int as "invitedConfirmed",
+        count(*) filter (where invited_confirmed = 1)::int as "oneInvite",
+        count(*) filter (where invited_confirmed between 2 and 4)::int as "twoToFour",
+        count(*) filter (where invited_confirmed >= 5)::int as "fivePlus"
       from ref_counts
+    `),
+  );
+
+  const [email] = rows<EmailRow>(
+    await db.execute(sql`
+      select
+        count(*) filter (where event_name = 'confirm_email_sent')::int as "confirmSent",
+        count(*) filter (where event_name = 'confirm_email_send_failed')::int as "confirmFailed",
+        count(*) filter (where event_name = 'status_email_sent')::int as "statusSent",
+        count(*) filter (where event_name = 'status_email_send_failed')::int as "statusFailed",
+        count(*) filter (where event_name = 'friend_joined_email_sent')::int as "friendSent",
+        count(*) filter (where event_name = 'friend_joined_email_send_failed')::int as "friendFailed",
+        count(*) filter (where event_name = 'milestone_email_sent')::int as "milestoneSent",
+        count(*) filter (where event_name = 'milestone_email_send_failed')::int as "milestoneFailed"
+      from waitlist_events
+      where created_at >= now() - interval '30 days'
+    `),
+  );
+
+  const engagedPeople = rows<EngagedRow>(
+    await db.execute(sql`
+      with ref_counts as (
+        select
+          w.id,
+          count(r.id) filter (where r.confirmed_at is not null)::int as confirmed_invites
+        from waitlist w
+        left join waitlist r on r.referred_by_code = w.referral_code
+        group by w.id
+      ),
+      event_counts as (
+        select
+          waitlist_id,
+          count(*) filter (where event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared'))::int as share_actions,
+          count(*) filter (where event_name = 'referral_room_viewed')::int as room_views
+        from waitlist_events
+        where waitlist_id is not null
+        group by waitlist_id
+      )
+      select
+        w.email,
+        wp.name,
+        w.referral_code as "referralCode",
+        coalesce(rc.confirmed_invites, 0)::int as "confirmedInvites",
+        coalesce(ec.share_actions, 0)::int as "shareActions",
+        coalesce(ec.room_views, 0)::int as "roomViews",
+        (
+          nullif(trim(wp.moment), '') is not null
+          and nullif(trim(wp.rhythm), '') is not null
+          and nullif(trim(wp.presence), '') is not null
+          and nullif(trim(wp.value), '') is not null
+        ) as "ritualComplete"
+      from waitlist w
+      left join waitlist_profile wp on wp.waitlist_id = w.id
+      left join ref_counts rc on rc.id = w.id
+      left join event_counts ec on ec.waitlist_id = w.id
+      where coalesce(rc.confirmed_invites, 0) > 0
+         or coalesce(ec.share_actions, 0) > 0
+         or coalesce(ec.room_views, 0) > 0
+         or wp.waitlist_id is not null
+      order by
+        coalesce(rc.confirmed_invites, 0) desc,
+        coalesce(ec.share_actions, 0) desc,
+        coalesce(ec.room_views, 0) desc,
+        w.created_at asc
+      limit 8
     `),
   );
 
@@ -365,28 +461,6 @@ async function getDashboardData() {
     .from(waitlistEvents)
     .orderBy(desc(waitlistEvents.createdAt))
     .limit(14);
-
-  const rhythmRows = rows<{ value: string | null; total: number }>(
-    await db.execute(sql`
-      select rhythm as value, count(*)::int as total
-      from waitlist_profile
-      where nullif(trim(rhythm), '') is not null
-      group by rhythm
-      order by count(*) desc
-      limit 8
-    `),
-  );
-
-  const presenceRows = rows<{ value: string | null; total: number }>(
-    await db.execute(sql`
-      select presence as value, count(*)::int as total
-      from waitlist_profile
-      where nullif(trim(presence), '') is not null
-      group by presence
-      order by count(*) desc
-      limit 8
-    `),
-  );
 
   const dailyRows = rows<DailyRow>(
     await db.execute(sql`
@@ -418,14 +492,42 @@ async function getDashboardData() {
     await db.execute(sql`
       select
         (select count(*)::int from waitlist where confirmed_at is null and created_at < now() - interval '24 hours') as "stalePending",
-        (select count(*)::int from waitlist where lower(email) like '%test%' or lower(email) like '%leonardocamacho%') as "dirtyRows",
+        (select count(*)::int from waitlist where lower(email) like '%leonardocamacho%') as "internalEmails",
+        (select count(*)::int from waitlist where lower(email) like '%test%' or lower(email) like '%launchtest%' or lower(email) like '%example.%') as "testRows",
         (
           select count(*)::int
           from waitlist child
           left join waitlist parent on parent.referral_code = child.referred_by_code
           where child.referred_by_code is not null and parent.id is null
         ) as "brokenReferrals",
-        (select count(*)::int from waitlist_events where event_name = 'invite_link_copied') as "legacyInviteEvents"
+        (select count(*)::int from waitlist_events where event_name = 'invite_link_copied') as "legacyInviteEvents",
+        (
+          select count(*)::int
+          from waitlist_events
+          where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
+            and metadata is not null
+            and nullif(metadata->>'distinctId', '') is null
+        ) as "eventsWithoutDistinctId"
+    `),
+  );
+
+  const flaggedRows = rows<FlaggedRow>(
+    await db.execute(sql`
+      select
+        email,
+        case
+          when lower(email) like '%test%' or lower(email) like '%launchtest%' or lower(email) like '%example.%' then 'teste'
+          when lower(email) like '%leonardocamacho%' then 'interno'
+          else 'revisar'
+        end as reason,
+        created_at as "createdAt"
+      from waitlist
+      where lower(email) like '%test%'
+         or lower(email) like '%launchtest%'
+         or lower(email) like '%example.%'
+         or lower(email) like '%leonardocamacho%'
+      order by created_at desc
+      limit 8
     `),
   );
 
@@ -458,10 +560,10 @@ async function getDashboardData() {
   const trafficSources = rows<BreakdownRow>(
     await db.execute(sql`
       select
-        coalesce(nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
+        coalesce(nullif(metadata->>'source_type', ''), nullif(metadata->>'utm_source', ''), nullif(source, ''), 'direct') as label,
         count(*)::int as total
       from waitlist_events
-      where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
+      where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
         and created_at >= now() - interval '30 days'
       group by 1
       order by count(*) desc
@@ -486,7 +588,7 @@ async function getDashboardData() {
   const signupSources = rows<BreakdownRow>(
     await db.execute(sql`
       select
-        coalesce(nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
+        coalesce(nullif(metadata->>'utm_source', ''), nullif(metadata->>'source_type', ''), nullif(source, ''), 'direct') as label,
         count(*)::int as total
       from waitlist_events
       where event_name = 'signup_created'
@@ -499,15 +601,32 @@ async function getDashboardData() {
 
   const [launchCampaign] = rows<CampaignSummaryRow>(
     await db.execute(sql`
+      with campaign_events as (
+        select *
+        from waitlist_events
+        where created_at >= now() - interval '30 days'
+          and metadata->>'utm_campaign' = 'launch_waitlist'
+      ),
+      page_distinct as (
+        select distinct metadata->>'distinctId' as distinct_id
+        from campaign_events
+        where event_name = 'launch_page_viewed'
+          and nullif(metadata->>'distinctId', '') is not null
+      )
       select
         count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
         count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
         count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess",
-        count(*) filter (where event_name = 'signup_created')::int as "signups"
-      from waitlist_events
-      where created_at >= now() - interval '30 days'
-        and metadata->>'utm_campaign' = 'launch_waitlist'
+        count(*) filter (where event_name = 'signup_created')::int as "signups",
+        count(*) filter (
+          where event_name = 'signup_created'
+            and not exists (
+              select 1 from page_distinct p
+              where p.distinct_id = campaign_events.metadata->>'distinctId'
+            )
+        )::int as "signupsWithoutPageview"
+      from campaign_events
     `),
   );
 
@@ -569,30 +688,42 @@ async function getDashboardData() {
       confirmedReferred: asNumber(summary?.confirmedReferred),
     },
     profile: {
-      totalProfiles: asNumber(profile?.totalProfiles),
-      names: asNumber(profile?.names),
       started: asNumber(profile?.started),
       complete: asNumber(profile?.complete),
     },
     eventSummary,
     topReferrers,
-    milestones: {
-      unlocked5: asNumber(milestones?.unlocked5),
-      unlocked10: asNumber(milestones?.unlocked10),
-      unlocked15: asNumber(milestones?.unlocked15),
-      unlocked20: asNumber(milestones?.unlocked20),
+    network: {
+      activeInviters: asNumber(network?.activeInviters),
+      invitedTotal: asNumber(network?.invitedTotal),
+      invitedConfirmed: asNumber(network?.invitedConfirmed),
+      oneInvite: asNumber(network?.oneInvite),
+      twoToFour: asNumber(network?.twoToFour),
+      fivePlus: asNumber(network?.fivePlus),
     },
+    email: {
+      confirmSent: asNumber(email?.confirmSent),
+      confirmFailed: asNumber(email?.confirmFailed),
+      statusSent: asNumber(email?.statusSent),
+      statusFailed: asNumber(email?.statusFailed),
+      friendSent: asNumber(email?.friendSent),
+      friendFailed: asNumber(email?.friendFailed),
+      milestoneSent: asNumber(email?.milestoneSent),
+      milestoneFailed: asNumber(email?.milestoneFailed),
+    },
+    engagedPeople,
     recentProfiles,
     recentEvents,
-    rhythmRows,
-    presenceRows,
     dailyRows,
     health: {
       stalePending: asNumber(health?.stalePending),
-      dirtyRows: asNumber(health?.dirtyRows),
+      internalEmails: asNumber(health?.internalEmails),
+      testRows: asNumber(health?.testRows),
       brokenReferrals: asNumber(health?.brokenReferrals),
       legacyInviteEvents: asNumber(health?.legacyInviteEvents),
+      eventsWithoutDistinctId: asNumber(health?.eventsWithoutDistinctId),
     },
+    flaggedRows,
     traffic: {
       pageviews: asNumber(traffic?.pageviews),
       visitors: asNumber(traffic?.visitors),
@@ -609,6 +740,7 @@ async function getDashboardData() {
       ctaClicks: asNumber(launchCampaign?.ctaClicks),
       clientSignupSuccess: asNumber(launchCampaign?.clientSignupSuccess),
       signups: asNumber(launchCampaign?.signups),
+      signupsWithoutPageview: asNumber(launchCampaign?.signupsWithoutPageview),
     },
     launchCampaignSources,
     launchCampaignContent,
@@ -635,174 +767,257 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       { total: 0, unique: 0 },
     );
 
-  const qualified = Math.max(data.profile.started, data.profile.complete);
-  const usdTarget = 1_000_000;
-  const assumedPrice = 9;
-  const assumedPaidConversion = 0.08;
-  const neededQualified = Math.ceil(usdTarget / 12 / assumedPrice / assumedPaidConversion);
-  const targetProgress = Math.min(100, Math.round((qualified / neededQualified) * 10000) / 100);
-  const projectedMrr = qualified * assumedPrice * assumedPaidConversion;
+  const emailFailures =
+    data.email.confirmFailed + data.email.statusFailed + data.email.friendFailed + data.email.milestoneFailed;
+  const emailSent = data.email.confirmSent + data.email.statusSent + data.email.friendSent + data.email.milestoneSent;
+  const dataHealthGood =
+    data.health.testRows === 0 &&
+    data.health.brokenReferrals === 0 &&
+    emailFailures === 0;
+  const healthMessage = dataHealthGood
+    ? "Base limpa para lançamento"
+    : data.health.testRows > 0
+      ? `Atenção: ${data.health.testRows} dados de teste detectados`
+      : emailFailures > 0
+        ? `Atenção: ${emailFailures} falhas de email`
+        : "Atenção técnica";
   const exportHref = `/api/waitlist/export?token=${encodeURIComponent(adminToken)}`;
   const highestDailyValue = Math.max(
     1,
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
   );
-  const inviteToConfirmedRate = percent(data.summary.confirmedReferred, shareEvents.unique);
-  const visitorToSignupRate = percent(data.summary.signups30, data.traffic.visitors);
-  const ctaClickRate = percent(data.traffic.ctaClicks, data.traffic.visitors);
-  const launchCampaignSignupRate = percent(data.launchCampaign.signups, data.launchCampaign.visitors);
-  const launchCampaignClickRate = percent(data.launchCampaign.ctaClicks, data.launchCampaign.visitors);
-  const dataHealthGood =
-    data.health.dirtyRows === 0 &&
-    data.health.brokenReferrals === 0 &&
-    data.health.legacyInviteEvents === 0;
 
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <section className={styles.hero}>
+        <section className={styles.compactHero}>
           <div>
             <div className={styles.brand}>
               <span className={styles.orb} />
-              Aurora Founder Cockpit
+              Aurora Cockpit
             </div>
-            <h1 className={styles.title}>Da lista de espera ao motor de crescimento.</h1>
+            <h1 className={styles.title}>Lançamento, emails e rede de convites.</h1>
             <p className={styles.lead}>
-              Um painel para acompanhar desejo, indicação, ritual e qualidade do lançamento. A pergunta central é simples: a
-              Aurora está criando confiança suficiente para ser compartilhada?
+              Painel operacional para entender confirmação, campanha, indicação e dados que pedem ação.
             </p>
-            <div className={styles.actions}>
-              <Link className={styles.button} href={exportHref}>
-                Exportar CSV
-              </Link>
-              <Link className={styles.secondary} href={`/admin?token=${encodeURIComponent(adminToken)}`}>
-                Atualizar painel
-              </Link>
-              <Link className={styles.secondary} href="/">
-                Ver home
-              </Link>
-            </div>
           </div>
-          <aside className={styles.heroPanel}>
-            <div className={styles.heroStat}>
-              <strong>{percent(data.summary.confirmed, data.summary.total)}</strong>
-              <span>confirmação da lista</span>
-            </div>
-            <div className={styles.heroStat}>
-              <strong>{ratio(data.summary.confirmedReferred, data.summary.confirmed)}</strong>
-              <span>convites confirmados por pessoa confirmada</span>
-            </div>
-            <div className={styles.heroStat}>
-              <strong>{percent(data.profile.complete, data.summary.confirmed)}</strong>
-              <span>Ritual completo entre confirmados</span>
-            </div>
-          </aside>
+          <div className={styles.actions}>
+            <Link className={styles.button} href={exportHref}>
+              Exportar CSV
+            </Link>
+            <Link className={styles.secondary} href={`/admin?token=${encodeURIComponent(adminToken)}`}>
+              Atualizar
+            </Link>
+            <Link className={styles.secondary} href="/">
+              Home
+            </Link>
+          </div>
+        </section>
+
+        <section className={styles.alertStrip}>
+          <SignalRow
+            label="Saúde dos dados"
+            value={healthMessage}
+            note={`${data.health.internalEmails} emails internos separados da sujeira real`}
+            tone={dataHealthGood ? "good" : "warn"}
+          />
+          <SignalRow
+            label="Pendentes acima de 24h"
+            value={`${data.health.stalePending} pessoas`}
+            note="Quem entrou e ainda não confirmou email"
+            tone={data.health.stalePending === 0 ? "good" : "warn"}
+          />
+          <SignalRow
+            label="Emails enviados"
+            value={`${emailSent}`}
+            note="Abertura, clique, bounce e complaint ainda dependem de webhook Resend"
+            tone={emailFailures === 0 ? "good" : "warn"}
+          />
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2>Norte do lançamento</h2>
-            <p>Os números que mostram se a Aurora está sendo entendida, desejada, confirmada e compartilhada.</p>
+            <h2>Lançamento</h2>
+            <p>O essencial: lista, confirmação, convite e Ritual de Chegada.</p>
           </div>
           <div className={styles.grid}>
             <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} />
-            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${data.summary.pending} ainda precisam confirmar`} />
-            <MetricCard value={compactNumber(data.summary.confirmedReferred)} label="Entradas por convite" note={`${percent(data.summary.confirmedReferred, data.summary.confirmed)} dos confirmados vieram por indicação`} />
-            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual de Chegada`} />
+            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${percent(data.summary.confirmed, data.summary.total)} da lista confirmou`} />
+            <MetricCard value={compactNumber(data.network.invitedConfirmed)} label="Convidados confirmados" note={`${data.network.invitedTotal} convidados gerados pela rede`} />
+            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual`} />
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2>Funil fundador</h2>
-            <p>Da primeira inscrição ao sinal mais forte de intenção: completar o Ritual de Chegada.</p>
+            <h2>Email</h2>
+            <p>Envios transacionais da waitlist. Abertura, clique, bounce e complaint ainda não estão configurados.</p>
           </div>
-          <div className={styles.funnel}>
-            <FunnelStep label="Inscrição" value={data.summary.total} total={data.summary.total} note="Entrou na lista de espera" />
-            <FunnelStep label="Confirmação" value={data.summary.confirmed} total={data.summary.total} note="Double opt-in concluído" />
-            <FunnelStep label="Convite acionado" value={shareEvents.unique} total={data.summary.confirmed} note="Fez algum gesto de compartilhamento" />
-            <FunnelStep
-              label="Indicação aceita"
-              value={data.summary.confirmedReferred}
-              total={Math.max(1, shareEvents.unique)}
-              note={`${inviteToConfirmedRate} por pessoas que compartilharam`}
+          <div className={styles.grid}>
+            <MetricCard
+              value={compactNumber(data.email.confirmSent)}
+              label="Confirmações enviadas"
+              note={`${data.email.confirmFailed} falhas ao enviar confirmação`}
+              tone={data.email.confirmFailed ? "warn" : "neutral"}
             />
-            <FunnelStep label="Ritual completo" value={data.profile.complete} total={data.summary.confirmed} note="Respondeu todas as perguntas de chegada" />
+            <MetricCard
+              value={compactNumber(data.email.statusSent)}
+              label="Links de status enviados"
+              note={`${data.email.statusFailed} falhas ao enviar sala/status`}
+              tone={data.email.statusFailed ? "warn" : "neutral"}
+            />
+            <MetricCard
+              value={compactNumber(data.email.friendSent)}
+              label="Avisos de convidado"
+              note={`${data.email.friendFailed} falhas ao avisar convidante`}
+              tone={data.email.friendFailed ? "warn" : "neutral"}
+            />
+            <MetricCard
+              value={compactNumber(data.email.milestoneSent)}
+              label="Marcos enviados"
+              note={`${data.email.milestoneFailed} falhas em emails de marco`}
+              tone={data.email.milestoneFailed ? "warn" : "neutral"}
+            />
+          </div>
+          <div className={styles.noteCard}>
+            Webhook Resend pendente: delivered, opened, clicked, bounced e complained ainda não existem no banco.
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2>Máquina viral</h2>
-            <p>O loop de indicação funciona quando a pessoa sente orgulho de trazer gente querida para perto.</p>
+            <h2>Rede de convites</h2>
+            <p>Convidante é quem compartilha. Convidados são as pessoas que entram pelo código. Confirmados são convidados que validaram email.</p>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard value={compactNumber(data.network.activeInviters)} label="Convidantes ativos" note="Pessoas que geraram ao menos um convidado" />
+            <MetricCard value={compactNumber(data.network.invitedTotal)} label="Convidados gerados" note={`${data.network.invitedConfirmed} confirmaram email`} />
+            <MetricCard value={ratio(data.network.invitedConfirmed, data.network.activeInviters)} label="Confirmados por convidante" note="Média entre convidantes ativos" />
+            <MetricCard value={percent(data.network.invitedConfirmed, data.network.invitedTotal)} label="Confirmação dos convidados" note="Convidados confirmados sobre convidados gerados" />
           </div>
           <div className={styles.gridThree}>
-            <MetricCard value={compactNumber(shareEvents.total)} label="Gestos de compartilhamento" note={`${shareEvents.unique} pessoas acionaram algum convite`} />
-            <MetricCard value={ratio(data.summary.confirmedReferred, data.summary.confirmed)} label="K-factor confirmado" note="Convites confirmados por pessoa confirmada" />
-            <MetricCard value={compactNumber(data.milestones.unlocked5)} label="Acesso antecipado desbloqueado" note={`${data.milestones.unlocked10} chegaram ao marco de 10`} />
+            <div className={styles.signalCard}>
+              <h3 className={styles.cardTitle}>Distribuição da rede</h3>
+              <SignalRow label="1 convidado confirmado" value={`${data.network.oneInvite}`} />
+              <SignalRow label="2 a 4 confirmados" value={`${data.network.twoToFour}`} />
+              <SignalRow label="5 ou mais confirmados" value={`${data.network.fivePlus}`} />
+            </div>
+            <div className={`${styles.tableCard} ${styles.widePanel}`}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Convidante</th>
+                    <th>Convidados</th>
+                    <th>Convidados confirmados</th>
+                    <th>Taxa</th>
+                    <th>Último</th>
+                    <th>Marco</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.topReferrers.map((person) => (
+                    <tr key={person.referralCode}>
+                      <td>
+                        <strong>{person.name || "Sem nome"}</strong>
+                        <br />
+                        <span className={styles.muted}>{maskEmail(person.email)}</span>
+                      </td>
+                      <td>{person.totalInvites}</td>
+                      <td>{person.confirmedInvites}</td>
+                      <td>{percent(person.confirmedInvites, person.totalInvites)}</td>
+                      <td>{formatDate(person.lastConfirmedAt)}</td>
+                      <td>{person.milestoneNotified ? `${person.milestoneNotified}+` : "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Pessoas mais engajadas</h2>
+            <p>Ranking operacional: convites confirmados, gestos de compartilhamento, visitas à sala e Ritual completo.</p>
+          </div>
+          <div className={styles.tableCard}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Pessoa</th>
+                  <th>Convidados confirmados</th>
+                  <th>Compartilhamentos</th>
+                  <th>Sala</th>
+                  <th>Ritual</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.engagedPeople.map((person) => (
+                  <tr key={person.referralCode}>
+                    <td>
+                      <strong>{person.name || "Sem nome"}</strong>
+                      <br />
+                      <span className={styles.muted}>{maskEmail(person.email)}</span>
+                    </td>
+                    <td>{person.confirmedInvites}</td>
+                    <td>{person.shareActions}</td>
+                    <td>{person.roomViews}</td>
+                    <td>{person.ritualComplete ? "completo" : "parcial"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Campanha launch_waitlist</h2>
-            <p>Recorte limpo dos links oficiais do lançamento. Use este bloco para testar bio, stories, WhatsApp e LinkedIn.</p>
+            <p>Recorte por UTM oficial. Quando não há pageview capturado, a taxa fica indisponível em vez de aparecer como 0%.</p>
           </div>
           <div className={styles.grid}>
             <MetricCard
               value={compactNumber(data.launchCampaign.visitors)}
-              label="Visitantes da campanha"
-              note={`${compactNumber(data.launchCampaign.pageviews)} pageviews marcados com launch_waitlist`}
+              label="Visitantes rastreados"
+              note={`${compactNumber(data.launchCampaign.pageviews)} pageviews com launch_waitlist`}
             />
             <MetricCard
-              value={launchCampaignClickRate}
+              value={percentOrNA(data.launchCampaign.ctaClicks, data.launchCampaign.visitors, "sem base")}
               label="Visitante para CTA"
-              note={`${compactNumber(data.launchCampaign.ctaClicks)} cliques em CTA da campanha`}
+              note={data.launchCampaign.visitors ? `${compactNumber(data.launchCampaign.ctaClicks)} cliques em CTA` : "pageview não capturado"}
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.signups)}
-              label="Cadastros da campanha"
+              label="Cadastros com UTM"
               note={`${compactNumber(data.launchCampaign.clientSignupSuccess)} sucessos capturados no client`}
             />
             <MetricCard
-              value={launchCampaignSignupRate}
+              value={percentOrNA(data.launchCampaign.signups, data.launchCampaign.visitors, "sem base")}
               label="Visitante para cadastro"
-              note="Conversão dos links oficiais para inscrição criada"
+              note={
+                data.launchCampaign.visitors
+                  ? "Conversão dos links oficiais"
+                  : `${data.launchCampaign.signupsWithoutPageview} cadastros sem pageview prévio`
+              }
             />
           </div>
           <div className={styles.gridThree}>
             <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} />
             <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} />
-            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} />
+            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} empty="Sem clique de CTA capturado com esta UTM." />
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Tráfego e conversão</h2>
-            <p>Leitura first-party para entender de onde vem a atenção e onde ela vira cadastro.</p>
+            <p>Leitura first-party geral dos últimos 30 dias.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard
-              value={compactNumber(data.traffic.pageviews)}
-              label="Pageviews nos últimos 30 dias"
-              note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`}
-            />
-            <MetricCard
-              value={visitorToSignupRate}
-              label="Visitante para cadastro"
-              note={`${compactNumber(data.summary.signups30)} cadastros no período`}
-            />
-            <MetricCard
-              value={ctaClickRate}
-              label="Visitante para clique em CTA"
-              note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`}
-            />
-            <MetricCard
-              value={compactNumber(data.traffic.clientSignupSuccess)}
-              label="Sucessos no client"
-              note="Confirmações de envio capturadas no navegador"
-            />
+            <MetricCard value={compactNumber(data.traffic.pageviews)} label="Pageviews" note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`} />
+            <MetricCard value={percentOrNA(data.summary.signups30, data.traffic.visitors, "sem base")} label="Visitante para cadastro" note={`${compactNumber(data.summary.signups30)} cadastros no período`} />
+            <MetricCard value={percentOrNA(data.traffic.ctaClicks, data.traffic.visitors, "sem base")} label="Visitante para CTA" note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`} />
+            <MetricCard value={compactNumber(data.traffic.clientSignupSuccess)} label="Sucessos no client" note="Confirmações de envio capturadas no navegador" />
           </div>
           <div className={styles.quadSplit}>
             <BreakdownList title="Páginas mais vistas" rows={data.topPages} />
@@ -815,7 +1030,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Últimos 14 dias</h2>
-            <p>Ritmo diário para perceber se uma publicação, conversa ou ajuste de copy mudou o comportamento.</p>
+            <p>Ritmo diário para perceber se publicação, conversa ou ajuste de copy mudou comportamento.</p>
           </div>
           <div className={styles.sparkCard}>
             {data.dailyRows.map((row) => {
@@ -844,154 +1059,89 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2>Diagnóstico do fundador</h2>
-            <p>Leitura rápida do que merece atenção antes de acelerar tráfego, conteúdo ou PR.</p>
+            <h2>Saúde dos dados</h2>
+            <p>Separação entre dados internos, teste real e problemas técnicos acionáveis.</p>
           </div>
           <div className={styles.split}>
             <div className={styles.signalCard}>
               <SignalRow
-                label="Confirmação de email"
-                value={`${percent(data.summary.confirmed, data.summary.total)} confirmados`}
-                tone={data.summary.total === 0 || data.summary.confirmed / data.summary.total >= 0.65 ? "good" : "warn"}
+                label="Emails internos"
+                value={`${data.health.internalEmails}`}
+                note="Separados da sujeira real; não bloqueiam leitura"
+                tone="neutral"
               />
               <SignalRow
-                label="Pendentes acima de 24h"
-                value={`${data.health.stalePending} pessoas`}
-                tone={data.health.stalePending === 0 ? "good" : "warn"}
-              />
-              <SignalRow
-                label="Compartilhamento"
-                value={`${shareEvents.unique} pessoas compartilharam`}
-                tone={shareEvents.unique >= Math.max(1, Math.floor(data.summary.confirmed * 0.25)) ? "good" : "warn"}
-              />
-              <SignalRow
-                label="Ritual de Chegada"
-                value={`${percent(data.profile.complete, data.summary.confirmed)} completo`}
-                tone={data.summary.confirmed === 0 || data.profile.complete / data.summary.confirmed >= 0.35 ? "good" : "warn"}
-              />
-            </div>
-            <div className={styles.signalCard}>
-              <SignalRow
-                label="Linhas de teste no banco"
-                value={`${data.health.dirtyRows}`}
-                tone={data.health.dirtyRows === 0 ? "good" : "warn"}
+                label="Dados de teste"
+                value={`${data.health.testRows}`}
+                note="Emails com test, launchtest ou example"
+                tone={data.health.testRows === 0 ? "good" : "warn"}
               />
               <SignalRow
                 label="Referrals quebrados"
                 value={`${data.health.brokenReferrals}`}
+                note="Convidado com código sem convidante"
                 tone={data.health.brokenReferrals === 0 ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Eventos sem distinctId"
+                value={`${data.health.eventsWithoutDistinctId}`}
+                note="Afeta leitura de visitantes únicos"
+                tone={data.health.eventsWithoutDistinctId === 0 ? "good" : "warn"}
               />
               <SignalRow
                 label="Evento legado de copy"
                 value={`${data.health.legacyInviteEvents}`}
+                note="invite_link_copied antigo"
                 tone={data.health.legacyInviteEvents === 0 ? "good" : "warn"}
               />
-              <SignalRow
-                label="Saúde geral"
-                value={dataHealthGood ? "limpa" : "pedindo revisão"}
-                tone={dataHealthGood ? "good" : "warn"}
-              />
             </div>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2>Rumo a US$1M ARR</h2>
-            <p>Modelo simples para orientar foco. Hipótese: US$9 mensais, 8% dos leads qualificados virando pagantes.</p>
-          </div>
-          <div className={styles.gridThree}>
-            <article className={`${styles.card} ${styles.wide}`}>
-              <div className={styles.metricValue}>{targetProgress}%</div>
-              <div className={styles.metricLabel}>Progresso de base qualificada</div>
-              <div className={styles.metricNote}>
-                {compactNumber(qualified)} qualificados de {compactNumber(neededQualified)} necessários pela hipótese atual.
-              </div>
-              <div className={styles.bar}>
-                <span style={{ width: `${targetProgress}%` }} />
-              </div>
-            </article>
-            <MetricCard
-              value={`US$${Math.round(projectedMrr).toLocaleString("pt-BR")}`}
-              label="MRR potencial do funil atual"
-              note="Estimativa conservadora baseada no Ritual ou perfil iniciado"
-            />
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2>Top indicações</h2>
-            <p>Quem já está levando a Aurora adiante.</p>
-          </div>
-          <div className={styles.tableCard}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Pessoa</th>
-                  <th>Código</th>
-                  <th>Confirmados</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.topReferrers.map((person) => (
-                  <tr key={person.referralCode}>
-                    <td>
-                      <strong>{person.name || "Sem nome"}</strong>
-                      <br />
-                      <span className={styles.muted}>{maskEmail(person.email)}</span>
-                    </td>
-                    <td>{person.referralCode}</td>
-                    <td>{person.confirmedReferrals}</td>
+            <div className={styles.tableCard}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Registro</th>
+                    <th>Tipo</th>
+                    <th>Criado em</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.flaggedRows.length ? (
+                    data.flaggedRows.map((row) => (
+                      <tr key={`${row.email}-${row.createdAt.toISOString()}`}>
+                        <td>{maskEmail(row.email)}</td>
+                        <td>{row.reason}</td>
+                        <td>{formatDate(row.createdAt)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3}>Nenhum registro interno ou de teste detectado.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Sinais de desejo</h2>
-            <p>As respostas do Ritual ajudam a entender promessa, linguagem e primeiro uso.</p>
+            <p>Respostas recentes do Ritual para entender promessa, linguagem e primeiro uso.</p>
           </div>
-          <div className={styles.split}>
-            <div className={styles.answerCard}>
-              <div className={styles.answerList}>
-                {data.recentProfiles.map((profileRow) => (
-                  <article className={styles.answer} key={`${profileRow.email}-${profileRow.updatedAt.toISOString()}`}>
-                    <strong>{profileRow.name || maskEmail(profileRow.email)}</strong>
-                    <p>{profileRow.moment || "Sem momento registrado ainda"}</p>
-                    <p>
-                      <span className={styles.muted}>Ritmo:</span> {profileRow.rhythm || "não respondeu"} ·{" "}
-                      <span className={styles.muted}>Presença:</span> {profileRow.presence || "não respondeu"} ·{" "}
-                      <span className={styles.muted}>Valor:</span> {profileRow.value || "não respondeu"}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className={styles.tableCard}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Sinal</th>
-                    <th>Resposta</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...data.rhythmRows.map((row) => ({ type: "Ritmo", ...row })), ...data.presenceRows.map((row) => ({ type: "Presença", ...row }))].map(
-                    (row, index) => (
-                      <tr key={`${row.type}-${row.value}-${index}`}>
-                        <td>{row.type}</td>
-                        <td>{row.value}</td>
-                        <td>{row.total}</td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
+          <div className={styles.answerCard}>
+            <div className={styles.answerList}>
+              {data.recentProfiles.map((profileRow) => (
+                <article className={styles.answer} key={`${profileRow.email}-${profileRow.updatedAt.toISOString()}`}>
+                  <strong>{profileRow.name || maskEmail(profileRow.email)}</strong>
+                  <p>{profileRow.moment || "Sem momento registrado ainda"}</p>
+                  <p>
+                    <span className={styles.muted}>Ritmo:</span> {profileRow.rhythm || "não respondeu"} ·{" "}
+                    <span className={styles.muted}>Presença:</span> {profileRow.presence || "não respondeu"} ·{" "}
+                    <span className={styles.muted}>Valor:</span> {profileRow.value || "não respondeu"}
+                  </p>
+                </article>
+              ))}
             </div>
           </div>
         </section>

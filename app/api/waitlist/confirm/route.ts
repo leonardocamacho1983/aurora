@@ -67,7 +67,18 @@ export async function GET(request: Request) {
         referral_code: referrer.referralCode,
         confirmed_count: confirmedCount,
       });
-      await sendFriendJoinedEmail({ row: referrer, confirmedCount, baseUrl });
+      const friendEmailSent = await sendFriendJoinedEmail({ row: referrer, confirmedCount, baseUrl });
+      await db.insert(waitlistEvents).values({
+        waitlistId: referrer.id,
+        eventName: friendEmailSent ? "friend_joined_email_sent" : "friend_joined_email_send_failed",
+        source: "email",
+        metadata: {
+          provider: "resend",
+          email_type: "friend_joined",
+          confirmedCount,
+          success: friendEmailSent,
+        },
+      });
 
       const milestone = currentMilestone(confirmedCount);
       if (milestone && milestone.count > referrer.milestoneNotified) {
@@ -79,11 +90,23 @@ export async function GET(request: Request) {
           })
           .where(eq(waitlist.id, referrer.id));
 
-        await sendMilestoneEmail({
+        const milestoneEmailSent = await sendMilestoneEmail({
           row: referrer,
           milestone,
           confirmedCount,
           baseUrl,
+        });
+        await db.insert(waitlistEvents).values({
+          waitlistId: referrer.id,
+          eventName: milestoneEmailSent ? "milestone_email_sent" : "milestone_email_send_failed",
+          source: "email",
+          metadata: {
+            provider: "resend",
+            email_type: "milestone",
+            milestone: milestone.count,
+            confirmedCount,
+            success: milestoneEmailSent,
+          },
         });
         await db.insert(waitlistEvents).values({
           waitlistId: referrer.id,

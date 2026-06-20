@@ -67,16 +67,34 @@ async function emailExisting(row: {
   confirmToken: string;
   confirmedAt: Date | null;
 }, baseUrl: string) {
-  if (row.confirmedAt) {
-    await sendStatusEmail(row, baseUrl);
-  } else {
-    await sendConfirmEmail(row, baseUrl);
-  }
+  const eventName = row.confirmedAt ? "status_email_sent" : "confirm_email_sent";
+  const failedEventName = row.confirmedAt ? "status_email_send_failed" : "confirm_email_send_failed";
+  const emailType = row.confirmedAt ? "status" : "confirm";
+  const sent = row.confirmedAt
+    ? await sendStatusEmail(row, baseUrl)
+    : await sendConfirmEmail(row, baseUrl);
+
   await db.insert(waitlistEvents).values({
     waitlistId: row.id,
-    eventName: row.confirmedAt ? "status_email_sent" : "confirm_email_resent",
-    source: "waitlist_form",
+    eventName: sent ? eventName : failedEventName,
+    source: "email",
+    metadata: {
+      provider: "resend",
+      email_type: emailType,
+      purpose: row.confirmedAt ? "existing_confirmed_status" : "existing_unconfirmed_resend",
+      success: sent,
+    },
   });
+
+  if (!row.confirmedAt) {
+    await db.insert(waitlistEvents).values({
+      waitlistId: row.id,
+      eventName: "confirm_email_resent",
+      source: "waitlist_form",
+      metadata: { legacy_counter: true, provider: "resend", success: sent },
+    });
+  }
+
   await captureAuroraServer("waitlist_existing_email_requested", analyticsEmailId(row.email), {
     referral_code: row.referralCode,
     confirmed: Boolean(row.confirmedAt),
@@ -170,7 +188,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "ok", mode: "email_sent" });
     }
 
-    await sendConfirmEmail(row, baseUrl);
+    const confirmEmailSent = await sendConfirmEmail(row, baseUrl);
+    await db.insert(waitlistEvents).values({
+      waitlistId: row.id,
+      eventName: confirmEmailSent ? "confirm_email_sent" : "confirm_email_send_failed",
+      source: "email",
+      metadata: {
+        provider: "resend",
+        email_type: "confirm",
+        purpose: "new_signup",
+        success: confirmEmailSent,
+      },
+    });
     await db.insert(waitlistEvents).values({
       waitlistId: row.id,
       eventName: "signup_created",
