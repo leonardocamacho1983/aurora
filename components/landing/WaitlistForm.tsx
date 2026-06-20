@@ -145,8 +145,8 @@ export function WaitlistForm() {
     const created = doneState.mode === "created";
     const title = "Falta só confirmar seu email.";
     const body = created
-      ? "Enviamos um link para você confirmar seu cadastro. Depois disso, seu acesso antecipado fica registrado e você recebe seu link pessoal para acompanhar os próximos passos da Aurora."
-      : "Reenviamos seu link da Aurora. Ele confirma seu acesso antecipado ou abre seu link pessoal para acompanhar os próximos passos.";
+      ? "Enviamos um link para confirmar seu cadastro. Depois disso, seu acesso antecipado fica registrado."
+      : "Reenviamos seu link da Aurora para confirmar ou acompanhar seu acesso antecipado.";
 
     function openInbox(provider: string, href: string, event: MouseEvent<HTMLAnchorElement>) {
       event.preventDefault();
@@ -198,12 +198,16 @@ export function WaitlistForm() {
         </div>
         <p>{body}</p>
         <div className={styles.waitlistSuccessNote}>
-          O diário completo será liberado aos poucos. Quem está no acesso antecipado recebe primeiro.
+          As novidades da abertura chegam por email. Marque a Aurora como favorita.
         </div>
-        <div className={styles.waitlistSuccessNote}>
-          As novidades da abertura e a liberação do seu acesso chegam por email. Para não perder nada,
-          marque a Aurora como favorita. Se a mensagem tiver caído em Spam ou Promoções, mova para a caixa principal.
-        </div>
+        <details className={styles.waitlistDetails}>
+          <summary>Entender acesso antecipado</summary>
+          <p>
+            O diário completo será liberado aos poucos. Quem confirma o email entra no acesso antecipado
+            e recebe as próximas liberações antes da abertura geral. Se a mensagem cair em Spam ou Promoções,
+            mova para a caixa principal.
+          </p>
+        </details>
         <div className={styles.waitlistInboxActions}>
           <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("gmail", GMAIL_SEARCH_URL, event)}>
             Abrir Gmail
@@ -261,7 +265,7 @@ export function WaitlistForm() {
           aria-hidden="true"
         />
         <button type="submit" disabled={submitting} className={styles.wlBtn}>
-          {submitting ? "Enviando..." : "Quero meu acesso antecipado"}
+          {submitting ? "Enviando..." : "Quero acesso antecipado"}
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />
@@ -269,7 +273,7 @@ export function WaitlistForm() {
         </button>
       </div>
       <div className={styles.waitlistMicrocopy}>
-        Sem spam. As atualizações da abertura chegam por email.
+        Sem spam. As novidades chegam por email.
       </div>
     </form>
   );

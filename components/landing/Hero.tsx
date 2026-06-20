@@ -416,7 +416,7 @@ export function Hero() {
   );
   const heroBody = isInviteMode
     ? "Uma pergunta de cada vez. Quanto mais a Aurora entende seu momento, melhor ela pode te receber quando seu acesso chegar."
-    : "A Aurora está abrindo em etapas. Entre agora para receber acesso antecipado antes da abertura geral.";
+    : "Receba acesso antecipado antes da abertura geral.";
 
   return (
     <>
@@ -602,17 +602,7 @@ export function Hero() {
             {heroBody}
           </p>
 
-          {!isInviteMode ? (
-            <div className={styles.earlyAccessNote}>
-              <strong>A Aurora está abrindo em etapas.</strong>
-              <span>
-                Quem entra agora recebe acesso antecipado antes da abertura geral. Depois do cadastro,
-                confirme seu email para receber os próximos passos e convidar pessoas queridas.
-              </span>
-            </div>
-          ) : null}
-
-          <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 460 }}>
+          <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 540 }}>
             {inviteGreeting ? (
               <HeroInviteNextStep initialName={inviteGreeting.name} />
             ) : (

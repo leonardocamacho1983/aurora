@@ -37,6 +37,7 @@
   display: flex;
   gap: 10px;
   align-items: stretch;
+  width: 100%;
 }
 @media (max-width: 440px) {
   .wlRow {
@@ -75,7 +76,7 @@
 
 .wlInput {
   display: block;
-  flex: 1;
+  flex: 1 1 280px;
   min-width: 0;
   min-height: 54px;
   height: 54px;
@@ -104,8 +105,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
   height: 54px;
-  padding: 0 24px;
+  padding: 0 22px;
   border: none;
   border-radius: 999px;
   background: var(--accent);
@@ -142,35 +144,6 @@
   font: 400 13px var(--font-sans);
   color: #a39eba;
   text-shadow: 0 1px 16px rgba(0, 0, 0, 0.6);
-}
-
-.earlyAccessNote {
-  width: min(100%, 560px);
-  margin-top: clamp(18px, 4vw, 24px);
-  padding: 14px 16px;
-  display: grid;
-  gap: 6px;
-  border-radius: 18px;
-  border: 1px solid rgba(236, 182, 210, 0.16);
-  background:
-    radial-gradient(ellipse 90% 120% at 10% 0%, rgba(236, 182, 210, 0.1), transparent 66%),
-    rgba(14, 12, 26, 0.56);
-  color: #d8d3e6;
-  text-align: left;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 48px -36px rgba(0, 0, 0, 0.75);
-}
-
-.earlyAccessNote strong {
-  color: #f8f6fc;
-  font: 700 13px var(--font-sans);
-}
-
-.earlyAccessNote span {
-  color: #bdb6d3;
-  font: 400 13px/1.5 var(--font-sans);
-  text-wrap: pretty;
 }
 
 .waitlistSuccess {
@@ -224,6 +197,33 @@
   font: 600 12px/1.45 var(--font-sans);
   text-align: center;
   text-wrap: pretty;
+}
+
+.waitlistDetails {
+  width: min(100%, 380px);
+  text-align: center;
+}
+
+.waitlistDetails summary {
+  width: fit-content;
+  margin: 0 auto;
+  cursor: pointer;
+  list-style: none;
+  color: #cfc6f6;
+  font: 600 12px var(--font-sans);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.waitlistDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.waitlistDetails p {
+  max-width: 360px;
+  margin: 10px auto 0;
+  color: #a39eba;
+  font: 400 12px/1.55 var(--font-sans);
 }
 
 .waitlistInboxActions {
