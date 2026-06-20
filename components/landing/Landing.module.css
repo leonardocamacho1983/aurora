@@ -1407,8 +1407,8 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: clamp(4px, 0.8vh, 8px);
+  gap: 12px;
+  margin-bottom: clamp(6px, 1vh, 12px);
 }
 
 .referralBrandMark > span:last-child {
@@ -1418,11 +1418,12 @@
 }
 
 .referralShellReady .referralOrb {
-  width: clamp(48px, 4.6vw, 64px);
-  height: clamp(48px, 4.6vw, 64px);
+  width: clamp(104px, 10vw, 148px);
+  height: clamp(104px, 10vw, 148px);
   box-shadow:
-    inset 0 8px 22px rgba(255, 255, 255, 0.22),
-    0 0 44px -14px rgba(236, 182, 210, 0.72);
+    inset 0 10px 32px rgba(255, 255, 255, 0.28),
+    0 0 68px -8px rgba(169, 155, 217, 0.9),
+    0 0 120px -34px rgba(127, 208, 196, 0.72);
 }
 
 .referralKicker {
@@ -1567,9 +1568,9 @@
 
 .referralProgressPanel {
   display: grid;
-  grid-template-columns: minmax(118px, 0.34fr) minmax(0, 1fr);
+  grid-template-columns: minmax(112px, 0.25fr) minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   text-align: left;
   background:
     radial-gradient(ellipse 75% 120% at 0% 0%, rgba(127, 208, 196, 0.08), transparent 66%),
@@ -1656,25 +1657,25 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .referralMilestone {
-  min-height: 74px;
+  min-height: 66px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 10px;
+  padding: 9px 8px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   color: #948fa8;
 }
 
 .referralMilestone span {
-  width: 28px;
-  height: 28px;
+  width: 27px;
+  height: 27px;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -1683,7 +1684,8 @@
 }
 
 .referralMilestone strong {
-  font: 600 12px/1.25 var(--font-sans);
+  font: 700 11px/1.25 var(--font-sans);
+  text-align: center;
 }
 
 .referralMilestoneDone {
@@ -1881,6 +1883,11 @@
     height: 56px;
   }
 
+  .referralShellReady .referralOrb {
+    width: 86px;
+    height: 86px;
+  }
+
   .referralIntro h1 {
     font-size: clamp(2.25rem, 4.2vw, 50px);
   }
@@ -2032,8 +2039,8 @@
   }
 
   .referralShellReady .referralOrb {
-    width: 38px;
-    height: 38px;
+    width: 76px;
+    height: 76px;
   }
 
   .referralBrandMark {

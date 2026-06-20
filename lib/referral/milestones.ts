@@ -14,14 +14,14 @@ export const MILESTONES: ReferralMilestone[] = [
   },
   {
     count: 10,
-    title: "Um mês grátis da versão paga",
-    shortTitle: "1 mês grátis",
-    description: "Quando os planos oficiais chegarem, você começa com um mês por nossa conta.",
+    title: "Três meses grátis da versão paga",
+    shortTitle: "3 meses grátis",
+    description: "Quando os planos oficiais chegarem, você começa com três meses por nossa conta.",
   },
   {
     count: 15,
-    title: "Três meses grátis da versão paga",
-    shortTitle: "3 meses grátis",
+    title: "Seis meses grátis da versão paga",
+    shortTitle: "6 meses grátis",
     description: "Mais tempo para viver a Aurora completa quando os planos pagos forem lançados.",
   },
   {

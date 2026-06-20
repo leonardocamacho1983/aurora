@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistProfile } from "@/lib/db/schema";
-import { progressFor } from "@/lib/referral/milestones";
+import { MILESTONES, progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
 import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
@@ -99,21 +99,20 @@ export default async function WaitlistStatusPage({ params }: Props) {
     .limit(1);
   const profileName = firstName(profileRows[0]?.name);
   const progress = progressFor(confirmedCount);
+  const finalMilestoneCount = MILESTONES[MILESTONES.length - 1]?.count ?? 20;
+  const totalProgress = Math.min(1, confirmedCount / finalMilestoneCount);
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || `${proto}://${host}`;
   const inviteUrl = referralUrl(row.referralCode, baseUrl);
   const confirmed = Boolean(row.confirmedAt);
-  const hasReferrals = confirmedCount > 0;
   const title = !confirmed
     ? "Confirme seu email para registrar seu acesso antecipado."
     : "Seu acesso antecipado está registrado.";
   const body = !confirmed
     ? "O link de confirmação está na sua caixa de entrada. Depois desse clique, você acompanha os próximos passos e recebe as novidades da abertura por email."
-    : hasReferrals
-      ? `${profileName ? `${profileName}, ` : ""}${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação. A Aurora vai te avisar por e-mail sobre as novidades.`
-      : `${profileName ? `${profileName}, a` : "A"}gora você pode convidar pessoas queridas enquanto a Aurora prepara novas entradas. A Aurora vai te avisar por e-mail sobre as novidades.`;
+    : "A Aurora vai te avisar por e-mail sobre as novidades.";
 
   return (
     <main className={styles.referralPage}>
@@ -146,9 +145,9 @@ export default async function WaitlistStatusPage({ params }: Props) {
               <div className={styles.referralSharePanel}>
                 <div className={styles.referralActionHeader}>
                   <span>Ajude a Aurora a ser conhecida</span>
-                  <strong>Conhece alguém em travessia?</strong>
+                  <strong>Convide pessoas queridas</strong>
                   <p>
-                    A Aurora é para quem busca se escutar melhor, atravessar desafios e encontrar um começo com mais clareza. Indique para alguém que possa gostar.
+                    Para quem quer se escutar melhor, celebrar o que faz bem, lembrar do que leva para frente e encontrar clareza.
                   </p>
                 </div>
                 <ShareInvite
@@ -163,14 +162,25 @@ export default async function WaitlistStatusPage({ params }: Props) {
                   <span>{pluralPessoa(confirmedCount)}</span>
                 </div>
                 <div className={styles.referralProgressCopy}>
-                  <span>{progress.current ? "Marco atual" : "Primeiro marco"}</span>
+                  <span>Marcos de convite</span>
                   <p>
                     {progress.current
                       ? progress.current.description
-                      : "Com 5 confirmações, seu acesso antecipado fica mais perto."}
+                      : "Cada pessoa que você ajuda a conhecer a Aurora te aproxima de um presente."}
                   </p>
                   <div className={styles.referralTrack} aria-hidden="true">
-                    <span style={{ width: `${Math.max(4, progress.ratio * 100)}%` }} />
+                    <span style={{ width: `${Math.max(4, totalProgress * 100)}%` }} />
+                  </div>
+                  <div className={styles.referralMilestones} aria-label="Marcos por convites confirmados">
+                    {MILESTONES.map((milestone) => (
+                      <div
+                        key={milestone.count}
+                        className={`${styles.referralMilestone} ${confirmedCount >= milestone.count ? styles.referralMilestoneDone : ""}`}
+                      >
+                        <span>{milestone.count}</span>
+                        <strong>{milestone.shortTitle}</strong>
+                      </div>
+                    ))}
                   </div>
                   <em>
                     {progress.next
