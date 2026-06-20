@@ -65,6 +65,8 @@ type TrafficSummaryRow = {
 };
 
 type CampaignSummaryRow = {
+  campaignSignals: number;
+  campaignPeople: number;
   pageviews: number;
   visitors: number;
   ctaClicks: number;
@@ -619,6 +621,12 @@ async function getDashboardData() {
           and nullif(metadata->>'distinctId', '') is not null
       )
       select
+        count(*)::int as "campaignSignals",
+        count(distinct coalesce(
+          nullif(metadata->>'distinctId', ''),
+          waitlist_id::text,
+          nullif(metadata->>'sessionId', '')
+        ))::int as "campaignPeople",
         count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
         count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
@@ -740,6 +748,8 @@ async function getDashboardData() {
     topCtas,
     signupSources,
     launchCampaign: {
+      campaignSignals: asNumber(launchCampaign?.campaignSignals),
+      campaignPeople: asNumber(launchCampaign?.campaignPeople),
       pageviews: asNumber(launchCampaign?.pageviews),
       visitors: asNumber(launchCampaign?.visitors),
       ctaClicks: asNumber(launchCampaign?.ctaClicks),
@@ -978,18 +988,26 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Campanha launch_waitlist</h2>
-            <p>Recorte por UTM oficial. Quando não há pageview capturado, a taxa fica indisponível em vez de aparecer como 0%.</p>
+            <p>Recorte por UTM oficial. Os volumes abaixo vêm dos eventos e cadastros marcados com a campanha.</p>
           </div>
           <div className={styles.grid}>
             <MetricCard
-              value={compactNumber(data.launchCampaign.visitors)}
-              label="Visitantes rastreados"
-              note={`${compactNumber(data.launchCampaign.pageviews)} pageviews com launch_waitlist`}
+              value={compactNumber(data.launchCampaign.campaignSignals)}
+              label="Sinais da campanha"
+              note={
+                data.launchCampaign.pageviews
+                  ? `${compactNumber(data.launchCampaign.pageviews)} pageviews com UTM`
+                  : `${compactNumber(data.launchCampaign.campaignPeople)} pessoas/sessões identificáveis`
+              }
             />
             <MetricCard
-              value={percentOrNA(data.launchCampaign.ctaClicks, data.launchCampaign.visitors, "sem base")}
-              label="Visitante para CTA"
-              note={data.launchCampaign.visitors ? `${compactNumber(data.launchCampaign.ctaClicks)} cliques em CTA` : "pageview não capturado"}
+              value={compactNumber(data.launchCampaign.ctaClicks)}
+              label="Cliques em CTA"
+              note={
+                data.launchCampaign.ctaClicks
+                  ? `${percent(data.launchCampaign.ctaClicks, data.launchCampaign.campaignSignals)} dos sinais da campanha`
+                  : "Nenhum clique de CTA com esta UTM"
+              }
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.signups)}
@@ -997,13 +1015,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               note={`${compactNumber(data.launchCampaign.clientSignupSuccess)} sucessos capturados no client`}
             />
             <MetricCard
-              value={percentOrNA(data.launchCampaign.signups, data.launchCampaign.visitors, "sem base")}
-              label="Visitante para cadastro"
-              note={
-                data.launchCampaign.visitors
-                  ? "Conversão dos links oficiais"
-                  : `${data.launchCampaign.signupsWithoutPageview} cadastros sem pageview prévio`
-              }
+              value={percent(data.launchCampaign.signups, data.launchCampaign.campaignSignals)}
+              label="Cadastro por sinal"
+              note={`${compactNumber(data.launchCampaign.signups)} cadastros / ${compactNumber(data.launchCampaign.campaignSignals)} sinais UTM`}
             />
           </div>
           <div className={styles.gridThree}>
