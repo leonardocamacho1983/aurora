@@ -51,7 +51,7 @@
 /lib
   /ai                     # router, prompts, caching, rag, crisis-classifier
   /db                     # drizzle schema + client
-  /supabase               # clients @supabase/ssr (browser/server) + middleware de sessão
+  /supabase               # clients @supabase/ssr (browser/server) + proxy de sessão
   /i18n
 /messages                 # pt-BR.json, es.json, fr.json, de.json, en.json
 ```
