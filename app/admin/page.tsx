@@ -110,6 +110,8 @@ type EmailRow = {
   friendFailed: number;
   milestoneSent: number;
   milestoneFailed: number;
+  lifecycleSent: number;
+  lifecycleFailed: number;
 };
 
 type FlaggedRow = {
@@ -389,7 +391,9 @@ async function getDashboardData() {
         count(*) filter (where event_name = 'friend_joined_email_sent')::int as "friendSent",
         count(*) filter (where event_name = 'friend_joined_email_send_failed')::int as "friendFailed",
         count(*) filter (where event_name = 'milestone_email_sent')::int as "milestoneSent",
-        count(*) filter (where event_name = 'milestone_email_send_failed')::int as "milestoneFailed"
+        count(*) filter (where event_name = 'milestone_email_send_failed')::int as "milestoneFailed",
+        count(*) filter (where event_name like 'lifecycle_%_email_sent')::int as "lifecycleSent",
+        count(*) filter (where event_name like 'lifecycle_%_email_send_failed')::int as "lifecycleFailed"
       from waitlist_events
       where created_at >= now() - interval '30 days'
     `),
@@ -724,6 +728,8 @@ async function getDashboardData() {
       friendFailed: asNumber(email?.friendFailed),
       milestoneSent: asNumber(email?.milestoneSent),
       milestoneFailed: asNumber(email?.milestoneFailed),
+      lifecycleSent: asNumber(email?.lifecycleSent),
+      lifecycleFailed: asNumber(email?.lifecycleFailed),
     },
     engagedPeople,
     recentProfiles,
@@ -784,8 +790,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     );
 
   const emailFailures =
-    data.email.confirmFailed + data.email.statusFailed + data.email.friendFailed + data.email.milestoneFailed;
-  const emailSent = data.email.confirmSent + data.email.statusSent + data.email.friendSent + data.email.milestoneSent;
+    data.email.confirmFailed +
+    data.email.statusFailed +
+    data.email.friendFailed +
+    data.email.milestoneFailed +
+    data.email.lifecycleFailed;
+  const emailSent =
+    data.email.confirmSent +
+    data.email.statusSent +
+    data.email.friendSent +
+    data.email.milestoneSent +
+    data.email.lifecycleSent;
   const dataHealthGood =
     data.health.testRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -893,6 +908,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               label="Marcos enviados"
               note={`${data.email.milestoneFailed} falhas em emails de marco`}
               tone={data.email.milestoneFailed ? "warn" : "neutral"}
+            />
+            <MetricCard
+              value={compactNumber(data.email.lifecycleSent)}
+              label="Cadência enviada"
+              note={`${data.email.lifecycleFailed} falhas em emails de lifecycle`}
+              tone={data.email.lifecycleFailed ? "warn" : "neutral"}
             />
           </div>
           <div className={styles.noteCard}>
