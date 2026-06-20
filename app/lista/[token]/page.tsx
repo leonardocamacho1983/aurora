@@ -146,9 +146,6 @@ export default async function WaitlistStatusPage({ params }: Props) {
                 <div className={styles.referralActionHeader}>
                   <span>Ajude a Aurora a ser conhecida</span>
                   <strong>Convide pessoas queridas</strong>
-                  <p>
-                    Para quem quer se escutar melhor, celebrar o que faz bem, lembrar do que leva para frente e encontrar clareza.
-                  </p>
                 </div>
                 <ShareInvite
                   referralCode={row.referralCode}
