@@ -112,8 +112,8 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const body = !confirmed
     ? "O link de confirmação está na sua caixa de entrada. Depois desse clique, você acompanha os próximos passos e recebe as novidades da abertura por email."
     : hasReferrals
-      ? `${profileName ? `${profileName}, s` : "S"}eu acesso antecipado está registrado. ${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação.`
-      : `${profileName ? `${profileName}, s` : "S"}eu acesso antecipado está registrado. Agora você pode convidar pessoas queridas enquanto a Aurora prepara novas entradas.`;
+      ? `${profileName ? `${profileName}, ` : ""}${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação. A Aurora vai te avisar por e-mail sobre as novidades.`
+      : `${profileName ? `${profileName}, a` : "A"}gora você pode convidar pessoas queridas enquanto a Aurora prepara novas entradas. A Aurora vai te avisar por e-mail sobre as novidades.`;
 
   return (
     <main className={styles.referralPage}>
@@ -129,8 +129,11 @@ export default async function WaitlistStatusPage({ params }: Props) {
       />
       <section className={`${styles.referralShell} ${confirmed ? styles.referralShellReady : ""}`}>
         <div className={styles.referralIntro}>
-          {!confirmed ? <div className={styles.referralOrb} aria-hidden="true" /> : null}
-          <p className={styles.referralKicker}>{confirmed ? "Acesso antecipado" : "Confirmação por email"}</p>
+          <div className={styles.referralBrandMark} aria-label="Aurora">
+            <span className={styles.referralOrb} aria-hidden="true" />
+            <span>Aurora</span>
+          </div>
+          {!confirmed ? <p className={styles.referralKicker}>Confirmação por email</p> : null}
           <h1 className="font-serif">{title}</h1>
           <p>{body}</p>
         </div>
@@ -142,10 +145,10 @@ export default async function WaitlistStatusPage({ params }: Props) {
             <>
               <div className={styles.referralSharePanel}>
                 <div className={styles.referralActionHeader}>
-                  <span>Gesto principal</span>
-                  <strong>Convidar pessoas queridas</strong>
+                  <span>Ajude a Aurora a ser conhecida</span>
+                  <strong>Conhece alguém em travessia?</strong>
                   <p>
-                    Envie para uma pessoa querida. Quando ela confirma o email, a indicação entra no seu contador. As próximas liberações chegam por email.
+                    A Aurora é para quem busca se escutar melhor, atravessar desafios e encontrar um começo com mais clareza. Indique para alguém que possa gostar.
                   </p>
                 </div>
                 <ShareInvite

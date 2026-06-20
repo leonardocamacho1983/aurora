@@ -203,9 +203,8 @@ export function WaitlistForm() {
         <details className={styles.waitlistDetails}>
           <summary>Entender acesso antecipado</summary>
           <p>
-            O diário completo será liberado aos poucos. Quem confirma o email entra no acesso antecipado
-            e recebe as próximas liberações antes da abertura geral. Se a mensagem cair em Spam ou Promoções,
-            mova para a caixa principal.
+            O acesso à Aurora será liberado aos poucos. Quem confirma o email entra no acesso antecipado
+            e recebe as próximas liberações antes da abertura geral. Se não achar o email, veja o Spam ou Promoções.
           </p>
         </details>
         <div className={styles.waitlistInboxActions}>
@@ -265,7 +264,7 @@ export function WaitlistForm() {
           aria-hidden="true"
         />
         <button type="submit" disabled={submitting} className={styles.wlBtn}>
-          {submitting ? "Enviando..." : "Quero acesso antecipado"}
+          {submitting ? "Enviando..." : "Acessar"}
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />

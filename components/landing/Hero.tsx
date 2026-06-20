@@ -404,7 +404,7 @@ export function Hero() {
     ? "Seu acesso antecipado"
     : isReferralArrival
       ? "Você chegou por convite · acesso antecipado"
-      : "Diário por voz com IA · acesso antecipado";
+      : "Diário por voz com IA";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
@@ -416,7 +416,7 @@ export function Hero() {
   );
   const heroBody = isInviteMode
     ? "Uma pergunta de cada vez. Quanto mais a Aurora entende seu momento, melhor ela pode te receber quando seu acesso chegar."
-    : "Receba acesso antecipado antes da abertura geral.";
+    : "Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.";
 
   return (
     <>
@@ -450,7 +450,7 @@ export function Hero() {
               <a href="/manifesto" className={styles.navLink}>Manifesto</a>
               <a href="/privacidade" className={styles.navLink}>Privacidade</a>
             </div>
-            <a href="#lista" className={styles.pill}>Receber acesso antecipado</a>
+            <a href="#lista" className={styles.pill}>Acessar</a>
           </div>
         </div>
       </div>
@@ -601,6 +601,13 @@ export function Hero() {
           <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: isInviteMode ? 640 : 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
             {heroBody}
           </p>
+
+          {!isInviteMode ? (
+            <div className={styles.launchHint} tabIndex={0} aria-label="Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.">
+              Participe do lançamento da Aurora
+              <span role="tooltip">Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.</span>
+            </div>
+          ) : null}
 
           <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 540 }}>
             {inviteGreeting ? (
