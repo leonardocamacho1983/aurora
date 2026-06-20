@@ -1,5 +1,7 @@
 # Aurora — Handoff de build para o Claude Code
-### Brief executável para construir no repo existente (Next.js + Vercel). Escopo: jornada do paciente ponta a ponta + crise/consentimento/paywall + conta/config + admin. **Sem** lado do terapeuta.
+### Brief executável para construir no repo existente (Next.js + Vercel). Escopo: jornada do paciente ponta a ponta + crise/consentimento + conta/config + admin. **Sem** lado do terapeuta.
+
+> Status: este handoff e um documento historico/tecnico. Quando houver conflito, `docs/plano-aurora.md` e `docs/aurora-ferramentas.md` prevalecem. Billing, Stripe, paywall, planos e pricing nao estao autorizados para implementacao agora; ficam bloqueados ate decisao explicita de modelo de negocio.
 
 > Como usar: entregue este arquivo + `aurora-design-system-v0.1.md` ao Claude Code no seu repo. Peça pra ele seguir a **Ordem de build** (§12). Construa por fases, testando cada uma.
 
@@ -14,7 +16,7 @@
 - **Storage de áudio:** Supabase Storage / S3. **Apagar o áudio após transcrição** (privacidade; ver §10).
 - **IA:** Vercel AI SDK roteando Anthropic (Claude) + OpenAI (transcrição). SDKs: `@anthropic-ai/sdk`, `openai`.
 - **Jobs assíncronos:** Inngest (digest semanal, embeddings, arco mensal em batch).
-- **Pagamentos:** Stripe (Billing + assinaturas + trial).
+- **Pagamentos:** Stripe (Billing + assinaturas + trial) aparece aqui como desenho futuro, nao como escopo ativo. Implementar somente depois de decisao explicita de modelo, planos, pricing e regras de acesso.
 - **i18n:** next-intl. Detectar idioma do usuário; a IA responde no idioma da entrada.
 - **PWA:** manifest + service worker (next-pwa ou manual). **Android e iOS** — Android tem prompt automático; iOS exige a sheet "Adicionar à Tela de Início" (§6).
 - **Observabilidade:** PostHog (produto/métricas) + Sentry (erros).
@@ -32,14 +34,14 @@
     /account/page.tsx     # PERFIL / CONTA / CONFIG / consentimento / export / excluir
     /share/[id]/page.tsx  # LEVAR PARA A TERAPIA (resumo consentido)
   /onboarding/page.tsx    # boas-vindas → 1ª gravação (aha-moment antes do cadastro)
-  /paywall/page.tsx       # Stripe
+  /paywall/page.tsx       # Stripe futuro; nao implementar sem decisao de billing
   /admin/page.tsx         # MÉTRICAS (protegida por role=admin)
   /api
     /transcribe/route.ts  # áudio → texto
     /reflect/route.ts     # pipeline central (crise → RAG → reflexão)
     /entries/route.ts     # CRUD
     /summary/route.ts     # gera resumo p/ terapeuta
-    /stripe/...           # checkout + webhook
+    /stripe/...           # futuro: checkout + webhook, bloqueado ate decisao de billing
     /account/export/route.ts
     /account/delete/route.ts
 /components
@@ -120,7 +122,7 @@ crisis_events (
 ```
 Métricas de admin (§11) saem por query sobre estas tabelas + PostHog — sem tabela nova.
 
-> Implementação (Drizzle): `lib/db/schema.ts`. Mantido índice HNSW cosine em `embeddings.embedding` p/ a busca do RAG (§5). `subscriptions` usa colunas `stripe_*` (Stripe travado em §1).
+> Implementação (Drizzle): `lib/db/schema.ts`. Mantido índice HNSW cosine em `embeddings.embedding` p/ a busca do RAG (§5). `subscriptions` e colunas `stripe_*` existem como desenho futuro, mas billing nao e escopo ativo.
 
 ---
 
@@ -186,7 +188,7 @@ Cada uma com os estados/componentes:
 5. **/timeline** — **cabeçalho "padrão da semana"** (1 frase gerada, pra não ficar fria com poucas entradas) + lista (ponto de humor + data + trecho). Pontos são a única cor.
 6. **/share/[id] (Levar para a terapia?)** — sheet: explica que vai um **resumo** (não o áudio), toggle de consentimento, gera resumo consentido e **exporta por link/PDF/email**. *Sem login de terapeuta — isso é Fase 3.* O resumo já vale pro próprio paciente preparar a sessão.
 7. **/account** — **sessão/identidade via Supabase Auth** (logout, troca de email/senha, provedores Apple/Google); perfil, idioma, gestão de **consentimento** (granular), **exportar meus dados** (LGPD), **excluir conta** (apaga tudo + revoga sessão Supabase), status da assinatura. Acesso protegido por sessão Supabase (RLS no banco garante isolamento por `user_id`).
-8. **/paywall** — Free (3 entradas/semana) vs Plus (ilimitado + digest + idiomas). Stripe checkout + webhook.
+8. **/paywall** — frente futura. Free/Plus, trial, Stripe checkout e webhook nao devem ser implementados ate decisao explicita de modelo, pricing e regras de acesso.
 9. **/admin** — métricas (§11), protegida por `role=admin` (claim/role lido da sessão Supabase).
 10. **Sheets globais:** `InstallPrompt` (detecta plataforma — Android: `beforeinstallprompt`; iOS: instruções "Compartilhar → Adicionar à Tela de Início"), `CrisisResources` (§8), `ShareToTherapist`.
 
@@ -264,7 +266,7 @@ Fontes: queries no Postgres + eventos PostHog. Sem dados pessoais sensíveis exp
 
 **Fase 1 — fundação:** scaffold, tokens v0.1 no globals, schema + migrations (pgvector), **auth (Supabase Auth)**, i18n base, PWA manifest+SW (Android+iOS).
 **Fase 2 — o loop (o que retém):** Orb (4 estados) → gravar → `/api/transcribe` → `/api/reflect` (crise→RAG→reflexão) → salvar → timeline com cabeçalho de padrão. **Escreva teste do classificador de crise primeiro.**
-**Fase 3 — conta + dinheiro:** `/account` (consentimento, export, excluir), paywall + Stripe (checkout + webhook).
+**Fase 3 — conta + privacidade:** `/account` (consentimento, export, excluir). Paywall + Stripe (checkout + webhook) ficam fora do escopo ativo ate decisao explicita de billing.
 **Fase 4 — loop e gestão:** `/share` (resumo consentido), InstallPrompt sheet, `/admin`.
 
 ---
