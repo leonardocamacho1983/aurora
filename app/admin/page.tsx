@@ -113,7 +113,7 @@ type EmailRow = {
 type FlaggedRow = {
   email: string;
   reason: string;
-  createdAt: Date;
+  createdAt: Date | string;
 };
 
 type EngagedRow = {
@@ -168,6 +168,11 @@ function formatDate(date: Date | string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(date));
+}
+
+function dateKey(date: Date | string | null | undefined) {
+  if (!date) return "sem-data";
+  return date instanceof Date ? date.toISOString() : String(date);
 }
 
 function compactNumber(value: number) {
@@ -1107,7 +1112,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <tbody>
                   {data.flaggedRows.length ? (
                     data.flaggedRows.map((row) => (
-                      <tr key={`${row.email}-${row.createdAt.toISOString()}`}>
+                      <tr key={`${row.email}-${dateKey(row.createdAt)}`}>
                         <td>{maskEmail(row.email)}</td>
                         <td>{row.reason}</td>
                         <td>{formatDate(row.createdAt)}</td>
@@ -1132,7 +1137,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           <div className={styles.answerCard}>
             <div className={styles.answerList}>
               {data.recentProfiles.map((profileRow) => (
-                <article className={styles.answer} key={`${profileRow.email}-${profileRow.updatedAt.toISOString()}`}>
+                <article className={styles.answer} key={`${profileRow.email}-${dateKey(profileRow.updatedAt)}`}>
                   <strong>{profileRow.name || maskEmail(profileRow.email)}</strong>
                   <p>{profileRow.moment || "Sem momento registrado ainda"}</p>
                   <p>
@@ -1153,7 +1158,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
           <div className={styles.eventList}>
             {data.recentEvents.map((event, index) => (
-              <div className={styles.event} key={`${event.eventName}-${event.createdAt.toISOString()}-${index}`}>
+              <div className={styles.event} key={`${event.eventName}-${dateKey(event.createdAt)}-${index}`}>
                 <span>{event.eventName}</span>
                 <span className={styles.muted}>
                   {event.source || "sem origem"} · {formatDate(event.createdAt)}
