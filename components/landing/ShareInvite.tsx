@@ -41,7 +41,7 @@ export function ShareInvite({
   const url = useMemo(() => buildUrl(referralCode, inviteUrl), [referralCode, inviteUrl]);
   const text = inviterName
     ? `${inviterName} te convidou para conhecer a Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. ${url}`
-    : `Estou na lista da Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. Vem conhecer comigo: ${url}`;
+    : `Estou no acesso antecipado da Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. Vem conhecer comigo: ${url}`;
   const whats = `https://wa.me/?text=${encodeURIComponent(text)}`;
 
   useEffect(() => {

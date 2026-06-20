@@ -15,6 +15,7 @@
 .pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 40px;
   padding: 0 20px;
   border-radius: 999px;
@@ -25,6 +26,7 @@
   letter-spacing: 0.1px;
   box-shadow: 0 8px 26px -10px rgba(169, 155, 217, 0.7);
   transition: transform 0.18s ease, filter 0.18s ease;
+  white-space: nowrap;
 }
 .pill:hover {
   transform: translateY(-1px);
@@ -53,7 +55,7 @@
   .wlBtn {
     height: 50px;
     padding: 0 18px;
-    font: 600 14px var(--font-sans);
+    font: 600 13px var(--font-sans);
     box-shadow: 0 8px 30px -10px rgba(236, 182, 210, 0.45);
   }
 }
@@ -62,6 +64,12 @@
 @media (max-width: 560px) {
   .navText {
     display: none !important;
+  }
+
+  .pill {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 12px;
   }
 }
 
@@ -134,6 +142,35 @@
   font: 400 13px var(--font-sans);
   color: #a39eba;
   text-shadow: 0 1px 16px rgba(0, 0, 0, 0.6);
+}
+
+.earlyAccessNote {
+  width: min(100%, 560px);
+  margin-top: clamp(18px, 4vw, 24px);
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(236, 182, 210, 0.16);
+  background:
+    radial-gradient(ellipse 90% 120% at 10% 0%, rgba(236, 182, 210, 0.1), transparent 66%),
+    rgba(14, 12, 26, 0.56);
+  color: #d8d3e6;
+  text-align: left;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 48px -36px rgba(0, 0, 0, 0.75);
+}
+
+.earlyAccessNote strong {
+  color: #f8f6fc;
+  font: 700 13px var(--font-sans);
+}
+
+.earlyAccessNote span {
+  color: #bdb6d3;
+  font: 400 13px/1.5 var(--font-sans);
+  text-wrap: pretty;
 }
 
 .waitlistSuccess {

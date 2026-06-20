@@ -5,7 +5,7 @@ import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 export const metadata = pageMetadata({
   title: "Privacidade | Aurora",
   description:
-    "Como a Aurora trata dados pessoais na lista de espera e no futuro diário por voz com IA, com referências a LGPD, GDPR e leis da Califórnia.",
+    "Como a Aurora trata dados pessoais no acesso antecipado e no futuro diário por voz com IA, com referências a LGPD, GDPR e leis da Califórnia.",
   path: "/privacidade",
   keywords: [
     "privacidade Aurora",
@@ -36,7 +36,7 @@ export default function PrivacidadePage() {
         <LaunchSection
           eyebrow="Resumo humano"
           title="Seu registro não é matéria-prima de anúncio."
-          lead="Na lista de espera, guardamos o mínimo necessário para convite, confirmação e contexto inicial. No app, o objetivo é que seus dados trabalhem para você, não contra você."
+          lead="No acesso antecipado, guardamos o mínimo necessário para convite, confirmação, próximos passos e contexto inicial. No app, o objetivo é que seus dados trabalhem para você, não contra você."
         >
           <Grid columns={3}>
             <Card title="Sem venda de dados">
@@ -51,7 +51,7 @@ export default function PrivacidadePage() {
           </Grid>
         </LaunchSection>
 
-        <LaunchSection alt eyebrow="Dados" title="O que existe na lista de espera." lead="A lista de espera é simples, mas já pede cuidado. Estes são os dados atuais do fluxo de lançamento.">
+        <LaunchSection alt eyebrow="Dados" title="O que existe no acesso antecipado." lead="O fluxo de abertura é simples, mas já pede cuidado. Estes são os dados atuais do lançamento.">
           <FineList
             items={[
               {
@@ -82,7 +82,7 @@ export default function PrivacidadePage() {
             </WideCard>
             <WideCard title="Califórnia">
               <p>Usuários da Califórnia podem ter direito de saber, acessar, corrigir, excluir, limitar certos usos de dados sensíveis e não sofrer discriminação por exercer direitos.</p>
-              <p>A Aurora não vende dados pessoais e não compartilha dados para publicidade comportamental cruzada na lista de espera.</p>
+              <p>A Aurora não vende dados pessoais e não compartilha dados para publicidade comportamental cruzada no acesso antecipado.</p>
             </WideCard>
           </Grid>
         </LaunchSection>
@@ -92,7 +92,7 @@ export default function PrivacidadePage() {
             items={[
               {
                 title: "Finalidade",
-                body: "Enviar confirmações, manter a lista, processar registros quando o app abrir e melhorar estabilidade.",
+                body: "Enviar confirmações, manter registros de acesso antecipado, processar entradas quando o app abrir e melhorar estabilidade.",
               },
               {
                 title: "Transferência internacional",

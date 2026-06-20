@@ -7,7 +7,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationJsonLd, softwareJsonLd, webSiteJsonLd } from "@/lib/seo/site";
 
-// Home pública (landing / lista de espera). Sem auth.
+// Home pública (landing / acesso antecipado). Sem auth.
 export default function Home() {
   return (
     <>

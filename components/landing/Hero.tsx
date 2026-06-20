@@ -401,10 +401,10 @@ export function Hero() {
   const isInviteMode = Boolean(inviteGreeting);
   const isReferralArrival = referralArrival && !isInviteMode;
   const heroEyebrow = isInviteMode
-    ? "Seu acesso já começou"
+    ? "Seu acesso antecipado"
     : isReferralArrival
-      ? "Você chegou por convite · lista aberta"
-      : "Diário por voz com IA · lista de espera aberta";
+      ? "Você chegou por convite · acesso antecipado"
+      : "Diário por voz com IA · acesso antecipado";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
@@ -416,7 +416,7 @@ export function Hero() {
   );
   const heroBody = isInviteMode
     ? "Uma pergunta de cada vez. Quanto mais a Aurora entende seu momento, melhor ela pode te receber quando seu acesso chegar."
-    : "Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.";
+    : "A Aurora está abrindo em etapas. Entre agora para receber acesso antecipado antes da abertura geral.";
 
   return (
     <>
@@ -450,7 +450,7 @@ export function Hero() {
               <a href="/manifesto" className={styles.navLink}>Manifesto</a>
               <a href="/privacidade" className={styles.navLink}>Privacidade</a>
             </div>
-            <a href="#lista" className={styles.pill}>Entrar na lista</a>
+            <a href="#lista" className={styles.pill}>Receber acesso antecipado</a>
           </div>
         </div>
       </div>
@@ -571,21 +571,21 @@ export function Hero() {
         <div ref={heroContentRef} className={isInviteMode ? styles.heroPostInvite : undefined} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: isInviteMode ? "clamp(44px,8vw,70px) clamp(20px,5vw,32px) 40px" : "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
           {inviteGreeting ? (
             <div className={styles.heroInviteGreeting}>
-              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu lugar na lista está confirmado.` : "Seu lugar na lista está confirmado."}</span>
+              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu acesso antecipado está registrado.` : "Seu acesso antecipado está registrado."}</span>
               <strong>
                 {inviteGreeting.confirmedCount > 0
                   ? inviteGreeting.confirmedCount === 1
                     ? "1 pessoa já entrou pela sua indicação."
                     : `${inviteGreeting.confirmedCount} pessoas já entraram pela sua indicação.`
                   : inviteGreeting.confirmed
-                    ? "A Aurora vai avisar quando chegar sua vez."
-                    : "Confirme seu email para ativar seus convites."}
+                    ? "A Aurora vai avisar por email quando novas entradas forem abertas."
+                    : "Confirme seu email para registrar seu acesso."}
               </strong>
             </div>
           ) : isReferralArrival ? (
             <div className={styles.heroInviteGreeting}>
               <span>Você chegou por convite.</span>
-              <strong>Entre na lista para guardar seu acesso e abrir seus próprios convites.</strong>
+              <strong>Cadastre seu email para receber acesso antecipado e acompanhar os próximos passos.</strong>
             </div>
           ) : null}
 
@@ -601,6 +601,16 @@ export function Hero() {
           <p style={{ margin: "clamp(16px,4vw,26px) 0 0", font: "400 clamp(15px,2.4vw,18px)/1.6 var(--font-sans)", color: "#E8E4F2", maxWidth: isInviteMode ? 640 : 580, textWrap: "pretty", textShadow: "0 1px 24px rgba(0,0,0,.6)" }}>
             {heroBody}
           </p>
+
+          {!isInviteMode ? (
+            <div className={styles.earlyAccessNote}>
+              <strong>A Aurora está abrindo em etapas.</strong>
+              <span>
+                Quem entra agora recebe acesso antecipado antes da abertura geral. Depois do cadastro,
+                confirme seu email para receber os próximos passos e convidar pessoas queridas.
+              </span>
+            </div>
+          ) : null}
 
           <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 460 }}>
             {inviteGreeting ? (

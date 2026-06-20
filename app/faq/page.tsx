@@ -4,9 +4,9 @@ import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 
 export const metadata = pageMetadata({
   title: "Perguntas frequentes | Aurora",
-  description: "Perguntas frequentes sobre a Aurora, lista de espera, privacidade, convites e uso responsável do diário por voz com IA.",
+  description: "Perguntas frequentes sobre a Aurora, acesso antecipado, privacidade, convites e uso responsável do diário por voz com IA.",
   path: "/faq",
-  keywords: ["FAQ Aurora", "perguntas Aurora", "diário por voz com IA", "lista de espera Aurora"],
+  keywords: ["FAQ Aurora", "perguntas Aurora", "diário por voz com IA", "acesso antecipado Aurora"],
 });
 
 const questions = [
@@ -15,8 +15,20 @@ const questions = [
     body: "Não. A Aurora é um diário por voz com IA para reflexão pessoal. Ela não faz diagnóstico, tratamento ou atendimento de emergência.",
   },
   {
-    title: "Como funciona a lista de espera?",
-    body: "Você cadastra o email, confirma a entrada e recebe uma sala pessoal para acompanhar convites, marcos e próximos passos.",
+    title: "Como funciona o acesso antecipado?",
+    body: "Você cadastra o email, confirma a entrada e recebe acesso antecipado antes da abertura geral. Depois disso, acompanha os próximos passos pelo seu link pessoal e por email.",
+  },
+  {
+    title: "Quando vou acessar o app?",
+    body: "A Aurora será liberada em etapas. Quem está no acesso antecipado recebe os próximos passos por email antes da abertura geral. Convites confirmados podem antecipar benefícios e condições especiais.",
+  },
+  {
+    title: "O que ganho ao entrar agora?",
+    body: "Você entra no acesso antecipado, acompanha a abertura da Aurora, pode convidar pessoas queridas e recebe condições de estreia quando elas forem definidas.",
+  },
+  {
+    title: "Como não perder meu acesso?",
+    body: "Depois de se cadastrar, confirme seu email. As atualizações da abertura e a liberação do acesso antecipado chegam por email. Se a mensagem da Aurora cair em Spam ou Promoções, mova para a caixa principal e marque como favorita.",
   },
   {
     title: "Preciso indicar pessoas?",
@@ -32,7 +44,7 @@ const questions = [
   },
   {
     title: "Quando o app abre?",
-    body: "A Aurora abre por convites. Quem está na lista recebe notícias quando novas vagas forem liberadas.",
+    body: "A abertura acontece em etapas. Quem registrou acesso antecipado recebe as novidades e liberações por email.",
   },
 ];
 

@@ -66,9 +66,9 @@ export function LaunchHeader({ page }: { page: string }) {
           <TrackedLink
             href="/#lista"
             className={styles.pill}
-            eventProperties={{ page, source: "launch_header", label: "Entrar na lista" }}
+            eventProperties={{ page, source: "launch_header", label: "Receber acesso antecipado" }}
           >
-            Entrar na lista
+            Receber acesso antecipado
           </TrackedLink>
         </nav>
       </div>
@@ -127,39 +127,39 @@ const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
 const conversionCopy: Record<string, { eyebrow: string; title: string; body: string; label: string }> = {
   manifesto: {
     eyebrow: "Próximo gesto",
-    title: "Se a ideia fez sentido, entre perto do começo.",
-    body: "A Aurora abre por convites. Entrar na lista também ajuda a moldar a experiência antes do lançamento.",
-    label: "Entrar na lista",
+    title: "Se a ideia fez sentido, chegue antes da abertura.",
+    body: "A Aurora está abrindo em etapas. O acesso antecipado aproxima você dos primeiros passos da experiência.",
+    label: "Quero entrar antes da abertura",
   },
   metodo: {
-    eyebrow: "Lista de espera",
+    eyebrow: "Acesso antecipado",
     title: "Acompanhe a Aurora enquanto o método ganha forma.",
-    body: "Você recebe acesso quando chegar sua vez e pode convidar pessoas queridas para conhecer a experiência.",
-    label: "Entrar na lista",
+    body: "Você recebe os próximos passos por email antes da abertura geral e pode convidar pessoas queridas para chegar junto.",
+    label: "Quero entrar antes da abertura",
   },
   "diario-por-voz": {
     eyebrow: "Experimente primeiro",
     title: "Quando a Aurora abrir, você pode começar pela voz.",
-    body: "Entre na lista para receber o convite e preparar sua chegada com calma.",
-    label: "Entrar na lista",
+    body: "Receba acesso antecipado e prepare sua chegada com calma.",
+    label: "Quero entrar antes da abertura",
   },
   "ia-para-reflexao": {
     eyebrow: "Tecnologia com limite",
     title: "Quer acompanhar essa forma de usar IA?",
-    body: "Entre na lista para acompanhar uma IA pensada para clareza, não para dependência.",
-    label: "Entrar na lista",
+    body: "Receba acesso antecipado para acompanhar uma IA pensada para clareza, não para dependência.",
+    label: "Quero entrar antes da abertura",
   },
   "para-terapeutas": {
     eyebrow: "Profissionais",
     title: "Quer acompanhar a Aurora pelo olhar clínico?",
-    body: "Entre na lista profissional para receber novidades sobre uso, limites e possíveis integrações.",
-    label: "Entrar na lista profissional",
+    body: "Receba novidades sobre uso responsável, limites e possíveis integrações para profissionais.",
+    label: "Conhecer a Aurora para profissionais",
   },
   "aurora-org": {
     eyebrow: "Próximo passo",
     title: "Acompanhe a Aurora.org desde o início.",
-    body: "A lista também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
-    label: "Entrar na lista",
+    body: "O acesso antecipado também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
+    label: "Quero entrar antes da abertura",
   },
 };
 

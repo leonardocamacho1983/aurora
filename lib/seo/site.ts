@@ -59,7 +59,7 @@ export const webSiteJsonLd = {
   potentialAction: {
     "@type": "JoinAction",
     target: absoluteUrl("/#lista"),
-    name: "Entrar na lista de espera da Aurora",
+    name: "Receber acesso antecipado à Aurora",
   },
 };
 

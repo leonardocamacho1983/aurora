@@ -76,10 +76,10 @@ function quietLink(label: string, href: string): string {
 function inboxInstruction(): string {
   return `
     <div style="margin:22px 0;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#151225">
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#d8d3e6"><strong>Para a Aurora não se perder:</strong></p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#d8d3e6"><strong>Para acompanhar a abertura da Aurora:</strong></p>
       <div style="display:flex;gap:10px;align-items:center;margin:10px 0">
         <span style="display:inline-block;width:34px;height:34px;border-radius:10px;background:#211b35;text-align:center;line-height:34px;color:#f4d98b;font-size:20px">★</span>
-        <span style="font-size:13px;line-height:1.5;color:#b8b1ca">No Gmail ou Outlook, marque este email com estrela ou adicione a Aurora aos favoritos. Se não aparecer, procure por Aurora, Promoções ou Spam.</span>
+        <span style="font-size:13px;line-height:1.5;color:#b8b1ca">A Aurora vai avisar por email quando novas entradas forem liberadas. Marque este email como favorito. Se ele tiver caído em Spam ou Promoções, mova para a caixa principal.</span>
       </div>
     </div>
   `;
@@ -96,15 +96,15 @@ export async function sendConfirmEmail(row: WaitlistEmailRow, baseUrl: string) {
 
   return sendEmail({
     to: row.email,
-    subject: "Confirme seu acesso à Aurora",
+    subject: "Confirme seu acesso antecipado à Aurora",
     html: shell(`
-      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Você está quase na lista. Confirme seu email para guardar seu lugar e ativar sua sala de convite.</p>
-      ${button("Confirmar meu acesso", url)}
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Você está a um passo de registrar seu acesso antecipado. Confirme seu email para receber os próximos passos da abertura da Aurora antes da abertura geral.</p>
+      ${button("Confirmar meu acesso antecipado", url)}
       ${inboxInstruction()}
-      <p style="font-size:14px;line-height:1.6;color:#948fa8">Depois de confirmar, você pode acompanhar seus marcos por este convite:</p>
+      <p style="font-size:14px;line-height:1.6;color:#948fa8">Depois de confirmar, você pode acompanhar convites e próximos passos pelo seu link pessoal:</p>
       <p style="font-size:14px;line-height:1.6;color:#c9c4d8">${share}</p>
     `),
-    text: `Confirme seu acesso à Aurora: ${url}\n\nPara a Aurora não se perder, marque este email com estrela ou adicione aos favoritos. Se não aparecer, procure por Aurora, Promoções ou Spam.\n\nSeu convite: ${share}`,
+    text: `Confirme seu acesso antecipado à Aurora: ${url}\n\nA Aurora vai avisar por email quando novas entradas forem liberadas. Marque este email como favorito. Se ele tiver caído em Spam ou Promoções, mova para a caixa principal.\n\nSeu link pessoal: ${share}`,
   });
 }
 
@@ -112,12 +112,12 @@ export async function sendStatusEmail(row: WaitlistEmailRow, baseUrl: string) {
   const url = statusUrl(row.statusToken, baseUrl);
   return sendEmail({
     to: row.email,
-    subject: "Seu link da lista Aurora",
+    subject: "Seu acesso antecipado à Aurora",
     html: shell(`
-      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Este email já está na lista Aurora. Aqui está seu link pessoal para acompanhar convites e próximos passos.</p>
-      ${button("Abrir minha sala de convite", url)}
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Seu acesso antecipado está registrado. Abra seu link pessoal para acompanhar convites, próximos passos e novidades da abertura.</p>
+      ${button("Ver meu acesso antecipado", url)}
     `),
-    text: `Seu link pessoal da Aurora: ${url}`,
+    text: `Seu acesso antecipado à Aurora: ${url}`,
   });
 }
 
@@ -153,7 +153,7 @@ export async function sendMilestoneEmail(input: {
       <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Você chegou a ${input.confirmedCount} convites confirmados e desbloqueou:</p>
       <h1 style="font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.15;color:#f8f6fc">${input.milestone.title}</h1>
       <p style="font-size:15px;line-height:1.6;color:#b3adc4">${input.milestone.description}</p>
-      ${button("Celebrar na minha sala", url)}
+      ${button("Celebrar meu acesso", url)}
     `),
     text: `Marco desbloqueado: ${input.milestone.title}\n\n${input.milestone.description}\n\nVer na Aurora: ${url}`,
   });
@@ -169,64 +169,64 @@ export async function sendLifecycleEmail(input: LifecycleEmailInput) {
 
   const variants: Record<LifecycleEmailKind, { subject: string; html: string; text: string }> = {
     unconfirmed_1h: {
-      subject: "Falta só confirmar seu lugar na Aurora",
+      subject: "Falta só confirmar seu acesso antecipado",
       html: shell(`
         <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu cadastro chegou, mas seu email ainda não foi confirmado.</p>
-        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A confirmação guarda seu lugar na lista e libera sua sala de convite.</p>
-        ${button("Confirmar meu email", confirm)}
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A confirmação registra seu acesso antecipado e garante que você receba os próximos passos da abertura da Aurora.</p>
+        ${button("Confirmar meu acesso antecipado", confirm)}
         ${inboxInstruction()}
       `),
-      text: `${greeting(input.row.name)}falta confirmar seu lugar na Aurora: ${confirm}\n\nA confirmação guarda seu lugar na lista e libera sua sala de convite.`,
+      text: `${greeting(input.row.name)}falta confirmar seu acesso antecipado à Aurora: ${confirm}\n\nAs próximas liberações chegam por email. Mantenha a Aurora na sua caixa principal.`,
     },
     unconfirmed_24h: {
-      subject: "Seu lugar na Aurora ainda está esperando confirmação",
+      subject: "Seu acesso antecipado ainda precisa de confirmação",
       html: shell(`
-        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}se você ainda quiser entrar na lista, este é o gesto que falta.</p>
-        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Sem confirmação, a Aurora não consegue ativar sua sala nem avisar quando seu acesso estiver pronto.</p>
-        ${button("Confirmar agora", confirm)}
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}se você ainda quiser receber acesso antecipado, este é o passo que falta.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">As próximas liberações chegam por email. Sem a confirmação, a Aurora não consegue avisar quando novas entradas forem abertas.</p>
+        ${button("Confirmar meu acesso antecipado", confirm)}
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Enquanto isso, você pode ler ${quietLink("o manifesto", manifesto)} ou entender ${quietLink("o método", metodo)}.</p>
       `),
-      text: `${greeting(input.row.name)}se ainda quiser entrar na lista, confirme aqui: ${confirm}\n\nManifesto: ${manifesto}\nMétodo: ${metodo}`,
+      text: `${greeting(input.row.name)}se ainda quiser receber acesso antecipado, confirme aqui: ${confirm}\n\nAs próximas liberações chegam por email. Mantenha a Aurora na sua caixa principal.\n\nManifesto: ${manifesto}\nMétodo: ${metodo}`,
     },
     invited_unconfirmed_1h: {
       subject: "Alguém abriu uma porta para você na Aurora",
       html: shell(`
-        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}você entrou por um convite. Falta confirmar o email para aceitar.</p>
-        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Depois disso, sua própria sala abre e você também pode chamar pessoas queridas.</p>
-        ${button("Aceitar convite", confirm)}
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}você entrou por um convite. Falta confirmar o email para registrar seu acesso antecipado.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Depois disso, você recebe os próximos passos da Aurora e também pode chamar pessoas queridas.</p>
+        ${button("Confirmar meu acesso antecipado", confirm)}
         ${inboxInstruction()}
       `),
-      text: `${greeting(input.row.name)}você entrou por um convite da Aurora. Aceite confirmando seu email: ${confirm}`,
+      text: `${greeting(input.row.name)}você entrou por um convite da Aurora. Confirme seu acesso antecipado: ${confirm}`,
     },
     confirmed_no_invite_24h: {
-      subject: "Sua sala de convite já está aberta",
+      subject: "Seu acesso antecipado à Aurora está registrado",
       html: shell(`
-        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu lugar está confirmado. Agora vem o gesto principal: convidar pessoas queridas.</p>
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu acesso antecipado está registrado. Agora você pode convidar pessoas queridas para chegar junto.</p>
         <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora cresce melhor quando chega por uma indicação íntima, não por barulho.</p>
-        ${button("Abrir minha sala", status)}
+        ${button("Ver meu acesso antecipado", status)}
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Seu link direto: ${share}</p>
       `),
-      text: `${greeting(input.row.name)}sua sala de convite já está aberta: ${status}\n\nSeu link direto: ${share}`,
+      text: `${greeting(input.row.name)}seu acesso antecipado está registrado: ${status}\n\nSeu link direto: ${share}`,
     },
     share_no_confirmed_invite_24h: {
       subject: "Seu convite só conta quando a pessoa confirma",
       html: shell(`
         <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}vi que você já mexeu no convite. Um detalhe importante: ele só vira indicação quando a pessoa confirma o email.</p>
         <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Vale mandar para uma ou duas pessoas com uma frase simples, pessoal, sem cara de divulgação.</p>
-        ${button("Ver meu convite", status)}
+        ${button("Ver meu acesso antecipado", status)}
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Sugestão: “pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.”</p>
       `),
-      text: `${greeting(input.row.name)}seu convite só conta quando a pessoa confirma o email.\n\nVeja sua sala: ${status}\n\nSugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.`,
+      text: `${greeting(input.row.name)}seu convite só conta quando a pessoa confirma o email.\n\nVeja seu acesso antecipado: ${status}\n\nAs próximas liberações chegam por email. Mantenha a Aurora na sua caixa principal.\n\nSugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.`,
     },
     confirmed_no_ritual_24h: {
       subject: "Prepare sua Aurora em poucos minutos",
       html: shell(`
         <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}antes da primeira experiência, você pode deixar a Aurora um pouco mais sua.</p>
         <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Na sua sala, o Ritual de Chegada ajuda a Aurora a entender seu momento, seu ritmo e o tipo de presença que você espera.</p>
-        ${button("Abrir minha sala", status)}
+        ${button("Preparar minha Aurora", status)}
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Se preferir entender melhor antes: ${quietLink("segurança e privacidade", seguranca)}.</p>
       `),
-      text: `${greeting(input.row.name)}prepare sua Aurora pela sua sala pessoal: ${status}\n\nSegurança e privacidade: ${seguranca}`,
+      text: `${greeting(input.row.name)}prepare sua Aurora pelo seu link pessoal: ${status}\n\nAs próximas liberações chegam por email. Mantenha a Aurora na sua caixa principal.\n\nSegurança e privacidade: ${seguranca}`,
     },
   };
 

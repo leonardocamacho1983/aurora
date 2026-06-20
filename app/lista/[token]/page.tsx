@@ -45,10 +45,10 @@ function InvalidState() {
         <p className={styles.referralKicker}>Aurora</p>
         <h1 className="font-serif">Não encontramos esse link.</h1>
         <p>
-          Entre na lista novamente para receber seu acesso pessoal por email.
+          Cadastre seu email novamente para receber seu acesso antecipado por email.
         </p>
         <Link href="/#lista" className={styles.referralPrimary}>
-          Entrar na lista
+          Receber acesso antecipado
         </Link>
       </section>
     </main>
@@ -59,12 +59,12 @@ function ConfirmEmailPanel() {
   return (
     <div className={styles.referralConfirmPanel}>
       <span>Próximo passo</span>
-      <strong>Abra o email da Aurora e confirme sua presença.</strong>
+      <strong>Confirme seu email para registrar seu acesso antecipado.</strong>
       <p>
-        Esse clique ativa sua sala de convite e faz suas indicações começarem a contar.
+        Depois da confirmação, você recebe seu link pessoal e acompanha os próximos passos da Aurora.
       </p>
       <p className={styles.referralConfirmHint}>
-        Se não aparecer, procure por Aurora ou veja a aba Promoções ou Spam.
+        As próximas liberações chegam por email. Deixe a Aurora na sua caixa principal para acompanhar tudo com calma.
       </p>
       <div className={styles.waitlistInboxActions}>
         <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer">
@@ -107,13 +107,13 @@ export default async function WaitlistStatusPage({ params }: Props) {
   const confirmed = Boolean(row.confirmedAt);
   const hasReferrals = confirmedCount > 0;
   const title = !confirmed
-    ? "Confirme seu email para ativar sua sala."
-    : "Convidar pessoas queridas";
+    ? "Confirme seu email para registrar seu acesso antecipado."
+    : "Seu acesso antecipado está registrado.";
   const body = !confirmed
-    ? "O link de confirmação está na sua caixa de entrada. Ele guarda seu lugar e ativa seus convites."
+    ? "O link de confirmação está na sua caixa de entrada. Depois desse clique, você acompanha os próximos passos e recebe as novidades da abertura por email."
     : hasReferrals
-      ? `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. ${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação.`
-      : `${profileName ? `${profileName}, s` : "S"}eu lugar está confirmado. O próximo gesto é mandar este convite para alguém que você quer por perto.`;
+      ? `${profileName ? `${profileName}, s` : "S"}eu acesso antecipado está registrado. ${confirmedCount} ${pluralPessoa(confirmedCount)} chegaram pela sua indicação.`
+      : `${profileName ? `${profileName}, s` : "S"}eu acesso antecipado está registrado. Agora você pode convidar pessoas queridas enquanto a Aurora prepara novas entradas.`;
 
   return (
     <main className={styles.referralPage}>
@@ -130,7 +130,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
       <section className={`${styles.referralShell} ${confirmed ? styles.referralShellReady : ""}`}>
         <div className={styles.referralIntro}>
           {!confirmed ? <div className={styles.referralOrb} aria-hidden="true" /> : null}
-          <p className={styles.referralKicker}>{confirmed ? "Sua sala de convite" : "Sua sala Aurora"}</p>
+          <p className={styles.referralKicker}>{confirmed ? "Acesso antecipado" : "Confirmação por email"}</p>
           <h1 className="font-serif">{title}</h1>
           <p>{body}</p>
         </div>
@@ -143,9 +143,9 @@ export default async function WaitlistStatusPage({ params }: Props) {
               <div className={styles.referralSharePanel}>
                 <div className={styles.referralActionHeader}>
                   <span>Gesto principal</span>
-                  <strong>Convide uma pessoa agora</strong>
+                  <strong>Convidar pessoas queridas</strong>
                   <p>
-                    Escolha alguém querido e envie pelo WhatsApp. Quando a pessoa confirma o email, a indicação entra no seu contador.
+                    Envie para uma pessoa querida. Quando ela confirma o email, a indicação entra no seu contador. As próximas liberações chegam por email.
                   </p>
                 </div>
                 <ShareInvite

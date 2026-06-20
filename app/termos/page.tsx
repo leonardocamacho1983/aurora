@@ -5,9 +5,9 @@ import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
 export const metadata = pageMetadata({
   title: "Termos de Uso | Aurora",
   description:
-    "Termos de uso da Aurora para lista de espera, convites, beta e futuro diário por voz com IA.",
+    "Termos de uso da Aurora para acesso antecipado, convites, beta e futuro diário por voz com IA.",
   path: "/termos",
-  keywords: ["termos Aurora", "termos diário por voz", "lista de espera Aurora"],
+  keywords: ["termos Aurora", "termos diário por voz", "acesso antecipado Aurora"],
 });
 
 export default function TermosPage() {
@@ -25,14 +25,14 @@ export default function TermosPage() {
         page="termos"
         eyebrow="Termos"
         title="Um acordo simples para uma experiência delicada."
-        lead="A Aurora é um diário por voz com IA para reflexão pessoal. Estes termos explicam a lista de espera, os convites e os limites da experiência."
+        lead="A Aurora é um diário por voz com IA para reflexão pessoal. Estes termos explicam o acesso antecipado, os convites e os limites da experiência."
       >
-        <LaunchSection eyebrow="Uso" title="O que você pode esperar." lead="A lista de espera dá acesso a convites, páginas pessoais e comunicações sobre lançamento. O app ainda pode mudar durante testes.">
+        <LaunchSection eyebrow="Uso" title="O que você pode esperar." lead="O acesso antecipado aproxima você da abertura da Aurora, com convites, links pessoais e comunicações sobre lançamento. O app ainda pode mudar durante testes.">
           <FineList
             items={[
               {
-                title: "Lista de espera",
-                body: "Ao cadastrar seu email, você aceita receber mensagens transacionais sobre confirmação, status, convites e acesso.",
+                title: "Acesso antecipado",
+                body: "Ao cadastrar seu email, você aceita receber mensagens transacionais sobre confirmação, status, convites, próximos passos e liberação de acesso.",
               },
               {
                 title: "Convites",
