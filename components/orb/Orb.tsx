@@ -9,7 +9,7 @@ export type OrbState = "idle" | "recording" | "reflecting" | "saved" | "disabled
 const DEFAULT_LABEL: Record<OrbState, string> = {
   idle: "Toque para falar",
   recording: "Toque para parar",
-  reflecting: "Refletindo",
+  reflecting: "A Aurora está pensando no que você falou",
   saved: "Salvo",
   disabled: "Indisponível",
 };
@@ -27,7 +27,7 @@ export interface OrbProps {
 
 /**
  * Orb — assinatura da Aurora (Design System v0.1 §5, handoff §7).
- * Máquina de estados visual: repousa · floresce · gira · exala · desabilitado.
+ * Máquina de estados visual: repousa · floresce · respira/pensa · exala · desabilitado.
  * Botão real, focável, aria-label por estado. Respeita prefers-reduced-motion.
  * NÃO está ligado às rotas — só o componente.
  */
@@ -48,8 +48,16 @@ export function Orb({ state = "idle", onClick, ariaLabel, audioLevels, decorativ
       </span>
 
       <span className={styles.core} aria-hidden="true">
-        {/* gradiente cônico que gira por dentro no "gira" (refletindo) */}
+        {/* luz interna lenta no estado respira/pensa (refletindo) */}
         <span className={styles.conic} />
+        <span className={styles.spiral} aria-hidden="true">
+          <span className={styles.spiralLayer} />
+          <span className={styles.spiralLayer} />
+          <span className={styles.spiralCurl}>
+            <span />
+          </span>
+          <span className={styles.spiralEye} />
+        </span>
         {/* grão (feTurbulence) — todos os estados mantêm o grão */}
         <svg className={styles.grain} aria-hidden="true" focusable="false">
           <filter id={grainId}>

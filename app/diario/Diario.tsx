@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
 import {
   CrisisResources,
@@ -14,11 +14,44 @@ import styles from "./Diario.module.css";
 type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
 
 type ReflectResponse =
-  | { status: "ok"; risk: string; reflection: string; mood: string | null; entryId: string }
-  | { status: "crisis"; risk: "high"; type: string; resources: CrisisResourcesData; entryId: string }
+  | { status: "ok"; risk: string; reflection: string; mood: string | null; entryId: string; intent?: string }
+  | { status: "crisis"; risk: "high"; type: string; resources: CrisisResourcesData; entryId: string; intent?: string }
   | { error: string };
 
-const DEFAULT_PROMPT = "O que está vivo em você agora?";
+type TranscribeResponse =
+  | { transcript: string; language?: string | null; entryId?: string; segmentId?: string }
+  | { error: string; entryId?: string; segmentId?: string };
+
+type EntryMode = "new" | "continue" | "reformulate";
+
+type ActiveRecorder = {
+  mimeType: string;
+  stop: () => Promise<Blob>;
+};
+
+type RetryPayload = {
+  blob: Blob;
+  entryId?: string;
+  entryMode: EntryMode;
+  durationBucket: string;
+};
+
+const DEFAULT_PROMPT = "O que está vivo agora?";
+const STOP_RECORDING_TIMEOUT_MS = 8000;
+const TRANSCRIBE_TIMEOUT_MS = 45000;
+const REFLECT_TIMEOUT_MS = 45000;
+
+function trackProduct(_eventName: string, _properties: Record<string, unknown>) {
+  // Product analytics are intentionally decoupled from this visual restore.
+}
+
+const REFLECTING_HELPERS = [
+  "Solte os ombros por um instante.",
+  "Sinta os pés no chão.",
+  "Se puder, tome um copo d'água.",
+  "Olhe pela janela por alguns segundos.",
+  "Deixe a respiração ficar um pouco mais lenta.",
+];
 
 const MOOD_COLOR: Record<string, string> = {
   leve: "var(--mood-leve)",
@@ -37,14 +70,268 @@ const ORB_STATE: Record<Phase, OrbState> = {
   error: "idle",
 };
 
-const HELPER: Record<Phase, string> = {
-  idle: "Toque para falar",
-  recording: "Gravando. Toque para parar",
-  reflecting: "A Aurora está organizando sua fala",
-  reflection: "",
-  crisis: "",
-  error: "Algo deu errado",
-};
+const STARS = [
+  [8, 12, 0, 1.5],
+  [88, 8, 1.2, 1],
+  [25, 6, 2.8, 1.5],
+  [72, 18, 0.5, 1],
+  [45, 4, 1.9, 2],
+  [92, 28, 3.1, 1],
+  [15, 35, 0.8, 1],
+  [60, 9, 2.2, 1.5],
+  [38, 22, 1.5, 1],
+  [78, 32, 0.3, 1.5],
+  [52, 16, 2, 1],
+  [5, 48, 1, 1],
+  [30, 75, 1.7, 1.5],
+  [65, 60, 0.6, 1],
+  [82, 72, 2.4, 1],
+  [18, 58, 3.3, 1.5],
+  [50, 85, 0.9, 1],
+  [95, 50, 1.8, 1],
+] as const;
+
+function Stars() {
+  return (
+    <div className={styles.stars} aria-hidden="true">
+      {STARS.map(([x, y, delay, size]) => (
+        <span
+          key={`${x}-${y}`}
+          style={{
+            left: `${x}%`,
+            top: `${y}%`,
+            width: size,
+            height: size,
+            animationDelay: `${delay}s`,
+            animationDuration: `${2.5 + delay * 0.4}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function HeaderIcon({ phase }: { phase: Phase }) {
+  if (phase === "idle") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <circle cx="12" cy="12" r="8.2" />
+        <path d="M12 7.5v5l3.3 1.8" />
+      </svg>
+    );
+  }
+
+  if (phase === "recording") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M4 7h7M15 7h5M4 12h3M11 12h9M4 17h10M18 17h2" />
+        <path d="M11 5v4M7 10v4M14 15v4" />
+      </svg>
+    );
+  }
+
+  if (phase === "reflecting") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M12 4.5c.6 4.1 1.4 4.9 5.5 5.5-4.1.6-4.9 1.4-5.5 5.5-.6-4.1-1.4-4.9-5.5-5.5 4.1-.6 4.9-1.4 5.5-5.5Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M5 7h14M5 12h14M5 17h14M9 5v4M15 10v4M11 15v4" />
+    </svg>
+  );
+}
+
+function bucketSeconds(ms: number) {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 10) return "lt_10s";
+  if (seconds < 30) return "10s_30s";
+  if (seconds < 60) return "30s_1m";
+  if (seconds < 180) return "1m_3m";
+  return "gte_3m";
+}
+
+function pickReflectingHelper() {
+  return REFLECTING_HELPERS[Math.floor(Math.random() * REFLECTING_HELPERS.length)];
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function preferredAudioMimeType() {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
+    return "";
+  }
+
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/mp4",
+    "audio/aac",
+  ];
+
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
+}
+
+function extensionForAudioType(type: string) {
+  const normalized = type.toLowerCase();
+  if (normalized.includes("webm")) return "webm";
+  if (normalized.includes("mp4")) return "m4a";
+  if (normalized.includes("aac")) return "aac";
+  if (normalized.includes("ogg")) return "ogg";
+  if (normalized.includes("mpeg")) return "mp3";
+  if (normalized.includes("wav")) return "wav";
+  return "webm";
+}
+
+function deviceFamily() {
+  if (typeof navigator === "undefined") return "desktop";
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (platform === "MacIntel" && typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+  if (isIOS && /CriOS/i.test(ua)) return "ios_chrome";
+  if (isIOS) return "ios_safari";
+  if (isAndroid && /Chrome/i.test(ua)) return "android_chrome";
+  if (/Mobi|Android/i.test(ua)) return "mobile_other";
+  return "desktop";
+}
+
+function combineFloat32(chunks: Float32Array[]) {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Float32Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function encodeWav(samples: Float32Array, sampleRate: number) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+
+  function writeString(offset: number, value: string) {
+    for (let i = 0; i < value.length; i += 1) {
+      view.setUint8(offset + i, value.charCodeAt(i));
+    }
+  }
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, samples.length * 2, true);
+
+  let offset = 44;
+  for (const sample of samples) {
+    const clamped = Math.max(-1, Math.min(1, sample));
+    view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+    offset += 2;
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+}
+
+async function createWavRecorder(stream: MediaStream): Promise<ActiveRecorder> {
+  const AudioContextCtor =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextCtor) throw new Error("AudioContext unavailable");
+
+  const audioContext = new AudioContextCtor();
+  if (audioContext.state === "suspended") await audioContext.resume();
+
+  const source = audioContext.createMediaStreamSource(stream);
+  const processor = audioContext.createScriptProcessor(4096, 1, 1);
+  const chunks: Float32Array[] = [];
+
+  processor.onaudioprocess = (event) => {
+    chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+  };
+
+  source.connect(processor);
+  processor.connect(audioContext.destination);
+
+  return {
+    mimeType: "audio/wav",
+    stop: async () => {
+      processor.disconnect();
+      source.disconnect();
+      stream.getTracks().forEach((track) => track.stop());
+      const sampleRate = audioContext.sampleRate;
+      await audioContext.close();
+      return encodeWav(combineFloat32(chunks), sampleRate);
+    },
+  };
+}
+
+function createMediaRecorder(stream: MediaStream, mimeType: string): ActiveRecorder {
+  const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+  const chunks: Blob[] = [];
+
+  recorder.ondataavailable = (ev) => {
+    if (ev.data.size > 0) chunks.push(ev.data);
+  };
+
+  recorder.start();
+
+  return {
+    mimeType: recorder.mimeType || mimeType || "audio/webm",
+    stop: () =>
+      new Promise((resolve) => {
+        recorder.onstop = () => {
+          stream.getTracks().forEach((track) => track.stop());
+          resolve(new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" }));
+        };
+        recorder.stop();
+      }),
+  };
+}
 
 export function Diario({
   userEmail = "",
@@ -55,32 +342,62 @@ export function Diario({
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
+  const [isReflectionExpanded, setIsReflectionExpanded] = useState(false);
   const [mood, setMood] = useState<string | null>(null);
   const [crisis, setCrisis] = useState<CrisisResourcesData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [reflectingHelper, setReflectingHelper] = useState(REFLECTING_HELPERS[0]);
 
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const recorderRef = useRef<ActiveRecorder | null>(null);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const lastDurationBucketRef = useRef("lt_10s");
+  const retryPayloadRef = useRef<RetryPayload | null>(null);
+  const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
+  const [nextEntryMode, setNextEntryMode] = useState<EntryMode>("new");
+  const [canRetry, setCanRetry] = useState(false);
+
+  useEffect(() => {
+    trackProduct("product_diary_viewed", {
+      source: "diary",
+      has_onboarding_moment: Boolean(onboarding?.moment),
+      has_onboarding_presence: Boolean(onboarding?.presence),
+    });
+  }, [onboarding?.moment, onboarding?.presence]);
 
   function resetToIdle() {
     setPhase("idle");
     setReflection(null);
+    setIsReflectionExpanded(false);
     setMood(null);
     setCrisis(null);
     setErrorMsg(null);
+    setCanRetry(false);
+    retryPayloadRef.current = null;
+    setActiveEntryId(null);
+    setNextEntryMode("new");
   }
 
   function fail(message: string) {
     setErrorMsg(message);
+    setCanRetry(Boolean(retryPayloadRef.current));
     setPhase("error");
+  }
+
+  function enterReflecting() {
+    setReflectingHelper(pickReflectingHelper());
+    setIsReflectionExpanded(false);
+    setPhase("reflecting");
   }
 
   async function onOrbClick() {
     if (phase === "recording") {
-      stopRecording();
+      await stopRecording();
       return;
     }
     if (phase === "reflecting") return; // ocupado
+    if (phase === "reflection" && activeEntryId) {
+      setNextEntryMode("continue");
+    }
     await startRecording(); // idle | error | reflection (gravar mais)
   }
 
@@ -92,129 +409,283 @@ export function Diario({
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = (ev) => {
-        if (ev.data.size > 0) chunksRef.current.push(ev.data);
-      };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, {
-          type: recorder.mimeType || "audio/webm",
-        });
-        await transcribeAndReflect(blob);
-      };
+      const family = deviceFamily();
+      const useWavRecorder = family === "ios_safari" || family === "ios_chrome";
+      const mimeType = useWavRecorder ? "audio/wav" : preferredAudioMimeType();
+      const recorder = useWavRecorder
+        ? await createWavRecorder(stream)
+        : createMediaRecorder(stream, mimeType);
       recorderRef.current = recorder;
-      recorder.start();
+      recordingStartedAtRef.current = Date.now();
       setPhase("recording");
+      trackProduct("product_diary_recording_started", {
+        source: "diary",
+        device_family: family,
+        recorder_mime_type: recorder.mimeType.split(";")[0],
+        entry_mode: nextEntryMode,
+      });
     } catch {
+      trackProduct("product_diary_recording_stopped", {
+        source: "diary",
+        status: "microphone_denied",
+      });
       fail("Não consegui acessar o microfone. Verifique a permissão.");
     }
   }
 
-  function stopRecording() {
-    recorderRef.current?.stop();
-    setPhase("reflecting");
+  async function stopRecording() {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+    recorderRef.current = null;
+
+    const startedAt = recordingStartedAtRef.current;
+    const durationMs = startedAt ? Date.now() - startedAt : 0;
+    const durationBucket = bucketSeconds(durationMs);
+    lastDurationBucketRef.current = durationBucket;
+    trackProduct("product_diary_recording_stopped", {
+      source: "diary",
+      status: "stopped",
+      duration_bucket: durationBucket,
+      device_family: deviceFamily(),
+      recorder_mime_type: recorder.mimeType.split(";")[0],
+      entry_mode: nextEntryMode,
+    });
+    enterReflecting();
+    let blob: Blob;
+    try {
+      blob = await withTimeout(recorder.stop(), STOP_RECORDING_TIMEOUT_MS);
+    } catch {
+      fail("A gravação demorou para encerrar. Tente de novo.");
+      return;
+    }
+    await transcribeAndReflect(blob, {
+      entryId: nextEntryMode === "new" ? undefined : activeEntryId ?? undefined,
+      entryMode: nextEntryMode,
+      durationBucket,
+    });
   }
 
-  async function transcribeAndReflect(blob: Blob) {
-    setPhase("reflecting");
+  async function transcribeAndReflect(
+    blob: Blob,
+    options?: { entryId?: string; entryMode?: EntryMode; durationBucket?: string },
+  ) {
+    enterReflecting();
+    setCanRetry(false);
     try {
       const form = new FormData();
-      form.append("audio", new File([blob], "audio.webm", { type: blob.type || "audio/webm" }));
-      const tRes = await fetch("/api/transcribe", { method: "POST", body: form });
-      const tData = (await tRes.json()) as { transcript?: string; language?: string | null };
-      if (!tRes.ok || !tData.transcript) {
+      const audioType = blob.type || "audio/webm";
+      const extension = extensionForAudioType(audioType);
+      form.append("audio", new File([blob], `audio.${extension}`, { type: audioType }));
+      form.append("audioMimeType", audioType);
+      form.append("deviceFamily", deviceFamily());
+      form.append("entryMode", options?.entryMode ?? nextEntryMode);
+      form.append("durationBucket", options?.durationBucket ?? lastDurationBucketRef.current);
+      if (options?.entryId) form.append("entryId", options.entryId);
+      const tRes = await fetchWithTimeout(
+        "/api/transcribe",
+        { method: "POST", body: form },
+        TRANSCRIBE_TIMEOUT_MS,
+      );
+      const tData = (await tRes.json()) as TranscribeResponse;
+      if (!tRes.ok || !("transcript" in tData) || !tData.transcript) {
+        retryPayloadRef.current = {
+          blob,
+          entryId: tData.entryId ?? options?.entryId,
+          entryMode: options?.entryMode ?? nextEntryMode,
+          durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+        };
+        trackProduct("product_transcription_failed", {
+          source: "diary_client",
+          status: String(tRes.status),
+          error_code: "transcription_response_invalid",
+          device_family: deviceFamily(),
+          recorder_mime_type: audioType.split(";")[0],
+          entry_mode: options?.entryMode ?? nextEntryMode,
+        });
         fail("Não consegui transcrever o áudio. Tente de novo.");
         return;
       }
-      await reflectOn(tData.transcript, tData.language ?? null);
-    } catch {
-      fail("Falha de conexão ao transcrever.");
+      await reflectOn(
+        tData.transcript,
+        tData.language ?? null,
+        tData.entryId,
+        tData.segmentId,
+        options?.entryMode ?? nextEntryMode,
+      );
+    } catch (error) {
+      retryPayloadRef.current = {
+        blob,
+        entryId: options?.entryId,
+        entryMode: options?.entryMode ?? nextEntryMode,
+        durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+      };
+      trackProduct("product_transcription_failed", {
+        source: "diary_client",
+        error_code: isAbortError(error) ? "transcription_timeout" : "transcription_network",
+        device_family: deviceFamily(),
+        entry_mode: options?.entryMode ?? nextEntryMode,
+      });
+      fail(isAbortError(error) ? "A transcrição demorou demais. Tente de novo." : "Falha de conexão ao transcrever.");
     }
   }
 
-  async function reflectOn(transcript: string, language: string | null) {
+  async function reflectOn(
+    transcript: string,
+    language: string | null,
+    entryId?: string,
+    segmentId?: string,
+    entryMode: EntryMode = "new",
+  ) {
     try {
-      const rRes = await fetch("/api/reflect", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ transcript, language, locale: "pt-BR" }),
-      });
+      const rRes = await fetchWithTimeout(
+        "/api/reflect",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode }),
+        },
+        REFLECT_TIMEOUT_MS,
+      );
       const data = (await rRes.json()) as ReflectResponse;
       if (!rRes.ok || "error" in data) {
+        trackProduct("product_reflection_failed", {
+          source: "diary_client",
+          status: String(rRes.status),
+          error_code: "reflection_response_invalid",
+          entry_mode: entryMode,
+        });
         fail("A Aurora não conseguiu responder agora. Tente de novo.");
         return;
       }
       if (data.status === "crisis") {
+        trackProduct("product_crisis_resources_shown", {
+          source: "diary_client",
+          risk_level: data.risk,
+        });
         setCrisis(data.resources);
+        setActiveEntryId(data.entryId);
         setPhase("crisis");
         return;
       }
       setReflection(data.reflection);
+      setIsReflectionExpanded(false);
       setMood(data.mood);
+      setActiveEntryId(data.entryId);
+      setNextEntryMode("continue");
       setPhase("reflection");
-    } catch {
-      fail("Falha de conexão ao refletir.");
+    } catch (error) {
+      trackProduct("product_reflection_failed", {
+        source: "diary_client",
+        error_code: isAbortError(error) ? "reflection_timeout" : "reflection_network",
+        entry_mode: entryMode,
+      });
+      fail(isAbortError(error) ? "A Aurora demorou demais para responder. Tente de novo." : "Falha de conexão ao refletir.");
     }
   }
 
+  async function retryTranscription() {
+    const retry = retryPayloadRef.current;
+    if (!retry) return;
+    await transcribeAndReflect(retry.blob, {
+      entryId: retry.entryId,
+      entryMode: retry.entryMode,
+      durationBucket: retry.durationBucket,
+    });
+  }
+
+  async function startWithMode(mode: EntryMode) {
+    setNextEntryMode(mode);
+    await startRecording();
+  }
+
   const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
-  const isActive = phase === "recording" || phase === "reflecting";
   const firstName = onboarding?.name?.split(" ")[0] ?? "";
-  const prompt = onboarding?.moment
-    ? `Quer começar por ${onboarding.moment}?`
-    : DEFAULT_PROMPT;
-  const helperCopy = onboarding?.presence
-    ? `A Aurora vai começar com uma presença ${onboarding.presence.toLowerCase()}.`
-    : "Fale por alguns minutos. Não precisa organizar antes.";
+  const idleTitle = firstName ? `${firstName}, o que está vivo agora?` : DEFAULT_PROMPT;
+  const canExpandReflection = Boolean(
+    reflection && (reflection.length > 170 || reflection.trim().split(/\s+/).length > 24),
+  );
+  const stateCopy: Record<Exclude<Phase, "reflection">, { title: string; body: string; helper: string }> = {
+    idle: {
+      title: idleTitle,
+      body: onboarding?.moment ? `Se quiser, comece por ${onboarding.moment}.` : "Fale sem organizar antes.",
+      helper: "Toque para falar",
+    },
+    recording: {
+      title: "Gravando",
+      body: "Pode falar no seu tempo.",
+      helper: "Toque no orb de novo para encerrar.",
+    },
+    reflecting: {
+      title: "Aproveite para respirar.",
+      body: "A Aurora está pensando no que você falou.",
+      helper: reflectingHelper,
+    },
+    crisis: {
+      title: "Apoio agora",
+      body: "A Aurora encontrou algo que precisa de cuidado imediato.",
+      helper: "",
+    },
+    error: {
+      title: "Algo saiu do fluxo.",
+      body: "Você pode tentar de novo. Nada foi inventado.",
+      helper: "",
+    },
+  };
 
   return (
-    <main className={styles.stage}>
+    <main className={styles.stage} data-phase={phase}>
+      <Stars />
       <nav className={styles.nav} aria-label="Navegação do diário">
         <Link href="/" className={styles.brand}>
           <span className={styles.brandOrb} aria-hidden="true" />
           <span>Aurora</span>
         </Link>
         <div className={styles.navLinks}>
-          <Link href="/timeline">Linha</Link>
-          <Link href="/account">{accountLabel}</Link>
+          <Link href="/timeline" className={styles.timelineLink} aria-label="Ver linha do tempo">
+            <HeaderIcon phase={phase} />
+          </Link>
+          <Link href="/account" className={styles.accountLink}>{accountLabel}</Link>
         </div>
       </nav>
 
       {phase !== "reflection" ? (
         <div className={styles.center}>
           <div className={styles.copy}>
-            <p className={styles.kicker}>{isActive ? "Agora" : "Diário por voz"}</p>
-            <h1 className="font-serif">{firstName ? `${firstName}, ${prompt}` : prompt}</h1>
-            <p>{helperCopy}</p>
+            <h1 className={phase === "recording" ? styles.functionalTitle : "font-serif"}>
+              {stateCopy[phase].title}
+            </h1>
+            <p>{stateCopy[phase].body}</p>
           </div>
 
-          {(phase === "idle" || phase === "recording" || phase === "reflecting") && (
+          {(phase === "idle" || phase === "recording" || phase === "reflecting" || phase === "error" || phase === "crisis") && (
             <div className={styles.orbStage}>
               <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
             </div>
           )}
 
-          {HELPER[phase] && (
+          {stateCopy[phase].helper && (
             <p className={phase === "recording" ? styles.liveHelper : styles.helper}>
-              {HELPER[phase]}
+              {stateCopy[phase].helper}
             </p>
           )}
 
           {phase === "error" && errorMsg && (
-            <p role="alert" className={styles.error}>
-              {errorMsg}
-            </p>
-          )}
-
-          {phase === "idle" && (
-            <div className={styles.quickGrid} aria-label="O que acontece no diário">
-              <span>Sem digitar</span>
-              <span>Registro privado</span>
-              <Link href="/timeline">Ver linha do tempo</Link>
+            <div role="alert" className={styles.errorPanel}>
+              <span className={styles.errorIcon} aria-hidden="true">!</span>
+              <p>{errorMsg}</p>
+              <div className={styles.errorActions}>
+                {canRetry && (
+                  <button type="button" onClick={retryTranscription}>
+                    Tentar transcrever
+                  </button>
+                )}
+                <button type="button" onClick={() => startWithMode(activeEntryId ? "continue" : "new")}>
+                  Gravar de novo
+                </button>
+              </div>
             </div>
           )}
+
         </div>
       ) : (
         <div className={styles.composition}>
@@ -223,14 +694,40 @@ export function Diario({
               <Orb state="idle" onClick={onOrbClick} ariaLabel="Toque para continuar falando" />
             </div>
 
-            <div className={styles.card}>
+            <div className={`${styles.card} ${isReflectionExpanded ? styles.cardExpanded : ""}`}>
               <div className={styles.cardContent}>
-                <p className={styles.kicker}>Reflexão</p>
+                <span className={styles.cardIcon} aria-hidden="true">✦</span>
                 <div
-                  className={`font-serif ${styles.reflectionText}`}
+                  role={canExpandReflection ? "button" : undefined}
+                  tabIndex={canExpandReflection ? 0 : undefined}
+                  className={`${styles.reflectionReader} ${
+                    isReflectionExpanded ? styles.reflectionReaderExpanded : ""
+                  } ${canExpandReflection ? styles.reflectionReaderExpandable : ""}`}
+                  onClick={() => canExpandReflection && setIsReflectionExpanded((expanded) => !expanded)}
+                  onKeyDown={(event) => {
+                    if (!canExpandReflection) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setIsReflectionExpanded((expanded) => !expanded);
+                    }
+                  }}
+                  aria-expanded={canExpandReflection ? isReflectionExpanded : undefined}
                 >
-                  {reflection && renderProse(reflection)}
+                  <div className={`font-serif ${styles.reflectionText}`}>
+                    {reflection && renderProse(reflection)}
+                  </div>
                 </div>
+
+                {canExpandReflection && (
+                  <button
+                    type="button"
+                    className={styles.readMoreAction}
+                    onClick={() => setIsReflectionExpanded((expanded) => !expanded)}
+                    aria-expanded={isReflectionExpanded}
+                  >
+                    {isReflectionExpanded ? "Recolher devolutiva" : "Ler devolutiva inteira"}
+                  </button>
+                )}
 
                 <div className={styles.metaRow}>
                   {mood ? (
@@ -250,16 +747,17 @@ export function Diario({
                     <span />
                   )}
 
-                  <Link href="/timeline" className={styles.softLink}>Ver linha do tempo</Link>
+                  <span />
                 </div>
 
                 <div className={styles.actionRow}>
-                  <button type="button" onClick={onOrbClick} className={styles.primaryAction}>
-                    Falar mais
+                  <button type="button" onClick={() => startWithMode("continue")} className={styles.primaryAction}>
+                    Continuar este registro
                   </button>
                   <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
-                    Concluir
+                    Novo momento
                   </button>
+                  <Link href="/timeline" className={styles.softLink}>Linha do tempo</Link>
                 </div>
               </div>
             </div>

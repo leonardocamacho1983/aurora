@@ -5,222 +5,483 @@
   min-width: 44px;
   min-height: 44px;
   padding: 0;
-  border: none;
-  background: transparent;
+  border: 0;
   border-radius: 50%;
-  cursor: pointer;
   display: inline-grid;
   place-items: center;
+  background: transparent;
+  cursor: pointer;
   isolation: isolate;
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
 }
+
 .orb:disabled {
   cursor: default;
 }
 
-/* halo (glow) atrás do núcleo */
 .halo {
   position: absolute;
-  inset: -16%;
-  border-radius: 50%;
-  background: var(--aurora);
-  filter: blur(28px);
-  opacity: 0.8;
+  inset: -21%;
   z-index: 0;
-  transition: opacity 300ms ease, filter 300ms ease;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 36%, rgba(255, 195, 220, 0.42), transparent 38%),
+    radial-gradient(circle at 66% 40%, rgba(155, 188, 255, 0.3), transparent 44%),
+    radial-gradient(circle at 42% 70%, rgba(138, 226, 198, 0.22), transparent 56%);
+  filter: blur(24px);
+  opacity: 0.68;
+  will-change: opacity, transform;
 }
 
-/* núcleo */
 .core {
   position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: var(--aurora);
-  overflow: hidden;
   z-index: 1;
-  transform: scale(1);
-  transition: transform 300ms ease, filter 300ms ease;
+  width: 90%;
+  height: 90%;
+  overflow: hidden;
+  border-radius: 50%;
+  -webkit-clip-path: circle(50% at 50% 50%);
+  clip-path: circle(50% at 50% 50%);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 195, 220, 0.95) 0%, transparent 44%),
+    radial-gradient(circle at 68% 24%, rgba(155, 188, 255, 0.85) 0%, transparent 42%),
+    radial-gradient(circle at 55% 72%, rgba(255, 162, 100, 0.75) 0%, transparent 46%),
+    radial-gradient(circle at 36% 64%, rgba(210, 158, 255, 0.65) 0%, transparent 36%),
+    radial-gradient(circle at 62% 54%, rgba(138, 226, 198, 0.55) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(130, 110, 180, 0.4) 0%, rgba(70, 55, 120, 0.65) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 52px 14px rgba(188, 148, 255, 0.28),
+    inset 0 0 18px rgba(255, 255, 255, 0.05),
+    inset -28px -34px 64px rgba(18, 14, 42, 0.24);
+  transform: translateZ(0);
+  contain: paint;
+  will-change: transform, box-shadow;
 }
 
-/* facho de luz que gira por dentro (refletindo) — um arco claro percorrendo
-   o orb deixa a rotação inequívoca, sem virar spinner ansioso */
+.core::before,
+.core::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.core::before {
+  background:
+    radial-gradient(circle at 31% 28%, rgba(255, 240, 246, 0.58), transparent 20%),
+    radial-gradient(circle at 70% 23%, rgba(210, 226, 255, 0.26), transparent 26%),
+    radial-gradient(circle at 48% 74%, rgba(255, 186, 136, 0.24), transparent 30%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+.core::after {
+  background:
+    radial-gradient(circle at 48% 112%, rgba(5, 4, 12, 0.24), transparent 58%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 38%, rgba(10, 8, 22, 0.08));
+  opacity: 0.48;
+}
+
 .conic {
   position: absolute;
-  inset: -30%;
+  inset: -55%;
+  z-index: 2;
   border-radius: 50%;
   background: conic-gradient(
-    from 0deg,
-    rgba(255, 255, 255, 0) 0deg,
-    rgba(255, 255, 255, 0.04) 130deg,
-    rgba(255, 255, 255, 0.55) 250deg,
-    rgba(244, 182, 160, 0.4) 300deg,
-    rgba(255, 255, 255, 0) 360deg
+    from 0deg at 48% 52%,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.09) 80deg,
+    transparent 180deg,
+    rgba(255, 255, 255, 0.07) 280deg,
+    transparent 360deg
   );
   opacity: 0;
   mix-blend-mode: screen;
-  transition: opacity 300ms ease;
+  pointer-events: none;
+  transform-origin: 50% 50%;
 }
 
-/* grão (sempre presente) */
-.grain {
+.spiral {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.18;
-  mix-blend-mode: overlay;
+  z-index: 2;
+  display: none;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
-}
-
-/* anéis (gravando) */
-.rings {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 0;
-  pointer-events: none;
-}
-.ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
   opacity: 0;
 }
 
-/* waveform (gravando) — 13 barras */
+.spiralLayer {
+  position: absolute;
+  inset: -55%;
+  width: 210%;
+  height: 210%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg at 48% 52%,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.09) 80deg,
+    transparent 180deg,
+    rgba(255, 255, 255, 0.07) 280deg,
+    transparent 360deg
+  );
+  mix-blend-mode: screen;
+  transform-origin: 50% 50%;
+}
+
+.spiralLayer:nth-child(2) {
+  background: conic-gradient(
+    from 60deg at 54% 46%,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.07) 100deg,
+    transparent 200deg,
+    rgba(255, 255, 255, 0.06) 300deg,
+    transparent 360deg
+  );
+}
+
+.spiralCurl {
+  position: absolute;
+  inset: 15%;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+}
+
+.spiralCurl span {
+  position: absolute;
+  inset: -80%;
+  width: 260%;
+  height: 260%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg at 52% 50%,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.11) 90deg,
+    transparent 200deg,
+    rgba(255, 255, 255, 0.08) 310deg,
+    transparent 360deg
+  );
+  transform-origin: 50% 50%;
+}
+
+.spiralEye {
+  position: absolute;
+  inset: 32%;
+  z-index: 3;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 100%);
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rings {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.ring {
+  position: absolute;
+  width: 105%;
+  height: 105%;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 170, 255, 0.18);
+  opacity: 0;
+}
+
 .waveform {
   position: absolute;
-  z-index: 2;
+  inset: 0;
+  z-index: 5;
   display: none;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  height: 38%;
+  gap: 3px;
+  pointer-events: none;
 }
+
 .bar {
-  width: 4px;
-  height: 100%;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.85);
-  transform: scaleY(0.2);
+  width: 2.5px;
+  height: 28px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.28);
+  transform: scaleY(0.22);
   transform-origin: center;
 }
 
-/* ── repousa (idle) ── */
 .idle .core {
-  animation: breathe 5s ease-in-out infinite alternate;
-}
-.idle .halo {
-  animation: glow 5s ease-in-out infinite;
+  animation: breathe 4.8s ease-in-out infinite, pulseGlow 5.4s ease-in-out infinite;
 }
 
-/* ── floresce (recording) ── */
+.idle .halo {
+  animation: haloBreathe 5.4s ease-in-out infinite;
+}
+
 .recording .core {
-  animation: bloom 1.6s ease-in-out infinite alternate;
+  animation: pulseGlow 1.7s ease-in-out infinite;
 }
+
+.recording .halo {
+  opacity: 0.74;
+  animation: haloBreathe 1.7s ease-in-out infinite;
+}
+
 .recording .ring {
-  animation: ringPulse 1.8s ease-out infinite;
+  animation: recPulse 2.3s ease-out infinite;
 }
+
 .recording .ring:nth-child(2) {
-  animation-delay: 0.6s;
+  animation-delay: 0.85s;
 }
+
 .recording .ring:nth-child(3) {
-  animation-delay: 1.2s;
+  display: none;
 }
+
 .recording .waveform {
   display: flex;
 }
-.recording .bar {
-  animation: dance 0.9s ease-in-out infinite alternate;
+
+.recording .bar:nth-child(1),
+.recording .bar:nth-child(13) {
+  height: 5px;
+  animation: wave 0.7s ease-in-out infinite;
 }
 
-/* ── gira (reflecting) — orb parado, facho girando por dentro ── */
+.recording .bar:nth-child(2),
+.recording .bar:nth-child(12) {
+  height: 8px;
+  animation: wave 0.84s ease-in-out infinite 0.065s;
+}
+
+.recording .bar:nth-child(3),
+.recording .bar:nth-child(11) {
+  height: 14px;
+  animation: wave 0.98s ease-in-out infinite 0.13s;
+}
+
+.recording .bar:nth-child(4),
+.recording .bar:nth-child(10) {
+  height: 22px;
+  animation: wave 1.12s ease-in-out infinite 0.195s;
+}
+
+.recording .bar:nth-child(5),
+.recording .bar:nth-child(9) {
+  height: 28px;
+  animation: wave 0.7s ease-in-out infinite 0.26s;
+}
+
+.recording .bar:nth-child(6),
+.recording .bar:nth-child(8) {
+  height: 24px;
+  animation: wave 0.84s ease-in-out infinite 0.325s;
+}
+
+.recording .bar:nth-child(7) {
+  height: 32px;
+  animation: wave 0.98s ease-in-out infinite 0.39s;
+}
+
+.reflecting .core {
+  animation: breathe 4.8s ease-in-out infinite, pulseGlow 5.4s ease-in-out infinite;
+}
+
+.reflecting .core::before {
+  opacity: 0.42;
+  animation: innerDrift 7.4s ease-in-out infinite;
+}
+
+.reflecting .halo {
+  opacity: 0.72;
+  filter: blur(22px);
+  animation: haloBreathe 5.4s ease-in-out infinite;
+}
+
 .reflecting .conic {
-  opacity: 1;
-  animation: spin 6s linear infinite;
+  opacity: 0.28;
+  animation: spiralSpin 22s linear infinite;
 }
 
-/* ── exala (saved) — uma respiração calma e tranquila ── */
+.reflecting .spiral {
+  display: block;
+  opacity: 0.82;
+}
+
+.reflecting .spiralLayer:first-child {
+  animation: spiralSpin 22s linear infinite;
+}
+
+.reflecting .spiralLayer:nth-child(2) {
+  animation: spiralSpinRev 18s linear infinite;
+}
+
+.reflecting .spiralCurl span {
+  animation: spiralSpin 14s linear infinite;
+}
+
+.reflecting .spiralEye {
+  animation: breathe 6s ease-in-out infinite;
+}
+
 .saved .core {
   animation: exhale 1.8s ease-in-out 1;
 }
+
 .saved .halo {
   animation: exhaleGlow 1.8s ease-in-out 1;
 }
 
-/* ── desabilitado — dessaturado, sem movimento ── */
 .disabled .core {
-  filter: grayscale(0.7) saturate(0.25) brightness(0.9);
+  filter: grayscale(0.2) saturate(0.7) brightness(0.84);
+  opacity: 0.76;
 }
+
 .disabled .halo {
-  opacity: 0.3;
-  filter: blur(28px) grayscale(0.7) saturate(0.25);
+  opacity: 0.28;
+  filter: blur(28px) saturate(0.7);
 }
 
 @keyframes breathe {
-  from { transform: scale(1); }
-  to { transform: scale(1.045); }
-}
-@keyframes glow {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-@keyframes bloom {
-  from { transform: scale(1); }
-  to { transform: scale(1.13); }
-}
-@keyframes ringPulse {
-  0% { transform: scale(0.55); opacity: 0.55; }
-  100% { transform: scale(2.5); opacity: 0; }
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes exhale {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-@keyframes exhaleGlow {
-  0% { opacity: 0.8; }
-  45% { opacity: 1; }
-  100% { opacity: 0.8; }
-}
-@keyframes dance {
-  from { transform: scaleY(0.2); }
-  to { transform: scaleY(1); }
-}
-@keyframes fadepulse {
-  from { opacity: 0.55; }
-  to { opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
 }
 
-/* prefers-reduced-motion (§5): glow fixo, sem anéis, sem rotação; exala = fade */
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 52px 14px rgba(188, 148, 255, 0.28),
+      inset 0 0 18px rgba(255, 255, 255, 0.05),
+      inset -28px -34px 64px rgba(18, 14, 42, 0.24);
+  }
+  50% {
+    box-shadow:
+      0 0 80px 26px rgba(188, 148, 255, 0.42),
+      inset 0 0 18px rgba(255, 255, 255, 0.08),
+      inset -28px -34px 64px rgba(18, 14, 42, 0.22);
+  }
+}
+
+@keyframes haloBreathe {
+  0%,
+  100% {
+    opacity: 0.54;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes recPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.42);
+    opacity: 0;
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.22);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes spiralSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spiralSpinRev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes innerDrift {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.035) translate3d(1%, -1%, 0);
+  }
+}
+
+@keyframes exhale {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes exhaleGlow {
+  0% {
+    opacity: 0.68;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.68;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .idle .core,
-  .recording .core {
-    animation: none;
+  .core,
+  .halo,
+  .ring,
+  .bar,
+  .conic,
+  .spiralLayer,
+  .spiralCurl span,
+  .spiralEye {
+    animation: none !important;
   }
-  .idle .halo {
-    animation: none;
-    opacity: 1;
-  }
-  .recording .ring {
-    animation: none;
-    opacity: 0; /* sem anéis */
-  }
+
   .recording .bar {
-    animation: none;
-    transform: scaleY(0.5);
-  }
-  .reflecting .conic {
-    animation: none; /* sem rotação */
-    opacity: 0.6;
-  }
-  .saved .core {
-    animation: fadepulse 700ms ease-out 1; /* exala vira fade simples */
+    transform: scaleY(0.55);
   }
 }
