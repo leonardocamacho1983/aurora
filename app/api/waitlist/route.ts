@@ -9,6 +9,7 @@ import { siteUrl } from "@/lib/referral/urls";
 import { sendConfirmEmail, sendStatusEmail } from "@/lib/email/waitlist";
 import { sanitizeAnalyticsProperties } from "@/lib/analytics/attribution";
 import { analyticsEmailId, captureAuroraServer } from "@/lib/analytics/server";
+import { hasHardEmailBlock, reactivatePolicyEmailBlock } from "@/lib/waitlist/maintenance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -145,6 +146,20 @@ export async function POST(request: Request) {
 
     const existing = existingRows[0];
     if (existing) {
+      if (await hasHardEmailBlock(existing.id)) {
+        await db.insert(waitlistEvents).values({
+          waitlistId: existing.id,
+          eventName: "waitlist_existing_email_blocked",
+          source: "waitlist_form",
+          metadata: {
+            reason: "hard_email_signal",
+            email_type: "confirm_or_status",
+          },
+        });
+        return NextResponse.json({ status: "ok", mode: "email_suppressed" });
+      }
+
+      await reactivatePolicyEmailBlock(existing.id);
       await emailExisting(existing, baseUrl);
       return NextResponse.json({ status: "ok", mode: "email_sent" });
     }
@@ -183,7 +198,21 @@ export async function POST(request: Request) {
         .limit(1);
       const duplicate = duplicateRows[0];
       if (duplicate) {
-        await emailExisting(duplicate, baseUrl);
+        if (await hasHardEmailBlock(duplicate.id)) {
+          await db.insert(waitlistEvents).values({
+            waitlistId: duplicate.id,
+            eventName: "waitlist_existing_email_blocked",
+            source: "waitlist_form",
+            metadata: {
+              reason: "hard_email_signal",
+              email_type: "confirm_or_status",
+            },
+          });
+          return NextResponse.json({ status: "ok", mode: "email_suppressed" });
+        } else {
+          await reactivatePolicyEmailBlock(duplicate.id);
+          await emailExisting(duplicate, baseUrl);
+        }
       }
       return NextResponse.json({ status: "ok", mode: "email_sent" });
     }

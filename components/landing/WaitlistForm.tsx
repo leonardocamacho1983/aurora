@@ -14,7 +14,8 @@ const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 
 type DoneState =
   | { mode: "created"; email: string; referralCode: string; statusToken: string }
-  | { mode: "email_sent"; email: string };
+  | { mode: "email_sent"; email: string }
+  | { mode: "email_suppressed"; email: string };
 
 type WaitlistFormProps = {
   buttonLabel?: string;
@@ -128,6 +129,13 @@ export function WaitlistForm({
           referralCode: data.referralCode,
           statusToken: data.statusToken,
         });
+      } else if (data.mode === "email_suppressed") {
+        trackAurora(
+          "waitlist_submit_success",
+          { source, mode: "email_suppressed", has_referral: Boolean(referralCode) },
+          { distinctId: submitDistinctId },
+        );
+        setDone({ mode: "email_suppressed", email: val });
       } else {
         trackAurora(
           "waitlist_submit_success",
@@ -147,10 +155,13 @@ export function WaitlistForm({
   if (done) {
     const doneState = done;
     const created = doneState.mode === "created";
-    const title = "Falta só confirmar seu email.";
-    const body = created
-      ? "Enviamos um link para confirmar seu email. Depois disso, seu convite fica registrado."
-      : "Reenviamos seu link da Aurora para confirmar ou acompanhar seu convite.";
+    const suppressed = doneState.mode === "email_suppressed";
+    const title = suppressed ? "Não enviamos uma nova mensagem." : "Falta só confirmar seu email.";
+    const body = suppressed
+      ? "Esse endereço sinalizou que não quer ou não consegue receber a Aurora. Para proteger sua caixa e manter a comunicação limpa, não insistimos nesse email."
+      : created
+        ? "Enviamos um link para confirmar seu email. Depois disso, seu convite fica registrado."
+        : "Reenviamos seu link da Aurora para confirmar ou acompanhar seu convite.";
 
     function openInbox(provider: string, href: string, event: MouseEvent<HTMLAnchorElement>) {
       event.preventDefault();
@@ -201,25 +212,29 @@ export function WaitlistForm({
           <strong>{title}</strong>
         </div>
         <p>{body}</p>
-        <div className={styles.waitlistSuccessNote}>
-          As novidades chegam por email, em ondas. Marque a Aurora como favorita.
-        </div>
-        <details className={styles.waitlistDetails}>
-          <summary>Entender acesso em ondas</summary>
-          <p>
-            A Aurora será liberada aos poucos. Quem confirma o email entra na lista de convites
-            e recebe os próximos passos quando novas ondas forem abertas. Se não achar o email, veja o Spam ou Promoções.
-          </p>
-        </details>
-        <div className={styles.waitlistInboxActions}>
-          <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("gmail", GMAIL_SEARCH_URL, event)}>
-            Abrir Gmail
-          </a>
-          <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("outlook", OUTLOOK_INBOX_URL, event)}>
-            Abrir Outlook
-          </a>
-        </div>
-        {created ? (
+        {!suppressed ? (
+          <>
+            <div className={styles.waitlistSuccessNote}>
+              As novidades chegam por email, em ondas. Marque a Aurora como favorita.
+            </div>
+            <details className={styles.waitlistDetails}>
+              <summary>Entender acesso em ondas</summary>
+              <p>
+                A Aurora será liberada aos poucos. Quem confirma o email entra na lista de convites
+                e recebe os próximos passos quando novas ondas forem abertas. Se não achar o email, veja o Spam ou Promoções.
+              </p>
+            </details>
+            <div className={styles.waitlistInboxActions}>
+              <a href={GMAIL_SEARCH_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("gmail", GMAIL_SEARCH_URL, event)}>
+                Abrir Gmail
+              </a>
+              <a href={OUTLOOK_INBOX_URL} target="_blank" rel="noreferrer" onClick={(event) => openInbox("outlook", OUTLOOK_INBOX_URL, event)}>
+                Abrir Outlook
+              </a>
+            </div>
+          </>
+        ) : null}
+        {created && !suppressed ? (
           <a
             href={`/lista/${doneState.statusToken}`}
             className={styles.waitlistStatusLink}
@@ -233,14 +248,16 @@ export function WaitlistForm({
             Ver meu convite
           </a>
         ) : null}
-        <button
-          type="button"
-          className={styles.waitlistResendButton}
-          onClick={resendEmail}
-          disabled={resending}
-        >
-          {resending ? "Reenviando..." : "Reenviar email"}
-        </button>
+        {!suppressed ? (
+          <button
+            type="button"
+            className={styles.waitlistResendButton}
+            onClick={resendEmail}
+            disabled={resending}
+          >
+            {resending ? "Reenviando..." : "Reenviar email"}
+          </button>
+        ) : null}
       </div>
     );
   }

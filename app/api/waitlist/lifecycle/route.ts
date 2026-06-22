@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { waitlistEvents } from "@/lib/db/schema";
 import { sendLifecycleEmail, type LifecycleEmailKind } from "@/lib/email/waitlist";
 import { siteUrl } from "@/lib/referral/urls";
+import { runWaitlistMaintenance } from "@/lib/waitlist/maintenance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,9 +72,62 @@ function limitFromUrl(request: Request) {
   return Math.max(1, Math.min(100, Math.floor(parsed)));
 }
 
+function maintenanceLimitFromUrl(request: Request) {
+  const url = new URL(request.url);
+  const parsed = Number(url.searchParams.get("maintenanceLimit") ?? 200);
+  if (!Number.isFinite(parsed)) return 200;
+  return Math.max(1, Math.min(500, Math.floor(parsed)));
+}
+
 function dryRunFromUrl(request: Request) {
   const url = new URL(request.url);
   return url.searchParams.get("dryRun") === "1" || url.searchParams.get("dryRun") === "true";
+}
+
+function lifecycleAllowedFilter() {
+  return sql`
+    not exists (
+      select 1
+      from waitlist_events block_event
+      where block_event.waitlist_id = w.id
+        and (
+          block_event.event_name in ('email_bounced', 'email_complained', 'email_suppressed')
+          or (
+            block_event.event_name = 'waitlist_email_suppressed'
+            and block_event.metadata->>'reason' = 'provider_signal'
+          )
+          or (
+            block_event.event_name in ('waitlist_email_suppressed', 'waitlist_email_archived')
+            and coalesce(block_event.metadata->>'reason', '') <> 'provider_signal'
+            and not exists (
+              select 1
+              from waitlist_events reactivated
+              where reactivated.waitlist_id = block_event.waitlist_id
+                and reactivated.event_name = 'waitlist_email_reactivated'
+                and reactivated.created_at > block_event.created_at
+            )
+          )
+        )
+    )
+  `;
+}
+
+function unconfirmedReminderNotSentFilter() {
+  return sql`
+    not exists (
+      select 1
+      from waitlist_events reminder_event
+      where reminder_event.waitlist_id = w.id
+        and reminder_event.event_name in (
+          'lifecycle_invited_unconfirmed_1h_email_sent',
+          'lifecycle_invited_unconfirmed_1h_email_send_failed',
+          'lifecycle_unconfirmed_1h_email_sent',
+          'lifecycle_unconfirmed_1h_email_send_failed',
+          'lifecycle_unconfirmed_24h_email_sent',
+          'lifecycle_unconfirmed_24h_email_send_failed'
+        )
+    )
+  `;
 }
 
 async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
@@ -95,6 +149,7 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
         where w.confirmed_at is null
           and w.referred_by_code is not null
           and w.created_at <= now() - interval '1 hour'
+          and ${lifecycleAllowedFilter()}
           and not exists (
             select 1 from waitlist_events e
             where e.waitlist_id = w.id and e.event_name = ${sentEvent}
@@ -121,6 +176,7 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
         where w.confirmed_at is null
           and w.referred_by_code is null
           and w.created_at <= now() - interval '1 hour'
+          and ${lifecycleAllowedFilter()}
           and not exists (
             select 1 from waitlist_events e
             where e.waitlist_id = w.id and e.event_name = ${sentEvent}
@@ -146,10 +202,9 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
         left join waitlist_profile wp on wp.waitlist_id = w.id
         where w.confirmed_at is null
           and w.created_at <= now() - interval '24 hours'
-          and not exists (
-            select 1 from waitlist_events e
-            where e.waitlist_id = w.id and e.event_name = ${sentEvent}
-          )
+          and w.created_at > now() - interval '7 days'
+          and ${lifecycleAllowedFilter()}
+          and ${unconfirmedReminderNotSentFilter()}
         order by w.created_at asc
         limit ${limit}
       `),
@@ -171,6 +226,7 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
         left join waitlist_profile wp on wp.waitlist_id = w.id
         where w.confirmed_at is not null
           and w.confirmed_at <= now() - interval '24 hours'
+          and ${lifecycleAllowedFilter()}
           and not exists (
             select 1 from waitlist child
             where child.referred_by_code = w.referral_code
@@ -200,6 +256,7 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
         left join waitlist_profile wp on wp.waitlist_id = w.id
         left join waitlist child on child.referred_by_code = w.referral_code
         where w.confirmed_at is not null
+          and ${lifecycleAllowedFilter()}
           and exists (
             select 1 from waitlist_events share_event
             where share_event.waitlist_id = w.id
@@ -232,6 +289,7 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
         and w.confirmed_at <= now() - interval '24 hours'
+        and ${lifecycleAllowedFilter()}
         and (
           wp.waitlist_id is null
           or nullif(trim(wp.moment), '') is null
@@ -251,8 +309,6 @@ async function selectCandidates(kind: LifecycleEmailKind, limit: number) {
 
 async function getCandidates(limit: number) {
   const priority: LifecycleEmailKind[] = [
-    "invited_unconfirmed_1h",
-    "unconfirmed_1h",
     "unconfirmed_24h",
     "confirmed_no_invite_24h",
     "share_no_confirmed_invite_24h",
@@ -287,6 +343,10 @@ async function runLifecycle(request: Request) {
 
   const limit = limitFromUrl(request);
   const dryRun = dryRunFromUrl(request);
+  const maintenance = await runWaitlistMaintenance({
+    dryRun,
+    limit: maintenanceLimitFromUrl(request),
+  });
   const candidates = await getCandidates(limit);
   const baseUrl = siteUrl(request.url);
   const results: SendResult[] = [];
@@ -327,6 +387,7 @@ async function runLifecycle(request: Request) {
   return NextResponse.json({
     status: "ok",
     dryRun,
+    maintenance,
     selected: candidates.length,
     sent: results.filter((result) => result.sent).length,
     results,
