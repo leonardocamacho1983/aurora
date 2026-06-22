@@ -186,19 +186,19 @@ export function Convide() {
       <AuroraGlow style={{ top: -140, left: "28%", width: 640, height: 640 }} />
       <div className={styles.sectionInner} style={{ maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,96px) clamp(20px,5vw,32px)", textAlign: "center" }}>
         <div className={styles.sectionEyebrow}>
-          Convide
+          Primeira onda
         </div>
         <h2 className="font-serif" style={{ margin: "18px auto 0", fontSize: "clamp(1.9rem,4.8vw,38px)", fontWeight: 450, lineHeight: 1.12, letterSpacing: "-0.02em", color: "#F6F4FB", maxWidth: 600, textWrap: "balance" }}>
-          Conhece alguém que merece um começo mais <span style={{ fontStyle: "italic", color: "var(--accent)" }}>leve</span>?
+          Convite não é viralização. É <span style={{ fontStyle: "italic", color: "var(--accent)" }}>curadoria</span>.
         </h2>
         <p style={{ margin: "18px auto 0", font: "400 17px/1.6 var(--font-sans)", color: "#B3ADC4", maxWidth: 520, textWrap: "pretty" }}>
-          Convide alguém querido para conhecer a Aurora. Quando 5 pessoas confirmam pelo seu link, seu acesso amanhece antes.
+          Depois de confirmar seu email, você recebe uma sala própria. Comece por uma pessoa que talvez precise de um lugar para organizar o que está solto.
         </p>
         <a href="#lista" className={styles.outlineBtn} style={{ marginTop: 30, height: 50, padding: "0 26px", font: "600 15px var(--font-sans)" }}>
-          Criar meu convite
+          Entrar e criar meu convite
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </a>
-        <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Você compartilha o link. A Aurora nunca manda convite sem sua ação.</div>
+        <div style={{ marginTop: 16, font: "400 13px var(--font-sans)", color: "#6F6987" }}>Você escolhe quem convidar. A Aurora nunca manda convite sem sua ação.</div>
       </div>
     </section>
   );

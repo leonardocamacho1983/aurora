@@ -66,9 +66,9 @@ export function LaunchHeader({ page }: { page: string }) {
           <TrackedLink
             href="/#lista"
             className={styles.pill}
-            eventProperties={{ page, source: "launch_header", label: "Receber acesso antecipado" }}
+            eventProperties={{ page, source: "launch_header", label: "Entrar antes da abertura" }}
           >
-            Receber acesso antecipado
+            Entrar antes da abertura
           </TrackedLink>
         </nav>
       </div>

@@ -264,7 +264,7 @@ export function WaitlistForm() {
           aria-hidden="true"
         />
         <button type="submit" disabled={submitting} className={styles.wlBtn}>
-          {submitting ? "Enviando..." : "Acessar"}
+          {submitting ? "Enviando..." : "Entrar antes da abertura"}
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />
@@ -272,7 +272,7 @@ export function WaitlistForm() {
         </button>
       </div>
       <div className={styles.waitlistMicrocopy}>
-        Sem spam. As novidades chegam por email.
+        Primeira onda por convite. Apenas email, confirmação por mensagem, sem spam.
       </div>
     </form>
   );

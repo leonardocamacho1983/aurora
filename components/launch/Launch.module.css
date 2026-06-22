@@ -82,6 +82,7 @@
   color: #1b1730 !important;
   background: #a99bd9;
   box-shadow: 0 10px 30px -12px rgba(169, 155, 217, 0.82);
+  white-space: nowrap;
 }
 
 .hero {

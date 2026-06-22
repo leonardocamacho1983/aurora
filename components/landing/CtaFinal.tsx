@@ -32,13 +32,13 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
           {inviteMode ? (
             <>Continue preparando sua <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span>.</>
           ) : (
-            <>Receba acesso <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>antecipado</span> à Aurora.</>
+            <>Entre antes da <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>abertura</span> da Aurora.</>
           )}
         </h2>
         <p style={{ margin: "20px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#C3BED4", maxWidth: 480, textWrap: "pretty" }}>
           {inviteMode
             ? "Seu acesso antecipado está registrado. Algumas respostas leves ajudam a Aurora a te receber melhor quando novas entradas forem abertas."
-            : "A Aurora está abrindo em etapas. Quem entra agora recebe os próximos passos por email antes da abertura geral."}
+            : "A primeira onda será pequena. Quem confirma o email recebe os próximos passos, acompanha a abertura e pode convidar pessoas queridas para chegar junto."}
         </p>
         {inviteMode ? (
           <div className={styles.ctaInviteReturn}>

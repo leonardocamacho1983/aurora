@@ -7,6 +7,21 @@ import { drawHero, makeDawnField, HSET, smooth } from "@/lib/landing/dawn";
 import { trackAurora } from "@/lib/analytics/client";
 import styles from "./Landing.module.css";
 
+const primaryNav = [
+  { href: "#produto", label: "Produto" },
+  { href: "/diario-por-voz", label: "Diário por voz" },
+  { href: "/metodo", label: "Método" },
+  { href: "/manifesto", label: "Manifesto" },
+];
+
+const exploreNav = [
+  { href: "/ia-para-reflexao", label: "IA para reflexão", note: "clareza sem conselho pronto" },
+  { href: "/privacidade", label: "Privacidade", note: "seu diário continua seu" },
+  { href: "/seguranca", label: "Segurança", note: "cuidado técnico explicado" },
+  { href: "/faq", label: "FAQ", note: "convites, acesso e limites" },
+  { href: "/para-terapeutas", label: "Profissionais", note: "uso entre encontros" },
+];
+
 // Tempo "base" do design (9.9s). S desacelera tudo p/ respirar.
 const S = 1.35;
 const BASE_END = 9.9;
@@ -404,19 +419,19 @@ export function Hero() {
     ? "Seu acesso antecipado"
     : isReferralArrival
       ? "Você chegou por convite · acesso antecipado"
-      : "Diário por voz com IA";
+      : "Diário por voz · acesso antecipado";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
     </>
   ) : (
     <>
-      Tem dias que pesam. Outros que <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>brilham</span>.
+      Um lugar para ouvir o que ainda não ganhou <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>forma</span>.
     </>
   );
   const heroBody = isInviteMode
     ? "Uma pergunta de cada vez. Quanto mais a Aurora entende seu momento, melhor ela pode te receber quando seu acesso chegar."
-    : "Fale por alguns minutos. A Aurora organiza o que você sentiu, percebe o seu momento e sugere por onde começar, sem pressão.";
+    : "Aurora organiza o que você sente, pensa e quer colocar em prática a partir da sua própria voz. Você fala. Ela devolve clareza, padrões e próximos passos, sem virar chat infinito.";
 
   return (
     <>
@@ -425,38 +440,67 @@ export function Hero() {
       {/* ===== Nav (escondida durante a intro; aparece no settle) ===== */}
       <div
         ref={headerRef}
+        className={styles.landingHeader}
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          background: "rgba(10,8,20,.66)",
-          borderBottom: "1px solid rgba(255,255,255,.06)",
           opacity: 0,
           transform: "translateY(-8px)",
           pointerEvents: "none",
         }}
       >
-        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 clamp(20px,5vw,32px)", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--aurora)", boxShadow: "0 0 14px rgba(201,162,212,.5)" }} />
-            <span className="font-serif" style={{ fontSize: 23, fontWeight: 450, letterSpacing: "-0.02em", color: "#F0ECF7" }}>Aurora</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
-            <div className={styles.navText} style={{ display: "flex", alignItems: "center", gap: "clamp(14px,3vw,30px)" }}>
-              <a href="/manifesto" className={styles.navLink}>Manifesto</a>
-              <a href="/privacidade" className={styles.navLink}>Privacidade</a>
+        <div className={styles.landingHeaderInner}>
+          <a href="/" className={styles.landingBrand} aria-label="Aurora">
+            <img src="/brand/aurora-logo-horizontal.svg" width="128" height="34" alt="" />
+          </a>
+
+          <nav className={styles.desktopNav} aria-label="Navegação principal">
+            {primaryNav.map((item) => (
+              <a key={item.href} href={item.href} className={styles.navLink}>
+                {item.label}
+              </a>
+            ))}
+            <details className={styles.navExplore}>
+              <summary>
+                Explorar
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <div className={styles.navPanel}>
+                {exploreNav.map((item) => (
+                  <a key={item.href} href={item.href}>
+                    <span>{item.label}</span>
+                    <small>{item.note}</small>
+                  </a>
+                ))}
+              </div>
+            </details>
+            <a href="#lista" className={styles.pill}>Entrar antes da abertura</a>
+          </nav>
+
+          <details className={styles.mobileMenu}>
+            <summary aria-label="Abrir menu">
+              <span>Menu</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 7h16" />
+                <path d="M4 12h16" />
+                <path d="M4 17h16" />
+              </svg>
+            </summary>
+            <div className={styles.mobilePanel}>
+              {[...primaryNav, ...exploreNav].map((item) => (
+                <a key={item.href} href={item.href}>
+                  <span>{item.label}</span>
+                  {"note" in item && typeof item.note === "string" ? <small>{item.note}</small> : null}
+                </a>
+              ))}
+              <a href="#lista" className={styles.mobilePanelCta}>Entrar antes da abertura</a>
             </div>
-            <a href="#lista" className={styles.pill}>Acessar</a>
-          </div>
+          </details>
         </div>
       </div>
 
       {/* ===== Hero · O Amanhecer ===== */}
-      <div style={{ position: "relative", overflow: "hidden", background: "#08060f", height: "100vh", minHeight: 720, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div id="produto" className={styles.heroStage} style={{ position: "relative", overflow: "hidden", background: "#08060f", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <canvas ref={canvasRef} width={1920} height={1080} aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block", pointerEvents: "none" }} />
 
         {/* Scrim de leitura (só atrás do texto) */}
@@ -568,7 +612,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div ref={heroContentRef} className={isInviteMode ? styles.heroPostInvite : undefined} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: isInviteMode ? "clamp(44px,8vw,70px) clamp(20px,5vw,32px) 40px" : "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
+        <div ref={heroContentRef} className={`${styles.heroContent} ${isInviteMode ? styles.heroPostInvite : ""}`} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: isInviteMode ? "clamp(44px,8vw,70px) clamp(20px,5vw,32px) 40px" : "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
           {inviteGreeting ? (
             <div className={styles.heroInviteGreeting}>
               <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu acesso antecipado está registrado.` : "Seu acesso antecipado está registrado."}</span>
@@ -603,13 +647,45 @@ export function Hero() {
           </p>
 
           {!isInviteMode ? (
-            <div className={styles.launchHint} tabIndex={0} aria-label="Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.">
-              Participe do lançamento da Aurora
-              <span role="tooltip">Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.</span>
-            </div>
+            <>
+              <div
+                className={`${styles.heroAccessNote} ${styles.heroAccessDesktop}`}
+                tabIndex={0}
+                aria-label="Participe do lançamento da Aurora. A primeira onda será por convites. Ao se cadastrar, você recebe acesso antecipado antes da abertura geral."
+              >
+                <span className={styles.launchStar} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="m12 3 1.9 5.7L20 10.5l-6.1 1.8L12 18l-1.9-5.7L4 10.5l6.1-1.8L12 3Z" />
+                    <path d="M18.5 3.8v3.4" />
+                    <path d="M20.2 5.5h-3.4" />
+                  </svg>
+                </span>
+                <span className={styles.launchTooltip} role="tooltip">
+                  Participe do lançamento da Aurora. A primeira onda será por convites. Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.
+                </span>
+                <span className={styles.heroAccessText}>A Aurora ainda não está aberta para todo mundo.</span>
+              </div>
+
+              <details className={styles.heroAccessMobile}>
+                <summary>
+                  <span className={styles.launchStar} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="m12 3 1.9 5.7L20 10.5l-6.1 1.8L12 18l-1.9-5.7L4 10.5l6.1-1.8L12 3Z" />
+                      <path d="M18.5 3.8v3.4" />
+                      <path d="M20.2 5.5h-3.4" />
+                    </svg>
+                  </span>
+                  <span className={styles.heroAccessText}>Abertura antecipada por convite.</span>
+                  <svg className={styles.mobileAccessChevron} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
+                <p>A Aurora ainda não está aberta para todos. A primeira onda será por convite.</p>
+              </details>
+            </>
           ) : null}
 
-          <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(26px,6vw,40px)", width: "100%", maxWidth: isInviteMode ? 560 : 540 }}>
+          <div id="hero-lista" style={{ marginTop: isInviteMode ? "clamp(22px,4.5vw,32px)" : "clamp(22px,5vw,34px)", width: "100%", maxWidth: isInviteMode ? 560 : 560 }}>
             {inviteGreeting ? (
               <HeroInviteNextStep initialName={inviteGreeting.name} />
             ) : (
