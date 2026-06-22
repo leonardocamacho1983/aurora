@@ -1,13 +1,13 @@
 "use client";
 
-import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import styles from "./Landing.module.css";
 import { getAuroraAttribution, getAuroraClientId, trackAurora } from "@/lib/analytics/client";
+import { writeInviteContext } from "./invite-context";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const REF = /^[A-Za-z0-9]{6,16}$/;
 const REF_KEY = "aurora_ref";
-const INVITE_CONTEXT_KEY = "aurora_invite_context";
 const REF_TTL = 30 * 24 * 60 * 60 * 1000;
 const GMAIL_SEARCH_URL = "https://mail.google.com/mail/u/0/#search/Aurora";
 const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
@@ -15,6 +15,13 @@ const OUTLOOK_INBOX_URL = "https://outlook.live.com/mail/0/inbox";
 type DoneState =
   | { mode: "created"; email: string; referralCode: string; statusToken: string }
   | { mode: "email_sent"; email: string };
+
+type WaitlistFormProps = {
+  buttonLabel?: string;
+  microcopy?: ReactNode;
+  source?: string;
+  variant?: "default" | "wide";
+};
 
 function readStoredRef(): string {
   try {
@@ -40,23 +47,20 @@ function storeRef(code: string) {
 }
 
 function storeInviteContext(referralCode: string, statusToken: string) {
-  try {
-    localStorage.setItem(
-      INVITE_CONTEXT_KEY,
-      JSON.stringify({
-        referralCode,
-        statusToken,
-        confirmed: false,
-        confirmedCount: 0,
-        savedAt: Date.now(),
-      }),
-    );
-  } catch {
-    /* ignore */
-  }
+  writeInviteContext({
+    referralCode,
+    statusToken,
+    confirmed: false,
+    confirmedCount: 0,
+  });
 }
 
-export function WaitlistForm() {
+export function WaitlistForm({
+  buttonLabel = "Pedir meu convite",
+  microcopy = "Acesso em ondas, com confirmação por email. Sem spam.",
+  source = "landing",
+  variant = "default",
+}: WaitlistFormProps = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const hpRef = useRef<HTMLInputElement>(null);
   const [referralCode, setReferralCode] = useState("");
@@ -81,14 +85,14 @@ export function WaitlistForm() {
     const val = inputRef.current?.value.trim() ?? "";
     if (!EMAIL.test(val)) {
       setInvalid(true);
-      trackAurora("waitlist_submit_error", { source: "landing", mode: "invalid_email" });
+      trackAurora("waitlist_submit_error", { source, mode: "invalid_email" });
       inputRef.current?.focus();
       return;
     }
     setInvalid(false);
     setSubmitting(true);
     const submitDistinctId = getAuroraClientId();
-    trackAurora("waitlist_submit_attempt", { source: "landing", has_referral: Boolean(referralCode) }, { distinctId: submitDistinctId });
+    trackAurora("waitlist_submit_attempt", { source, has_referral: Boolean(referralCode) }, { distinctId: submitDistinctId });
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
@@ -102,7 +106,7 @@ export function WaitlistForm() {
       });
       if (!res.ok) {
         setInvalid(true);
-        trackAurora("waitlist_submit_error", { source: "landing", mode: String(res.status) }, { distinctId: submitDistinctId });
+        trackAurora("waitlist_submit_error", { source, mode: String(res.status) }, { distinctId: submitDistinctId });
         return;
       }
       const data = (await res.json()) as {
@@ -113,7 +117,7 @@ export function WaitlistForm() {
       if (data.mode === "created" && data.referralCode && data.statusToken) {
         storeInviteContext(data.referralCode, data.statusToken);
         trackAurora("waitlist_submit_success", {
-          source: "landing",
+          source,
           mode: "created",
           has_referral: Boolean(referralCode),
           referral_code: data.referralCode,
@@ -127,14 +131,14 @@ export function WaitlistForm() {
       } else {
         trackAurora(
           "waitlist_submit_success",
-          { source: "landing", mode: "email_sent", has_referral: Boolean(referralCode) },
+          { source, mode: "email_sent", has_referral: Boolean(referralCode) },
           { distinctId: submitDistinctId },
         );
         setDone({ mode: "email_sent", email: val });
       }
     } catch {
       setInvalid(true);
-      trackAurora("waitlist_submit_error", { source: "landing", mode: "network" }, { distinctId: submitDistinctId });
+      trackAurora("waitlist_submit_error", { source, mode: "network" }, { distinctId: submitDistinctId });
     } finally {
       setSubmitting(false);
     }
@@ -145,8 +149,8 @@ export function WaitlistForm() {
     const created = doneState.mode === "created";
     const title = "Falta só confirmar seu email.";
     const body = created
-      ? "Enviamos um link para confirmar seu cadastro. Depois disso, seu acesso antecipado fica registrado."
-      : "Reenviamos seu link da Aurora para confirmar ou acompanhar seu acesso antecipado.";
+      ? "Enviamos um link para confirmar seu email. Depois disso, seu convite fica registrado."
+      : "Reenviamos seu link da Aurora para confirmar ou acompanhar seu convite.";
 
     function openInbox(provider: string, href: string, event: MouseEvent<HTMLAnchorElement>) {
       event.preventDefault();
@@ -198,13 +202,13 @@ export function WaitlistForm() {
         </div>
         <p>{body}</p>
         <div className={styles.waitlistSuccessNote}>
-          As novidades da abertura chegam por email. Marque a Aurora como favorita.
+          As novidades chegam por email, em ondas. Marque a Aurora como favorita.
         </div>
         <details className={styles.waitlistDetails}>
-          <summary>Entender acesso antecipado</summary>
+          <summary>Entender acesso em ondas</summary>
           <p>
-            O acesso à Aurora será liberado aos poucos. Quem confirma o email entra no acesso antecipado
-            e recebe as próximas liberações antes da abertura geral. Se não achar o email, veja o Spam ou Promoções.
+            A Aurora será liberada aos poucos. Quem confirma o email entra na lista de convites
+            e recebe os próximos passos quando novas ondas forem abertas. Se não achar o email, veja o Spam ou Promoções.
           </p>
         </details>
         <div className={styles.waitlistInboxActions}>
@@ -226,7 +230,7 @@ export function WaitlistForm() {
               });
             }}
           >
-            Ver meu acesso antecipado
+            Ver meu convite
           </a>
         ) : null}
         <button
@@ -242,7 +246,7 @@ export function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={submit}>
+    <form className={variant === "wide" ? styles.wlFormWide : undefined} onSubmit={submit}>
       <div className={styles.wlRow}>
         <input
           ref={inputRef}
@@ -264,7 +268,7 @@ export function WaitlistForm() {
           aria-hidden="true"
         />
         <button type="submit" disabled={submitting} className={styles.wlBtn}>
-          {submitting ? "Enviando..." : "Entrar antes da abertura"}
+          {submitting ? "Enviando..." : buttonLabel}
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />
@@ -272,7 +276,7 @@ export function WaitlistForm() {
         </button>
       </div>
       <div className={styles.waitlistMicrocopy}>
-        Primeira onda por convite. Apenas email, confirmação por mensagem, sem spam.
+        {microcopy}
       </div>
     </form>
   );

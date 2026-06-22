@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HeroInviteNextStep } from "./HeroInviteNextStep";
 import { WaitlistForm } from "./WaitlistForm";
+import { readInviteContext } from "./invite-context";
 import { drawHero, makeDawnField, HSET, smooth } from "@/lib/landing/dawn";
 import { trackAurora } from "@/lib/analytics/client";
 import styles from "./Landing.module.css";
@@ -339,24 +340,15 @@ export function Hero() {
         sessionStorage.setItem("aurora_hero_seen", "1");
         setReferralArrival(true);
       }
-      if (url.searchParams.get("sala") === "convite") {
+      const inviteContext = readInviteContext();
+      if (url.searchParams.get("sala") === "convite" || inviteContext?.statusToken) {
         sessionStorage.setItem("aurora_hero_seen", "1");
-        const rawContext = localStorage.getItem("aurora_invite_context");
-        if (rawContext) {
-          const context = JSON.parse(rawContext) as {
-            name?: string;
-            confirmed?: boolean;
-            confirmedCount?: number;
-            savedAt?: number;
-          };
-          const fresh = !context.savedAt || Date.now() - context.savedAt < 7 * 24 * 60 * 60 * 1000;
-          if (fresh) {
-            setInviteGreeting({
-              name: typeof context.name === "string" ? context.name.trim().slice(0, 40) : "",
-              confirmed: Boolean(context.confirmed),
-              confirmedCount: Number.isFinite(context.confirmedCount) ? Number(context.confirmedCount) : 0,
-            });
-          }
+        if (inviteContext) {
+          setInviteGreeting({
+            name: inviteContext.name ?? "",
+            confirmed: Boolean(inviteContext.confirmed),
+            confirmedCount: inviteContext.confirmedCount ?? 0,
+          });
         }
       }
       seen = sessionStorage.getItem("aurora_hero_seen") === "1";
@@ -416,10 +408,10 @@ export function Hero() {
   const isInviteMode = Boolean(inviteGreeting);
   const isReferralArrival = referralArrival && !isInviteMode;
   const heroEyebrow = isInviteMode
-    ? "Seu acesso antecipado"
+    ? "Seu convite"
     : isReferralArrival
-      ? "Você chegou por convite · acesso antecipado"
-      : "Diário por voz · acesso antecipado";
+      ? "Você chegou por convite"
+      : "Diário por voz · acesso em ondas";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
@@ -474,7 +466,7 @@ export function Hero() {
                 ))}
               </div>
             </details>
-            <a href="#lista" className={styles.pill}>Entrar antes da abertura</a>
+            <a href="#lista" className={styles.pill}>Pedir convite</a>
           </nav>
 
           <details className={styles.mobileMenu}>
@@ -493,7 +485,7 @@ export function Hero() {
                   {"note" in item && typeof item.note === "string" ? <small>{item.note}</small> : null}
                 </a>
               ))}
-              <a href="#lista" className={styles.mobilePanelCta}>Entrar antes da abertura</a>
+              <a href="#lista" className={styles.mobilePanelCta}>Pedir convite</a>
             </div>
           </details>
         </div>
@@ -615,21 +607,21 @@ export function Hero() {
         <div ref={heroContentRef} className={`${styles.heroContent} ${isInviteMode ? styles.heroPostInvite : ""}`} style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1120, margin: "0 auto", padding: isInviteMode ? "clamp(44px,8vw,70px) clamp(20px,5vw,32px) 40px" : "clamp(56px,12vw,84px) clamp(20px,5vw,32px) 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: 0, transform: "translateY(20px)" }}>
           {inviteGreeting ? (
             <div className={styles.heroInviteGreeting}>
-              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu acesso antecipado está registrado.` : "Seu acesso antecipado está registrado."}</span>
+              <span>{inviteGreeting.name ? `${inviteGreeting.name}, seu convite está registrado.` : "Seu convite está registrado."}</span>
               <strong>
                 {inviteGreeting.confirmedCount > 0
                   ? inviteGreeting.confirmedCount === 1
                     ? "1 pessoa já entrou pela sua indicação."
                     : `${inviteGreeting.confirmedCount} pessoas já entraram pela sua indicação.`
                   : inviteGreeting.confirmed
-                    ? "A Aurora vai avisar por email quando novas entradas forem abertas."
-                    : "Confirme seu email para registrar seu acesso."}
+                    ? "A Aurora vai avisar por email quando novas ondas forem abertas."
+                    : "Confirme seu email para registrar seu convite."}
               </strong>
             </div>
           ) : isReferralArrival ? (
             <div className={styles.heroInviteGreeting}>
               <span>Você chegou por convite.</span>
-              <strong>Cadastre seu email para receber acesso antecipado e acompanhar os próximos passos.</strong>
+              <strong>Cadastre seu email para pedir seu convite e acompanhar os próximos passos.</strong>
             </div>
           ) : null}
 
@@ -651,7 +643,7 @@ export function Hero() {
               <div
                 className={`${styles.heroAccessNote} ${styles.heroAccessDesktop}`}
                 tabIndex={0}
-                aria-label="Participe do lançamento da Aurora. A primeira onda será por convites. Ao se cadastrar, você recebe acesso antecipado antes da abertura geral."
+                aria-label="A Aurora ainda não está aberta para todo mundo. O acesso será liberado em ondas para quem confirmar o email."
               >
                 <span className={styles.launchStar} aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -661,7 +653,7 @@ export function Hero() {
                   </svg>
                 </span>
                 <span className={styles.launchTooltip} role="tooltip">
-                  Participe do lançamento da Aurora. A primeira onda será por convites. Ao se cadastrar, você recebe acesso antecipado antes da abertura geral.
+                  O acesso será liberado em ondas para quem confirmar o email.
                 </span>
                 <span className={styles.heroAccessText}>A Aurora ainda não está aberta para todo mundo.</span>
               </div>
@@ -675,12 +667,12 @@ export function Hero() {
                       <path d="M20.2 5.5h-3.4" />
                     </svg>
                   </span>
-                  <span className={styles.heroAccessText}>Abertura antecipada por convite.</span>
+                  <span className={styles.heroAccessText}>Acesso em ondas por convite.</span>
                   <svg className={styles.mobileAccessChevron} viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </summary>
-                <p>A Aurora ainda não está aberta para todos. A primeira onda será por convite.</p>
+                <p>A Aurora ainda não está aberta para todo mundo. O acesso será liberado em ondas para quem confirmar o email.</p>
               </details>
             </>
           ) : null}

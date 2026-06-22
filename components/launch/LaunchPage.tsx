@@ -10,14 +10,16 @@ type LaunchPageProps = {
   title: ReactNode;
   lead: string;
   children: ReactNode;
+  heroMode?: "immersive" | "compact";
 };
 
 type SectionProps = {
   eyebrow?: string;
-  title: ReactNode;
+  title?: ReactNode;
   lead?: string;
   center?: boolean;
   alt?: boolean;
+  bare?: boolean;
   children?: ReactNode;
 };
 
@@ -27,13 +29,14 @@ export function LaunchPage({
   title,
   lead,
   children,
+  heroMode = "immersive",
 }: LaunchPageProps) {
   return (
     <div className={styles.page}>
       <TrackPageView page={page} />
       <LaunchHeader page={page} />
       <main>
-        <section className={styles.hero}>
+        <section className={`${styles.hero} ${heroMode === "compact" ? styles.heroCompact : ""}`}>
           <div className={styles.stars} aria-hidden="true" />
           <div className={styles.heroInner}>
             <p className={styles.kicker}>{eyebrow}</p>
@@ -66,9 +69,9 @@ export function LaunchHeader({ page }: { page: string }) {
           <TrackedLink
             href="/#lista"
             className={styles.pill}
-            eventProperties={{ page, source: "launch_header", label: "Entrar antes da abertura" }}
+            eventProperties={{ page, source: "launch_header", label: "Pedir convite" }}
           >
-            Entrar antes da abertura
+            Pedir convite
           </TrackedLink>
         </nav>
       </div>
@@ -87,6 +90,7 @@ export function LaunchFooter() {
         <nav className={styles.footerLinks} aria-label="Rodapé">
           <Link href="/">Home</Link>
           <Link href="/privacidade">Privacidade</Link>
+          <Link href="/privacidade/email">Email sem spam</Link>
           <Link href="/termos">Termos</Link>
           <Link href="/seguranca">Segurança</Link>
           <Link href="/faq">FAQ</Link>
@@ -109,6 +113,7 @@ const launchPaths = {
   termos: { href: "/termos", label: "Termos", note: "o acordo simples da experiência" },
   "para-terapeutas": { href: "/para-terapeutas", label: "Profissionais", note: "uso entre encontros, com limites" },
   "aurora-org": { href: "/aurora-org", label: "Aurora.org", note: "o próximo passo regenerativo" },
+  "privacidade-email": { href: "/privacidade/email", label: "Email sem spam", note: "comunicação com cuidado" },
 } satisfies Record<string, { href: string; label: string; note: string }>;
 
 const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
@@ -116,7 +121,8 @@ const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
   metodo: ["diario-por-voz", "ia-para-reflexao", "privacidade"],
   "diario-por-voz": ["metodo", "ia-para-reflexao", "privacidade"],
   "ia-para-reflexao": ["metodo", "seguranca", "privacidade"],
-  privacidade: ["seguranca", "termos", "faq"],
+  privacidade: ["privacidade-email", "seguranca", "termos"],
+  "privacidade-email": ["privacidade", "seguranca", "faq"],
   seguranca: ["privacidade", "faq", "para-terapeutas"],
   faq: ["privacidade", "seguranca", "termos"],
   termos: ["privacidade", "seguranca", "faq"],
@@ -127,27 +133,27 @@ const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
 const conversionCopy: Record<string, { eyebrow: string; title: string; body: string; label: string }> = {
   manifesto: {
     eyebrow: "Próximo gesto",
-    title: "Se a ideia fez sentido, chegue antes da abertura.",
-    body: "A Aurora está abrindo em etapas. O acesso antecipado aproxima você dos primeiros passos da experiência.",
-    label: "Quero entrar antes da abertura",
+    title: "Se a ideia fez sentido, peça seu convite.",
+    body: "A Aurora será aberta em ondas. Confirme seu email para acompanhar os próximos passos com calma.",
+    label: "Pedir meu convite",
   },
   metodo: {
-    eyebrow: "Acesso antecipado",
+    eyebrow: "Convite",
     title: "Acompanhe a Aurora enquanto o método ganha forma.",
-    body: "Você recebe os próximos passos por email antes da abertura geral e pode convidar pessoas queridas para chegar junto.",
-    label: "Quero entrar antes da abertura",
+    body: "Você recebe os próximos passos por email e pode convidar pessoas queridas quando fizer sentido.",
+    label: "Pedir meu convite",
   },
   "diario-por-voz": {
     eyebrow: "Experimente primeiro",
     title: "Quando a Aurora abrir, você pode começar pela voz.",
-    body: "Receba acesso antecipado e prepare sua chegada com calma.",
-    label: "Quero entrar antes da abertura",
+    body: "Peça seu convite e prepare sua chegada com calma.",
+    label: "Pedir meu convite",
   },
   "ia-para-reflexao": {
     eyebrow: "Tecnologia com limite",
     title: "Quer acompanhar essa forma de usar IA?",
-    body: "Receba acesso antecipado para acompanhar uma IA pensada para clareza, não para dependência.",
-    label: "Quero entrar antes da abertura",
+    body: "Peça seu convite para acompanhar uma IA pensada para clareza, não para dependência.",
+    label: "Pedir meu convite",
   },
   "para-terapeutas": {
     eyebrow: "Profissionais",
@@ -158,8 +164,8 @@ const conversionCopy: Record<string, { eyebrow: string; title: string; body: str
   "aurora-org": {
     eyebrow: "Próximo passo",
     title: "Acompanhe a Aurora.org desde o início.",
-    body: "O acesso antecipado também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
-    label: "Quero entrar antes da abertura",
+    body: "Seu convite também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
+    label: "Pedir meu convite",
   },
 };
 
@@ -178,6 +184,15 @@ function LaunchNextStep({ page }: { page: string }) {
             <p>{conversion.eyebrow}</p>
             <h2>{conversion.title}</h2>
             <span>{conversion.body}</span>
+            {page !== "privacidade-email" ? (
+              <TrackedLink
+                href="/privacidade/email"
+                className={styles.conversionTrust}
+                eventProperties={{ page, source: "launch_contextual_trust", label: "Email sem spam" }}
+              >
+                Sem spam, sem pressão. Conheça nosso compromisso.
+              </TrackedLink>
+            ) : null}
             <TrackedLink
               href="/#lista"
               className={styles.primary}
@@ -209,15 +224,17 @@ function LaunchNextStep({ page }: { page: string }) {
   );
 }
 
-export function LaunchSection({ eyebrow, title, lead, center = false, alt = false, children }: SectionProps) {
+export function LaunchSection({ eyebrow, title, lead, center = false, alt = false, bare = false, children }: SectionProps) {
   return (
-    <section className={`${styles.section} ${alt ? styles.sectionAlt : ""}`}>
+    <section className={`${styles.section} ${alt ? styles.sectionAlt : ""} ${bare ? styles.sectionBare : ""}`}>
       <div className={styles.sectionInner}>
-        <div className={`${styles.sectionIntro} ${center ? styles.center : ""}`}>
-          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-          <h2 className={styles.sectionTitle}>{title}</h2>
-          {lead ? <p className={styles.sectionLead}>{lead}</p> : null}
-        </div>
+        {!bare ? (
+          <div className={`${styles.sectionIntro} ${center ? styles.center : ""}`}>
+            {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
+            {title ? <h2 className={styles.sectionTitle}>{title}</h2> : null}
+            {lead ? <p className={styles.sectionLead}>{lead}</p> : null}
+          </div>
+        ) : null}
         {children}
       </div>
     </section>

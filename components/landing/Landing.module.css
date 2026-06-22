@@ -359,6 +359,41 @@
   cursor: default;
 }
 
+.wlFormWide {
+  width: 100%;
+}
+
+.wlFormWide .wlRow {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(220px, 3fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.wlFormWide .wlInput {
+  width: 100%;
+  min-height: 62px;
+  height: 62px;
+  padding: 0 26px;
+  font-size: 17px;
+  line-height: 62px;
+}
+
+.wlFormWide .wlBtn {
+  width: 100%;
+  min-width: 0;
+  height: 62px;
+  padding: 0 26px;
+  font-size: 16px;
+  justify-content: center;
+}
+
+.wlFormWide .waitlistMicrocopy {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 @media (max-width: 640px) {
   .wlInput {
     flex: 0 0 auto;
@@ -378,6 +413,17 @@
     font: 600 13px var(--font-sans);
     box-shadow: 0 8px 30px -10px rgba(236, 182, 210, 0.45);
   }
+
+  .wlFormWide .wlRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .wlFormWide .wlInput,
+  .wlFormWide .wlBtn {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .hpField {
@@ -394,6 +440,22 @@
   font: 400 13px var(--font-sans);
   color: #a39eba;
   text-shadow: 0 1px 16px rgba(0, 0, 0, 0.6);
+}
+
+.trustMicroLink {
+  width: fit-content;
+  display: inline-flex;
+  justify-content: center;
+  margin: 14px auto 0;
+  color: #a99bd9;
+  font: 700 12px var(--font-sans);
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.trustMicroLink:hover {
+  color: #ecb6d2;
 }
 
 .launchStar {

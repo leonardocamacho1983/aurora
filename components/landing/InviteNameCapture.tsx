@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import styles from "./Landing.module.css";
+import { writeInviteContext } from "./invite-context";
 
 type InviteNameCaptureProps = {
   confirmedCount: number;
@@ -11,7 +12,6 @@ type InviteNameCaptureProps = {
 };
 
 const NAME_KEY = "aurora_guest_name";
-const CONTEXT_KEY = "aurora_invite_context";
 
 function cleanName(value: string): string {
   return value
@@ -55,17 +55,7 @@ export function InviteNameCapture({ confirmedCount, confirmed, referralCode, sta
     if (!nextName) return;
     try {
       localStorage.setItem(NAME_KEY, nextName);
-      localStorage.setItem(
-        CONTEXT_KEY,
-        JSON.stringify({
-          name: nextName,
-          confirmedCount,
-          confirmed,
-          referralCode,
-          statusToken,
-          savedAt: Date.now(),
-        }),
-      );
+      writeInviteContext({ name: nextName, confirmedCount, confirmed, referralCode, statusToken });
     } catch {
       /* ignore */
     }

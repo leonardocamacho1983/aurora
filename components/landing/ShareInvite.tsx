@@ -40,8 +40,8 @@ export function ShareInvite({
   const [inviterName, setInviterName] = useState("");
   const url = useMemo(() => buildUrl(referralCode, inviteUrl), [referralCode, inviteUrl]);
   const text = inviterName
-    ? `${inviterName} te convidou para conhecer a Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. ${url}`
-    : `Estou no acesso antecipado da Aurora, um diário por voz com IA para organizar sentimentos e perceber padrões com mais clareza. Vem conhecer comigo: ${url}`;
+    ? `${inviterName} te convidou para conhecer a Aurora, um diário por voz para organizar o que você sente, pensa e quer colocar em prática. A pessoa decide no próprio tempo: ${url}`
+    : `Recebi meu convite para conhecer a Aurora, um diário por voz para organizar o que você sente, pensa e quer colocar em prática. Pensei que talvez fizesse sentido para você: ${url}`;
   const whats = `https://wa.me/?text=${encodeURIComponent(text)}`;
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export function ShareInvite({
       {label ? <div className={styles.shareLabel}>{label}</div> : null}
       {!compact ? (
         <p className={styles.shareHint}>
-          Envie pelo WhatsApp ou copie o link. Cada confirmação entra no seu contador.
+          Envie pelo WhatsApp ou copie o link. A pessoa decide no próprio tempo, e a Aurora não manda mensagem por você.
         </p>
       ) : null}
       <div className={styles.shareUrl} aria-label="Seu link de convite">

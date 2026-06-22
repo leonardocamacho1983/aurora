@@ -1,6 +1,7 @@
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Card, FineList, Grid, LaunchPage, LaunchSection, WideCard } from "@/components/launch/LaunchPage";
 import { absoluteUrl, pageMetadata } from "@/lib/seo/site";
+import Link from "next/link";
 
 export const metadata = pageMetadata({
   title: "Privacidade | Aurora",
@@ -49,6 +50,15 @@ export default function PrivacidadePage() {
               <p>Você poderá pedir acesso, correção, exportação e exclusão dos dados, de acordo com a lei aplicável.</p>
             </Card>
           </Grid>
+          <WideCard title="Email, convites e comunicação sem spam">
+            <p>
+              A Aurora também trata comunicação como parte da confiança: sem lista comprada, sem pressão e sem usar
+              conteúdo íntimo como gatilho de campanha.
+            </p>
+            <p>
+              <Link href="/privacidade/email">Conheça nosso compromisso de e-mail, comunicação e sem spam.</Link>
+            </p>
+          </WideCard>
         </LaunchSection>
 
         <LaunchSection alt eyebrow="Dados" title="O que existe no acesso antecipado." lead="O fluxo de abertura é simples, mas já pede cuidado. Estes são os dados atuais do lançamento.">

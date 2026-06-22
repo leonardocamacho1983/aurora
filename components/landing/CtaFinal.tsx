@@ -1,22 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { WaitlistForm } from "./WaitlistForm";
+import { useInviteContext } from "./useInviteContext";
 import styles from "./Landing.module.css";
 
 // CTA final: orb grande no rodape + waitlist reusado. orbGlow default 1.
 export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
-  const [inviteMode, setInviteMode] = useState(false);
-
-  useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      const raw = localStorage.getItem("aurora_invite_context");
-      setInviteMode(url.searchParams.get("sala") === "convite" && Boolean(raw));
-    } catch {
-      setInviteMode(false);
-    }
-  }, []);
+  const inviteContext = useInviteContext();
+  const inviteMode = Boolean(inviteContext?.statusToken);
 
   return (
     <section id="lista" className={`${styles.sectionAnchor} ${styles.divineSection}`} style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "radial-gradient(ellipse 100% 90% at 50% 120%, #1a1330 0%, #0A0814 62%)" }}>
@@ -30,24 +21,27 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
       <div className={styles.sectionInner} style={{ zIndex: 2, maxWidth: 1080, margin: "0 auto", padding: "clamp(56px,9vw,110px) clamp(20px,5vw,32px) clamp(88px,14vw,200px)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         <h2 className="font-serif" style={{ margin: 0, fontSize: "clamp(2.1rem,5.4vw,46px)", fontWeight: 450, lineHeight: 1.1, letterSpacing: "-0.025em", color: "#F8F6FC", maxWidth: 640, textWrap: "balance", textShadow: "0 2px 40px rgba(0,0,0,.5)" }}>
           {inviteMode ? (
-            <>Continue preparando sua <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span>.</>
+            <>Se lembrar de alguém querido, a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> recebe com cuidado.</>
           ) : (
-            <>Entre antes da <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>abertura</span> da Aurora.</>
+            <>Peça seu <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>convite</span> para chegar com calma.</>
           )}
         </h2>
         <p style={{ margin: "20px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#C3BED4", maxWidth: 480, textWrap: "pretty" }}>
           {inviteMode
-            ? "Seu acesso antecipado está registrado. Algumas respostas leves ajudam a Aurora a te receber melhor quando novas entradas forem abertas."
-            : "A primeira onda será pequena. Quem confirma o email recebe os próximos passos, acompanha a abertura e pode convidar pessoas queridas para chegar junto."}
+            ? "Seu convite é só uma porta discreta. A pessoa decide se quer chegar, no tempo dela, e a Aurora cuida para que a comunicação seja leve."
+            : "A Aurora será aberta em ondas. Quem confirma o email recebe os próximos passos e pode convidar pessoas queridas quando fizer sentido."}
         </p>
         {inviteMode ? (
           <div className={styles.ctaInviteReturn}>
-            <a href="/chegada">Continuar meu Ritual de Chegada</a>
-            <a href="/?sala=convite">Voltar ao topo da Aurora</a>
+            <a href={`/lista/${inviteContext?.statusToken}`}>Ver meu convite</a>
+            <a href="/privacidade/email">Conhecer nosso compromisso</a>
           </div>
         ) : (
           <div style={{ marginTop: 34, width: "100%", maxWidth: 460 }}>
-            <WaitlistForm />
+            <WaitlistForm source="landing_final_cta" />
+            <a className={styles.trustMicroLink} href="/privacidade/email">
+              Sem spam, sem pressão. Conheça nosso compromisso.
+            </a>
           </div>
         )}
       </div>

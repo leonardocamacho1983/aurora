@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Landing.module.css";
 import { trackAurora } from "@/lib/analytics/client";
+import { readInviteContext, writeInviteContext } from "./invite-context";
 
 type HeroInviteNextStepProps = {
   initialName?: string;
@@ -22,8 +23,6 @@ type Step = {
   autoComplete?: string;
   options?: string[];
 };
-
-const CONTEXT_KEY = "aurora_invite_context";
 
 const steps: Step[] = [
   {
@@ -90,21 +89,11 @@ function writeValue(key: string, value: string) {
 }
 
 function readContext() {
-  try {
-    const raw = localStorage.getItem(CONTEXT_KEY);
-    return raw ? JSON.parse(raw) as { statusToken?: string; name?: string } : {};
-  } catch {
-    return {};
-  }
+  return readInviteContext() ?? {};
 }
 
 function syncNameToContext(name: string) {
-  try {
-    const context = readContext();
-    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ ...context, name, savedAt: Date.now() }));
-  } catch {
-    /* ignore */
-  }
+  writeInviteContext({ ...readContext(), name });
 }
 
 async function saveProfile(statusToken: string, key: string, value: string) {
