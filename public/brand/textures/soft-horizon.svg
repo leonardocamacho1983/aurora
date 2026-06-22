@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Aurora soft horizon texture">
+  <defs>
+    <radialGradient id="h" cx="50%" cy="100%" r="65%">
+      <stop offset="0%" stop-color="#F4B6A0" stop-opacity="0.28" />
+      <stop offset="44%" stop-color="#C9A2D4" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#7FD0C4" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <ellipse cx="600" cy="620" rx="520" ry="250" fill="url(#h)" />
+</svg>

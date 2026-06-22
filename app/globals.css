@@ -1,54 +1,80 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Aurora — Design System v0.1 (tokens). Fonte da verdade.
+   Aurora — Design System v2 (tokens). Fonte da verdade.
    Crepúsculo = tema padrão (dark). Amanhecer = [data-theme="dawn"].
+   Guardrail: docs/agent-guardrails/design-system.md
    ─────────────────────────────────────────────────────────── */
 :root {
   /* Crepúsculo (padrão) */
-  --bg: #181527;
-  --surface: #221e33;
-  --raised: #2a2540;
-  --ink: #f0ecf7;
+  --bg-base: #08060f;
+  --bg: #0d0c17;
+  --surface: #181527;
+  --raised: #221e33;
+  --overlay: #2a2540;
+  --ink: #f8f6fc;
   --ink-soft: #b3adc4;
-  --ink-faint: #928ca8; /* v0.1: clareado p/ passar AA (≥4.5:1) */
+  --ink-faint: #928ca8;
+  --ink-dark: #26233a;
+  --ink-dark-soft: #5e5872;
+
+  /* Aurora */
+  --aurora-warm: #f4b6a0;
+  --aurora-pink: #c9a2d4;
+  --aurora-blue: #8fa4d6;
+  --aurora-mint: #7fd0c4;
   --accent: #a99bd9;
-  --focus: #a99bd9;
-  --hairline: #2e2944;
+  --accent-soft: #ecb6d2;
+  --accent-active: #6f6496;
+
+  /* Bordas e foco */
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-md: rgba(255, 255, 255, 0.12);
+  --hairline-strong: rgba(255, 255, 255, 0.18);
+  --focus: rgba(169, 155, 217, 0.6);
 
   /* Humor */
   --mood-leve: #8fb89c;
   --mood-calmo: #9bb0d4;
   --mood-pesado: #8c8aa6;
   --mood-sensivel: #d6a48c;
-  --mood-ansioso: #d9b36b;
+  --mood-ansioso: #c4956b;
+  --mood-neutro: rgba(255, 255, 255, 0.3);
 
   /* Sistema */
-  --success: #7fa88a;
-  --alert: #c58468;
+  --status-ok: #7fd0c4;
+  --status-warn: #d9b36d;
+  --status-error: #f4b6a0;
+  --success: var(--status-ok);
+  --alert: var(--status-error);
 
-  /* Espaçamento (escala travada — não usar valores fora dela) */
+  /* Espaçamento (escala 4px) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-7: var(--space-12); /* compatibilidade v0.1 */
 
   /* Raios */
   --r-sm: 12px;
   --r-md: 20px;
   --r-lg: 28px;
-  --r-pill: 999px;
+  --r-xl: 32px;
+  --r-pill: 9999px;
 
-  /* Orb (gradiente aurora) */
-  --aurora: radial-gradient(circle at 32% 26%, #f4b6a0 0%, transparent 52%),
-    radial-gradient(circle at 72% 30%, #c9a2d4 0%, transparent 56%),
-    radial-gradient(circle at 74% 74%, #8fa4d6 0%, transparent 56%),
-    radial-gradient(circle at 28% 76%, #7fd0c4 0%, transparent 56%),
-    linear-gradient(140deg, #c9a2d4, #8fa4d6 55%, #7fd0c4);
+  /* Orb (gradiente canonico Aurora) */
+  --aurora: radial-gradient(circle at 28% 24%, rgba(244, 182, 160, 0.96) 0 14%, transparent 38%),
+    radial-gradient(circle at 67% 25%, rgba(143, 164, 214, 0.92) 0 18%, transparent 42%),
+    radial-gradient(circle at 56% 72%, rgba(244, 182, 160, 0.7) 0 13%, transparent 39%),
+    radial-gradient(circle at 35% 64%, rgba(201, 162, 212, 0.62) 0 18%, transparent 43%),
+    radial-gradient(circle at 62% 55%, rgba(127, 208, 196, 0.46) 0 16%, transparent 36%),
+    linear-gradient(140deg, rgba(91, 76, 145, 0.94), rgba(36, 32, 68, 0.96));
 
   /* ── LUZ como material: rampa de temperatura (quente→frio) ──
      quente = agora / amanhecer (falar, refletir)
@@ -67,10 +93,21 @@
   );
 
   /* Vidro fosco (superfície luminosa translúcida) */
-  --glass-bg: rgba(34, 30, 51, 0.66);
+  --glass-bg: rgba(255, 255, 255, 0.052);
+  --glass-raised: rgba(255, 255, 255, 0.075);
+  --glass-hover: rgba(255, 255, 255, 0.065);
   --glass-bg-warm: rgba(42, 32, 50, 0.6);
-  --glass-border: rgba(240, 236, 247, 0.08);
-  --glass-blur: 14px;
+  --glass-border: var(--hairline);
+  --glass-blur: 24px;
+
+  /* Sombras */
+  --shadow-panel:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 24px 90px rgba(0, 0, 0, 0.24);
+  --shadow-orb:
+    0 0 72px rgba(169, 155, 217, 0.23),
+    inset 0 0 28px rgba(255, 255, 255, 0.08);
+  --shadow-brand: 0 0 22px rgba(169, 155, 217, 0.55);
 
   /* Escala editorial do Fraunces (só no falado/reflexão) */
   --fraunces-display: clamp(1.9rem, 1.3rem + 2vw, 2.6rem);
@@ -80,27 +117,45 @@
   /* Fontes (Inter no geral; Fraunces só no falado/reflexão) */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 360ms;
+  --duration-orb: 5800ms;
+  --duration-screen: 420ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-linear: linear;
 }
 
 [data-theme="dawn"] {
   /* Amanhecer */
-  --bg: #e9e6ee;
+  --bg-base: #eceaf4;
+  --bg: #f6f3fb;
   --surface: #ffffff;
-  --raised: #f6f3fb;
+  --raised: #f0ecf7;
+  --overlay: rgba(0, 0, 0, 0.4);
   --ink: #26233a;
   --ink-soft: #5e5872;
-  --ink-faint: #655f78; /* v0.1: escurecido p/ AA */
+  --ink-faint: #928ca8;
   --accent: #7c6bb0;
-  --focus: #7c6bb0;
-  --hairline: #e0dcea;
+  --accent-active: #5e4d96;
+  --focus: rgba(124, 107, 176, 0.6);
+  --hairline: rgba(0, 0, 0, 0.08);
+  --hairline-md: rgba(0, 0, 0, 0.12);
 
   /* Luz (Amanhecer): morno claro → frio claro */
   --temp-dawn: #fbf3ec;
   --temp-mid: #f1eef6;
   --temp-dusk: #e6e7f0;
   --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-raised: rgba(255, 255, 255, 0.9);
   --glass-bg-warm: rgba(255, 250, 245, 0.7);
   --glass-border: rgba(38, 35, 58, 0.08);
+  --shadow-panel:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* Mobile: aprofunda a rampa do Fraunces (hierarquia real: ~21 / 16 / 14px @375). */
@@ -129,10 +184,88 @@ body {
   font-family: var(--font-serif);
 }
 
+.orb-gradient {
+  background: var(--aurora);
+}
+
 /* Foco visível obrigatório em todo interativo (v0.1 §2). */
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+@keyframes aurora-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.038) translateY(-1%);
+  }
+}
+
+@keyframes aurora-halo {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes aurora-ring {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.045);
+  }
+}
+
+@keyframes aurora-wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes aurora-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aurora-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes aurora-screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Respeita prefers-reduced-motion (v0.1 §5). */

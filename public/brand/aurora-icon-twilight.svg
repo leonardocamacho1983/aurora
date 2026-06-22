@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Aurora icon">
+
+  <defs>
+    <linearGradient id="aurora-icon-twilight-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A99BD9" />
+      <stop offset="55%" stop-color="#6F79B8" />
+      <stop offset="100%" stop-color="#4C9AA0" />
+    </linearGradient>
+    <radialGradient id="aurora-icon-twilight-warm" cx="32%" cy="26%" r="52%">
+      <stop offset="0%" stop-color="#E6A2B8" />
+      <stop offset="100%" stop-color="#E6A2B8" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="aurora-icon-twilight-lilac" cx="72%" cy="30%" r="56%">
+      <stop offset="0%" stop-color="#B99BD9" />
+      <stop offset="100%" stop-color="#B99BD9" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="aurora-icon-twilight-blue" cx="74%" cy="74%" r="56%">
+      <stop offset="0%" stop-color="#768DD1" />
+      <stop offset="100%" stop-color="#768DD1" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="aurora-icon-twilight-teal" cx="28%" cy="76%" r="56%">
+      <stop offset="0%" stop-color="#66BDB5" />
+      <stop offset="100%" stop-color="#66BDB5" stop-opacity="0" />
+    </radialGradient>
+    <filter id="aurora-icon-twilight-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="16.0" />
+    </filter>
+  </defs>
+  <circle cx="256.0" cy="256.0" r="168" fill="#A99BD9" opacity="0.42" filter="url(#aurora-icon-twilight-glow)" />
+  <circle cx="256.0" cy="256.0" r="168" fill="url(#aurora-icon-twilight-base)" />
+  <circle cx="256.0" cy="256.0" r="168" fill="url(#aurora-icon-twilight-warm)" />
+  <circle cx="256.0" cy="256.0" r="168" fill="url(#aurora-icon-twilight-lilac)" />
+  <circle cx="256.0" cy="256.0" r="168" fill="url(#aurora-icon-twilight-blue)" />
+  <circle cx="256.0" cy="256.0" r="168" fill="url(#aurora-icon-twilight-teal)" />
+</svg>

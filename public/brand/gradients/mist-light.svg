@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Aurora mist-light gradient">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E6C9EF" />
+      <stop offset="55%" stop-color="#C9D6F2" />
+      <stop offset="100%" stop-color="#B7E7DF" />
+    </linearGradient>
+    <radialGradient id="w" cx="32%" cy="26%" r="52%"><stop offset="0%" stop-color="#FFE7DA" /><stop offset="100%" stop-color="#FFE7DA" stop-opacity="0" /></radialGradient>
+    <radialGradient id="l" cx="72%" cy="30%" r="56%"><stop offset="0%" stop-color="#E6C9EF" /><stop offset="100%" stop-color="#E6C9EF" stop-opacity="0" /></radialGradient>
+    <radialGradient id="t" cx="28%" cy="76%" r="56%"><stop offset="0%" stop-color="#B7E7DF" /><stop offset="100%" stop-color="#B7E7DF" stop-opacity="0" /></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#F8F6FC" />
+  <rect width="1200" height="630" fill="url(#g)" />
+  <rect width="1200" height="630" fill="url(#w)" />
+  <rect width="1200" height="630" fill="url(#l)" />
+  <rect width="1200" height="630" fill="url(#t)" />
+</svg>

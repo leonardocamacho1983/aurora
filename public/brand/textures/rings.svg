@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Aurora signal rings texture">
+  <g fill="none" stroke="#A99BD9" stroke-linecap="round">
+    <circle cx="600" cy="315" r="170" stroke-width="2" opacity="0.34" />
+    <circle cx="600" cy="315" r="226" stroke-width="1.4" opacity="0.22" />
+    <circle cx="600" cy="315" r="302" stroke-width="1" opacity="0.12" />
+    <path d="M262 315a338 338 0 0 1 676 0" stroke-width="1" opacity="0.08" />
+  </g>
+</svg>

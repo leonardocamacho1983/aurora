@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Aurora orb with signal rings key visual">
+  <rect width="1200" height="630" fill="#08060F" />
+  <rect width="1200" height="630" fill="url(#bg)" opacity="0.74" />
+
+  <defs>
+    <linearGradient id="kv-orb-rings-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F4B6A0" />
+      <stop offset="55%" stop-color="#ECB6D2" />
+      <stop offset="100%" stop-color="#9BB0D4" />
+    </linearGradient>
+    <radialGradient id="kv-orb-rings-warm" cx="32%" cy="26%" r="52%">
+      <stop offset="0%" stop-color="#FFD9BD" />
+      <stop offset="100%" stop-color="#FFD9BD" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="kv-orb-rings-lilac" cx="72%" cy="30%" r="56%">
+      <stop offset="0%" stop-color="#ECB6D2" />
+      <stop offset="100%" stop-color="#ECB6D2" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="kv-orb-rings-blue" cx="74%" cy="74%" r="56%">
+      <stop offset="0%" stop-color="#AFC3EE" />
+      <stop offset="100%" stop-color="#AFC3EE" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="kv-orb-rings-teal" cx="28%" cy="76%" r="56%">
+      <stop offset="0%" stop-color="#A2DED1" />
+      <stop offset="100%" stop-color="#A2DED1" stop-opacity="0" />
+    </radialGradient>
+    <filter id="kv-orb-rings-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="24" />
+    </filter>
+  </defs>
+  <defs><radialGradient id="bg" cx="54%" cy="50%" r="74%"><stop offset="0%" stop-color="#2A2032" /><stop offset="70%" stop-color="#08060F" /></radialGradient></defs>
+  <circle cx="600" cy="315" r="232" fill="none" stroke="#A99BD9" stroke-width="3" opacity="0.72" />
+  <circle cx="600" cy="315" r="278" fill="none" stroke="#F8F6FC" stroke-width="1.2" opacity="0.09" />
+  <circle cx="600" cy="315" r="184" fill="#ECB6D2" opacity="0.54" filter="url(#kv-orb-rings-glow)" />
+  <circle cx="600" cy="315" r="184" fill="url(#kv-orb-rings-base)" />
+  <circle cx="600" cy="315" r="184" fill="url(#kv-orb-rings-warm)" />
+  <circle cx="600" cy="315" r="184" fill="url(#kv-orb-rings-lilac)" />
+  <circle cx="600" cy="315" r="184" fill="url(#kv-orb-rings-blue)" />
+  <circle cx="600" cy="315" r="184" fill="url(#kv-orb-rings-teal)" />
+  <g fill="#F8F6FC" opacity="0.72"><rect x="568" y="303" width="6" height="24" rx="3"/><rect x="582" y="293" width="6" height="44" rx="3"/><rect x="596" y="281" width="6" height="68" rx="3"/><rect x="610" y="294" width="6" height="42" rx="3"/><rect x="624" y="304" width="6" height="22" rx="3"/></g>
+</svg>
