@@ -7,6 +7,7 @@ import { MILESTONES, progressFor } from "@/lib/referral/milestones";
 import { countConfirmedReferrals } from "@/lib/referral/waitlist";
 import { referralUrl } from "@/lib/referral/urls";
 import { InviteNameCapture } from "@/components/landing/InviteNameCapture";
+import { InvalidInviteContextReset } from "@/components/landing/InvalidInviteContextReset";
 import { ReferralHomeLink } from "@/components/landing/ReferralHomeLink";
 import { ShareInvite } from "@/components/landing/ShareInvite";
 import { TrackPageView } from "@/components/analytics/TrackPageView";
@@ -37,9 +38,10 @@ function firstName(name?: string | null): string {
   return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
 
-function InvalidState() {
+function InvalidState({ token }: { token: string }) {
   return (
     <main className={styles.referralPage}>
+      <InvalidInviteContextReset token={token} />
       <section className={styles.referralShell}>
         <div className={styles.referralOrb} aria-hidden="true" />
         <p className={styles.referralKicker}>Aurora</p>
@@ -80,7 +82,7 @@ function ConfirmEmailPanel() {
 
 export default async function WaitlistStatusPage({ params }: Props) {
   const { token } = await params;
-  if (!UUID.test(token)) return <InvalidState />;
+  if (!UUID.test(token)) return <InvalidState token={token} />;
 
   const rows = await db
     .select()
@@ -89,7 +91,7 @@ export default async function WaitlistStatusPage({ params }: Props) {
     .limit(1);
 
   const row = rows[0];
-  if (!row) return <InvalidState />;
+  if (!row) return <InvalidState token={token} />;
 
   const confirmedCount = await countConfirmedReferrals(db, row.referralCode);
   const profileRows = await db

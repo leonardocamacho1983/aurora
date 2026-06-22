@@ -33,8 +33,8 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
         </p>
         {inviteMode ? (
           <div className={styles.ctaInviteReturn}>
-            <a href={`/lista/${inviteContext?.statusToken}`}>Ver meu convite</a>
-            <a href="/privacidade/email">Conhecer nosso compromisso</a>
+            <a href="/?sala=convite">Ver meu convite</a>
+            <a href="/privacidade/email#convites-com-cuidado">Conhecer nosso compromisso</a>
           </div>
         ) : (
           <div style={{ marginTop: 34, width: "100%", maxWidth: 460 }}>

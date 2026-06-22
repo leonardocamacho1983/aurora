@@ -104,6 +104,7 @@ export default function EmailPolicyPage() {
         </LaunchSection>
 
         <LaunchSection
+          id="convites-com-cuidado"
           eyebrow="Pessoas queridas"
           title="Quando você convida alguém, a relação entre vocês também merece cuidado."
           lead="Convite não é viralização. É uma porta discreta para alguém chegar, entender e decidir no próprio tempo."

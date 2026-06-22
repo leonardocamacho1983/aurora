@@ -14,6 +14,7 @@ type LaunchPageProps = {
 };
 
 type SectionProps = {
+  id?: string;
   eyebrow?: string;
   title?: ReactNode;
   lead?: string;
@@ -224,9 +225,9 @@ function LaunchNextStep({ page }: { page: string }) {
   );
 }
 
-export function LaunchSection({ eyebrow, title, lead, center = false, alt = false, bare = false, children }: SectionProps) {
+export function LaunchSection({ id, eyebrow, title, lead, center = false, alt = false, bare = false, children }: SectionProps) {
   return (
-    <section className={`${styles.section} ${alt ? styles.sectionAlt : ""} ${bare ? styles.sectionBare : ""}`}>
+    <section id={id} className={`${styles.section} ${alt ? styles.sectionAlt : ""} ${bare ? styles.sectionBare : ""}`}>
       <div className={styles.sectionInner}>
         {!bare ? (
           <div className={`${styles.sectionIntro} ${center ? styles.center : ""}`}>

@@ -33,10 +33,10 @@ export function TrustSignupCard({ source = "trust_signup_card", fullBleed = fals
 
         <div className={styles.arrivalArea}>
           <div className={styles.actions}>
-            <Link className={styles.primary} href={`/lista/${inviteContext.statusToken}`}>
+            <Link className={styles.primary} href="/?sala=convite">
               Ver meu convite
             </Link>
-            <Link className={styles.secondary} href="/privacidade/email">
+            <Link className={styles.secondary} href="/privacidade/email#convites-com-cuidado">
               Conhecer nosso compromisso
             </Link>
           </div>
