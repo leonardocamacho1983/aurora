@@ -12,6 +12,7 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - [x] Manutencao manual fica em `POST /api/waitlist/maintenance?token=$WAITLIST_ADMIN_TOKEN&dryRun=1`.
 - [x] Emails com bounce, complaint ou suppressed entram em `waitlist_email_suppressed` e nao recebem novo envio.
 - [x] Emails nao confirmados com 7+ dias entram em supressao operacional; com 30+ dias entram em arquivamento operacional.
+- [x] `/admin` mostra saude de email: bloqueios duros, pausados, arquivados, reativados e ultimas execucoes.
 - [x] `POST /api/resend/webhook` verifica assinatura Svix/Resend usando raw body e `RESEND_WEBHOOK_SECRET`.
 - [x] Webhook do Resend grava eventos seguros em `waitlist_events`, sem conteudo de email, sem email do destinatario em metadata e sem URL completa de clique.
 - [x] Admin passa a mostrar delivered, opened, clicked, bounced e complained dos ultimos 30 dias.
@@ -33,6 +34,8 @@ O cron de `/api/waitlist/lifecycle` roda uma etapa de higiene antes de seleciona
 - `waitlist_email_suppressed` com `reason=provider_signal`: existe `email_bounced`, `email_complained` ou `email_suppressed`.
 - `waitlist_email_suppressed` com `reason=unconfirmed_7d`: cadastro nao confirmado com 7 a 29 dias.
 - `waitlist_email_archived` com `reason=unconfirmed_30d`: cadastro nao confirmado com 30+ dias.
+- `waitlist_maintenance_run`: heartbeat da manutencao real, mesmo quando nao ha pessoa selecionada.
+- `waitlist_lifecycle_run`: heartbeat da rotina diaria depois da manutencao e dos envios.
 
 Regras de envio:
 

@@ -130,6 +130,11 @@
   margin-top: 16px;
 }
 
+.inlineForm {
+  display: flex;
+  margin: 0;
+}
+
 .button,
 .secondary {
   min-height: 44px;
@@ -140,6 +145,14 @@
   padding: 0 18px;
   font: 700 14px/1 Inter, sans-serif;
   text-decoration: none;
+}
+
+.secondary {
+  cursor: pointer;
+}
+
+button.secondary {
+  font-family: Inter, sans-serif;
 }
 
 .button {

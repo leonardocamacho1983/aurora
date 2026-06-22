@@ -119,6 +119,28 @@ type EmailRow = {
   complained: number;
 };
 
+type EmailHealthRow = {
+  hardBlocked: number;
+  bouncedPeople: number;
+  complainedPeople: number;
+  providerSuppressedPeople: number;
+  pausedUnconfirmed: number;
+  archivedUnconfirmed: number;
+  reactivated: number;
+  blockedResends: number;
+  pendingReminderWindow: number;
+  lastMaintenanceAt: Date | string | null;
+  lastLifecycleAt: Date | string | null;
+};
+
+type EmailHygieneEventRow = {
+  eventName: string;
+  reason: string | null;
+  selected: number | null;
+  applied: number | null;
+  createdAt: Date | string;
+};
+
 type FlaggedRow = {
   email: string;
   reason: string;
@@ -194,6 +216,29 @@ function formatDay(value: string) {
     month: "2-digit",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function emailHygieneLabel(eventName: string) {
+  const labels: Record<string, string> = {
+    waitlist_email_suppressed: "Pausa de email",
+    waitlist_email_archived: "Arquivamento",
+    waitlist_email_reactivated: "Reativação",
+    waitlist_existing_email_blocked: "Reenvio bloqueado",
+    waitlist_maintenance_run: "Manutenção executada",
+    waitlist_lifecycle_run: "Lifecycle executado",
+  };
+  return labels[eventName] ?? eventName;
+}
+
+function emailHygieneReason(reason: string | null) {
+  const reasons: Record<string, string> = {
+    provider_signal: "sinal do provedor",
+    unconfirmed_7d: "7+ dias sem confirmação",
+    unconfirmed_30d: "30+ dias sem confirmação",
+    user_requested_email: "pessoa voltou ao formulário",
+    hard_email_signal: "bloqueio duro de entrega",
+  };
+  return reason ? reasons[reason] ?? reason : "execução";
 }
 
 function PrivateScreen({ configured }: { configured: boolean }) {
@@ -406,6 +451,165 @@ async function getDashboardData() {
         count(*) filter (where event_name = 'email_complained')::int as "complained"
       from waitlist_events
       where created_at >= now() - interval '30 days'
+    `),
+  );
+
+  const [emailHealth] = rows<EmailHealthRow>(
+    await db.execute(sql`
+      select
+        (
+          select count(distinct w.id)::int
+          from waitlist w
+          where exists (
+            select 1
+            from waitlist_events e
+            where e.waitlist_id = w.id
+              and (
+                e.event_name in ('email_bounced', 'email_complained', 'email_suppressed')
+                or (
+                  e.event_name = 'waitlist_email_suppressed'
+                  and e.metadata->>'reason' = 'provider_signal'
+                )
+              )
+          )
+        ) as "hardBlocked",
+        (
+          select count(distinct waitlist_id)::int
+          from waitlist_events
+          where event_name = 'email_bounced'
+        ) as "bouncedPeople",
+        (
+          select count(distinct waitlist_id)::int
+          from waitlist_events
+          where event_name = 'email_complained'
+        ) as "complainedPeople",
+        (
+          select count(distinct w.id)::int
+          from waitlist w
+          where exists (
+            select 1
+            from waitlist_events e
+            where e.waitlist_id = w.id
+              and (
+                e.event_name = 'email_suppressed'
+                or (
+                  e.event_name = 'waitlist_email_suppressed'
+                  and e.metadata->>'reason' = 'provider_signal'
+                )
+              )
+          )
+        ) as "providerSuppressedPeople",
+        (
+          select count(distinct e.waitlist_id)::int
+          from waitlist_events e
+          where e.event_name = 'waitlist_email_suppressed'
+            and e.metadata->>'reason' = 'unconfirmed_7d'
+            and not exists (
+              select 1
+              from waitlist_events reactivated
+              where reactivated.waitlist_id = e.waitlist_id
+                and reactivated.event_name = 'waitlist_email_reactivated'
+                and reactivated.created_at > e.created_at
+            )
+        ) as "pausedUnconfirmed",
+        (
+          select count(distinct e.waitlist_id)::int
+          from waitlist_events e
+          where e.event_name = 'waitlist_email_archived'
+            and e.metadata->>'reason' = 'unconfirmed_30d'
+            and not exists (
+              select 1
+              from waitlist_events reactivated
+              where reactivated.waitlist_id = e.waitlist_id
+                and reactivated.event_name = 'waitlist_email_reactivated'
+                and reactivated.created_at > e.created_at
+            )
+        ) as "archivedUnconfirmed",
+        (
+          select count(*)::int
+          from waitlist_events
+          where event_name = 'waitlist_email_reactivated'
+        ) as "reactivated",
+        (
+          select count(*)::int
+          from waitlist_events
+          where event_name = 'waitlist_existing_email_blocked'
+        ) as "blockedResends",
+        (
+          select count(*)::int
+          from waitlist w
+          where w.confirmed_at is null
+            and w.created_at <= now() - interval '24 hours'
+            and w.created_at > now() - interval '7 days'
+            and not exists (
+              select 1
+              from waitlist_events block_event
+              where block_event.waitlist_id = w.id
+                and (
+                  block_event.event_name in ('email_bounced', 'email_complained', 'email_suppressed')
+                  or (
+                    block_event.event_name = 'waitlist_email_suppressed'
+                    and block_event.metadata->>'reason' = 'provider_signal'
+                  )
+                  or (
+                    block_event.event_name in ('waitlist_email_suppressed', 'waitlist_email_archived')
+                    and coalesce(block_event.metadata->>'reason', '') <> 'provider_signal'
+                    and not exists (
+                      select 1
+                      from waitlist_events reactivated
+                      where reactivated.waitlist_id = block_event.waitlist_id
+                        and reactivated.event_name = 'waitlist_email_reactivated'
+                        and reactivated.created_at > block_event.created_at
+                    )
+                  )
+                )
+            )
+            and not exists (
+              select 1
+              from waitlist_events reminder_event
+              where reminder_event.waitlist_id = w.id
+                and reminder_event.event_name in (
+                  'lifecycle_invited_unconfirmed_1h_email_sent',
+                  'lifecycle_invited_unconfirmed_1h_email_send_failed',
+                  'lifecycle_unconfirmed_1h_email_sent',
+                  'lifecycle_unconfirmed_1h_email_send_failed',
+                  'lifecycle_unconfirmed_24h_email_sent',
+                  'lifecycle_unconfirmed_24h_email_send_failed'
+                )
+            )
+        ) as "pendingReminderWindow",
+        (
+          select max(created_at)
+          from waitlist_events
+          where event_name = 'waitlist_maintenance_run'
+        ) as "lastMaintenanceAt",
+        (
+          select max(created_at)
+          from waitlist_events
+          where event_name = 'waitlist_lifecycle_run'
+        ) as "lastLifecycleAt"
+    `),
+  );
+
+  const emailHygieneEvents = rows<EmailHygieneEventRow>(
+    await db.execute(sql`
+      select
+        event_name as "eventName",
+        metadata->>'reason' as reason,
+        nullif(metadata->>'selected', '')::int as selected,
+        nullif(metadata->>'applied', '')::int as applied,
+        created_at as "createdAt"
+      from waitlist_events
+      where event_name in (
+        'waitlist_email_suppressed',
+        'waitlist_email_archived',
+        'waitlist_email_reactivated',
+        'waitlist_existing_email_blocked',
+        'waitlist_maintenance_run',
+        'waitlist_lifecycle_run'
+      )
+      order by created_at desc
+      limit 10
     `),
   );
 
@@ -746,6 +950,20 @@ async function getDashboardData() {
       bounced: asNumber(email?.bounced),
       complained: asNumber(email?.complained),
     },
+    emailHealth: {
+      hardBlocked: asNumber(emailHealth?.hardBlocked),
+      bouncedPeople: asNumber(emailHealth?.bouncedPeople),
+      complainedPeople: asNumber(emailHealth?.complainedPeople),
+      providerSuppressedPeople: asNumber(emailHealth?.providerSuppressedPeople),
+      pausedUnconfirmed: asNumber(emailHealth?.pausedUnconfirmed),
+      archivedUnconfirmed: asNumber(emailHealth?.archivedUnconfirmed),
+      reactivated: asNumber(emailHealth?.reactivated),
+      blockedResends: asNumber(emailHealth?.blockedResends),
+      pendingReminderWindow: asNumber(emailHealth?.pendingReminderWindow),
+      lastMaintenanceAt: emailHealth?.lastMaintenanceAt ?? null,
+      lastLifecycleAt: emailHealth?.lastLifecycleAt ?? null,
+    },
+    emailHygieneEvents,
     engagedPeople,
     recentProfiles,
     recentEvents,
@@ -816,6 +1034,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     data.email.friendSent +
     data.email.milestoneSent +
     data.email.lifecycleSent;
+  const emailHardSignalNote = `${data.emailHealth.bouncedPeople} bounce, ${data.emailHealth.complainedPeople} complaint, ${data.emailHealth.providerSuppressedPeople} suppressed`;
   const dataHealthGood =
     data.health.testRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -828,6 +1047,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         ? `Atenção: ${emailFailures} falhas de email`
         : "Atenção técnica";
   const exportHref = `/api/waitlist/export?token=${encodeURIComponent(adminToken)}`;
+  const maintenanceDryRunHref = `/api/waitlist/maintenance?token=${encodeURIComponent(adminToken)}&dryRun=1`;
   const highestDailyValue = Math.max(
     1,
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
@@ -945,6 +1165,102 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
           <div className={styles.noteCard}>
             Webhook Resend: eventos assinados são gravados sem conteúdo do email e sem armazenar destinatário em metadata.
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2>Saúde de e-mail</h2>
+              <p>Higiene da lista para proteger entrega, IP e esforço de comunicação.</p>
+            </div>
+            <form className={styles.inlineForm} action={maintenanceDryRunHref} method="post">
+              <button className={styles.secondary} type="submit">
+                Rodar dry-run
+              </button>
+            </form>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard
+              value={compactNumber(data.emailHealth.hardBlocked)}
+              label="Bloqueios duros"
+              note={emailHardSignalNote}
+              tone={data.emailHealth.hardBlocked ? "warn" : "good"}
+            />
+            <MetricCard
+              value={compactNumber(data.emailHealth.pausedUnconfirmed)}
+              label="Pausados 7+ dias"
+              note="Não confirmaram e saíram da cadência ativa"
+              tone={data.emailHealth.pausedUnconfirmed ? "warn" : "good"}
+            />
+            <MetricCard
+              value={compactNumber(data.emailHealth.archivedUnconfirmed)}
+              label="Arquivados 30+ dias"
+              note="Preservados no histórico, fora da operação"
+              tone={data.emailHealth.archivedUnconfirmed ? "warn" : "good"}
+            />
+            <MetricCard
+              value={compactNumber(data.emailHealth.reactivated)}
+              label="Reativados"
+              note="Pessoas que voltaram ao formulário por vontade própria"
+              tone="neutral"
+            />
+          </div>
+          <div className={styles.split}>
+            <div className={styles.signalCard}>
+              <SignalRow
+                label="Última manutenção"
+                value={data.emailHealth.lastMaintenanceAt ? formatDate(data.emailHealth.lastMaintenanceAt) : "sem execução"}
+                note="Execução real do cron; dry-run não altera banco"
+                tone={data.emailHealth.lastMaintenanceAt ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Último lifecycle"
+                value={data.emailHealth.lastLifecycleAt ? formatDate(data.emailHealth.lastLifecycleAt) : "sem execução"}
+                note="Rotina que roda higiene antes dos envios"
+                tone={data.emailHealth.lastLifecycleAt ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Na janela de lembrete"
+                value={`${data.emailHealth.pendingReminderWindow}`}
+                note="Não confirmados entre 24h e 7d, sem bloqueio ativo"
+                tone={data.emailHealth.pendingReminderWindow ? "neutral" : "good"}
+              />
+              <SignalRow
+                label="Reenvios bloqueados"
+                value={`${data.emailHealth.blockedResends}`}
+                note="Tentativas no formulário barradas por sinal duro"
+                tone={data.emailHealth.blockedResends ? "warn" : "good"}
+              />
+            </div>
+            <div className={styles.tableCard}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Evento</th>
+                    <th>Motivo</th>
+                    <th>Volume</th>
+                    <th>Quando</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.emailHygieneEvents.length ? (
+                    data.emailHygieneEvents.map((event, index) => (
+                      <tr key={`${event.eventName}-${dateKey(event.createdAt)}-${index}`}>
+                        <td>{emailHygieneLabel(event.eventName)}</td>
+                        <td>{emailHygieneReason(event.reason)}</td>
+                        <td>{event.selected === null ? "-" : `${event.applied ?? 0}/${event.selected}`}</td>
+                        <td>{formatDate(event.createdAt)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4}>Nenhum evento de higiene registrado ainda.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 

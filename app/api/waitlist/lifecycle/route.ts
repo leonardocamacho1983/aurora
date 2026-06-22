@@ -343,9 +343,10 @@ async function runLifecycle(request: Request) {
 
   const limit = limitFromUrl(request);
   const dryRun = dryRunFromUrl(request);
+  const maintenanceLimit = maintenanceLimitFromUrl(request);
   const maintenance = await runWaitlistMaintenance({
     dryRun,
-    limit: maintenanceLimitFromUrl(request),
+    limit: maintenanceLimit,
   });
   const candidates = await getCandidates(limit);
   const baseUrl = siteUrl(request.url);
@@ -384,12 +385,29 @@ async function runLifecycle(request: Request) {
     });
   }
 
+  const sentCount = results.filter((result) => result.sent).length;
+  if (!dryRun) {
+    await db.insert(waitlistEvents).values({
+      eventName: "waitlist_lifecycle_run",
+      source: "email_lifecycle",
+      metadata: {
+        automation: "waitlist_lifecycle",
+        selected: candidates.length,
+        sent: sentCount,
+        limit,
+        maintenance_selected: maintenance.selected,
+        maintenance_applied: maintenance.applied,
+        maintenance_limit: maintenanceLimit,
+      },
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
     dryRun,
     maintenance,
     selected: candidates.length,
-    sent: results.filter((result) => result.sent).length,
+    sent: sentCount,
     results,
   });
 }

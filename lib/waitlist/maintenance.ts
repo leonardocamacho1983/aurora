@@ -267,6 +267,17 @@ export async function runWaitlistMaintenance({
         },
       });
     }
+
+    await db.insert(waitlistEvents).values({
+      eventName: "waitlist_maintenance_run",
+      source: "waitlist_maintenance",
+      metadata: {
+        automation: "email_hygiene",
+        selected: actions.length,
+        applied: actions.length,
+        limit: boundedLimit,
+      },
+    });
   }
 
   return {
