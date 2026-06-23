@@ -67,7 +67,7 @@ function isAdminAuthorized(request: Request) {
 
 function limitFromUrl(request: Request) {
   const url = new URL(request.url);
-  const parsed = Number(url.searchParams.get("limit") ?? 20);
+  const parsed = Number(url.searchParams.get("limit") ?? 100);
   if (!Number.isFinite(parsed)) return 20;
   return Math.max(1, Math.min(100, Math.floor(parsed)));
 }
