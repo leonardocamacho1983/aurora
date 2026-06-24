@@ -1,0 +1,43 @@
+.chip {
+  min-height: 28px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: 0 10px;
+  color: rgba(248, 246, 252, 0.72);
+  background: rgba(255, 255, 255, 0.04);
+  font: 760 var(--type-meta) / 1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 14px currentColor;
+}
+
+.mood {
+  color: rgba(236, 182, 210, 0.9);
+  background: rgba(236, 182, 210, 0.09);
+}
+
+.status {
+  color: rgba(127, 208, 196, 0.9);
+  background: rgba(127, 208, 196, 0.1);
+}
+
+.privacy {
+  color: rgba(143, 164, 214, 0.92);
+  background: rgba(143, 164, 214, 0.1);
+}
+
+.date {
+  color: rgba(248, 246, 252, 0.58);
+}
