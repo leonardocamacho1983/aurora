@@ -37,7 +37,7 @@ function fromAddress(): string | null {
   return process.env.EMAIL_FROM?.trim() || null;
 }
 
-async function sendEmail(input: { to: string; subject: string; html: string; text: string }) {
+async function sendEmail(input: { to: string; subject: string; html: string; text: string; scheduledAt?: string }) {
   const client = getResend();
   const from = fromAddress();
   if (!client || !from) {
@@ -71,6 +71,24 @@ function button(label: string, href: string): string {
 
 function quietLink(label: string, href: string): string {
   return `<a href="${href}" style="color:#cfc6f6;text-decoration:underline;text-underline-offset:3px">${label}</a>`;
+}
+
+function leoSignatureHtml(): string {
+  return `
+    <p style="font-size:14px;line-height:1.6;color:#948fa8">
+      Com carinho,<br>
+      Leo<br>
+      Criador da Aurora · ${quietLink("Instagram", "https://instagram.com/camacho__leo")} · ${quietLink("LinkedIn", "https://www.linkedin.com/in/leocamacho/")}
+    </p>
+  `;
+}
+
+function leoSignatureText(): string {
+  return `Com carinho,
+Leo
+Criador da Aurora
+Instagram: https://instagram.com/camacho__leo
+LinkedIn: https://www.linkedin.com/in/leocamacho/`;
 }
 
 function inboxInstruction(): string {
@@ -236,5 +254,85 @@ export async function sendLifecycleEmail(input: LifecycleEmailInput) {
     subject: variant.subject,
     html: variant.html,
     text: variant.text,
+  });
+}
+
+export async function sendAlphaTesterRitualEmail(
+  row: WaitlistEmailRow & { name?: string | null },
+  baseUrl: string,
+  scheduledAt?: string,
+) {
+  const status = statusUrl(row.statusToken, baseUrl);
+  const ritual = `${baseUrl.replace(/\/+$/, "")}/chegada?token=${encodeURIComponent(row.statusToken)}`;
+  return sendEmail({
+    to: row.email,
+    subject: "Vou abrir o primeiro grupo Alpha da Aurora",
+    html: shell(`
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Oi, aqui é o Leo, criador da Aurora.</p>
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Nesta sexta-feira, 26 de junho, vou escolher as primeiras pessoas para o Alpha da Aurora.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Além dos convites, vou considerar quem completar o Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento e te receber melhor.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quem entrar no Alpha usa a Aurora antes da abertura mais ampla e me ajuda a ajustar o que precisa ficar mais claro, simples e cuidadoso.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Se a Aurora faz sentido para este momento da sua vida, complete o Ritual até sexta-feira, 26 de junho, às 00:00.</p>
+      ${button("Completar meu Ritual", ritual)}
+      <p style="font-size:13px;line-height:1.6;color:#948fa8">Se o botão não abrir, acesse sua sala Aurora por este link: ${quietLink(status, status)}. Lá, clique em “Preparar minha Aurora”.</p>
+      ${leoSignatureHtml()}
+    `),
+    text: `Oi, aqui é o Leo, criador da Aurora.
+
+Nesta sexta-feira, 26 de junho, vou escolher as primeiras pessoas para o Alpha da Aurora.
+
+Além dos convites, vou considerar quem completar o Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento e te receber melhor.
+
+Quem entrar no Alpha usa a Aurora antes da abertura mais ampla e me ajuda a ajustar o que precisa ficar mais claro, simples e cuidadoso.
+
+Se a Aurora faz sentido para este momento da sua vida, complete o Ritual até sexta-feira, 26 de junho, às 00:00.
+
+Completar meu Ritual: ${ritual}
+
+Se o botão não abrir, acesse sua sala Aurora por este link:
+${status}
+
+Lá, clique em "Preparar minha Aurora".
+
+${leoSignatureText()}`,
+    scheduledAt,
+  });
+}
+
+export async function sendRitualCompleteFirstGroupEmail(
+  row: WaitlistEmailRow & { name?: string | null },
+  baseUrl: string,
+  scheduledAt?: string,
+) {
+  const invite = statusUrl(row.statusToken, baseUrl);
+  return sendEmail({
+    to: row.email,
+    subject: "Você já está no primeiro grupo",
+    html: shell(`
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Oi, aqui é o Leo.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Você já completou o Ritual de Chegada.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Isso coloca você no grupo que vou considerar para os primeiros acessos da Aurora nesta sexta-feira, 26 de junho.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Não precisa fazer mais nada agora. Na sexta, eu mando os próximos passos.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Enquanto isso, se puder, convide uma ou duas pessoas queridas para conhecer a Aurora.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Estamos construindo tudo com esforço próprio. Um convite pode parecer pequeno, mas neste começo faz muita diferença.</p>
+      ${button("Convidar alguém", invite)}
+      ${leoSignatureHtml()}
+    `),
+    text: `Oi, aqui é o Leo.
+
+Você já completou o Ritual de Chegada.
+
+Isso coloca você no grupo que vou considerar para os primeiros acessos da Aurora nesta sexta-feira, 26 de junho.
+
+Não precisa fazer mais nada agora. Na sexta, eu mando os próximos passos.
+
+Enquanto isso, se puder, convide uma ou duas pessoas queridas para conhecer a Aurora.
+
+Estamos construindo tudo com esforço próprio. Um convite pode parecer pequeno, mas neste começo faz muita diferença.
+
+Convidar alguém: ${invite}
+
+${leoSignatureText()}`,
+    scheduledAt,
   });
 }
