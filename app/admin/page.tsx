@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents, waitlistProfile } from "@/lib/db/schema";
@@ -90,6 +91,10 @@ type TopReferrerRow = {
   milestoneNotified: number;
   roomViews: number;
   shareActions: number;
+  linkViews: number;
+  linkVisitors: number;
+  formSuccesses: number;
+  signupEvents: number;
 };
 
 type NetworkRow = {
@@ -169,6 +174,10 @@ function asNumber(value: unknown) {
   return Number(value ?? 0);
 }
 
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
 function percent(value: number, total: number) {
   if (!total) return "0%";
   return `${Math.round((value / total) * 100)}%`;
@@ -216,6 +225,63 @@ function formatDay(value: string) {
     month: "2-digit",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+const help = {
+  dataHealth: "Resumo dos checks técnicos: dados de teste, referrals quebrados e falhas recentes de email.",
+  stalePending: "Pessoas em waitlist com email ainda não confirmado e cadastro criado há mais de 24 horas.",
+  emailsSent: "Soma dos eventos de envio de email registrados nos últimos 30 dias.",
+  totalList: "Total de registros na tabela waitlist, incluindo pessoas pendentes, confirmadas, diretas e convidadas.",
+  confirmedEmails: "Pessoas da waitlist com confirmed_at preenchido depois de clicar no email de confirmação.",
+  confirmedInvited: "Pessoas com referred_by_code preenchido e email confirmado. Esse é o número oficial de convidados confirmados.",
+  ritualsComplete: "Perfis em waitlist_profile com momento, ritmo, presença e valor preenchidos.",
+  confirmSent: "Eventos confirm_email_sent nos últimos 30 dias.",
+  statusSent: "Eventos status_email_sent nos últimos 30 dias, usados para reenviar link de sala/status.",
+  friendSent: "Eventos friend_joined_email_sent nos últimos 30 dias, quando uma pessoa convidada confirma.",
+  milestoneSent: "Eventos milestone_email_sent nos últimos 30 dias.",
+  lifecycleSent: "Emails automáticos de cadência da waitlist enviados nos últimos 30 dias.",
+  delivered: "Eventos email_delivered recebidos do webhook do Resend nos últimos 30 dias.",
+  bounces: "Eventos email_bounced recebidos do webhook do Resend nos últimos 30 dias.",
+  hardBlocked: "Pessoas com bounce, complaint ou supressão de provedor; ficam fora de novos envios.",
+  paused7d: "Pessoas não confirmadas após 7 dias que foram pausadas pela higiene de email.",
+  archived30d: "Pessoas não confirmadas após 30 dias que foram arquivadas operacionalmente.",
+  reactivated: "Eventos em que uma pessoa pausada/arquivada voltou ao formulário e foi reativada.",
+  activeInviters: "Pessoas cujo referral_code aparece em pelo menos um cadastro novo como referred_by_code.",
+  invitedTotal: "Cadastros na tabela waitlist criados com referred_by_code válido.",
+  confirmedPerInviter: "Convidados confirmados dividido por convidantes ativos.",
+  inviteConfirmRate: "Convidados confirmados dividido por todos os cadastros gerados pela rede.",
+  shareActions: "Cliques de copiar, compartilhar ou WhatsApp. Mede intenção de compartilhar, não cadastro.",
+  campaignSignals: "Eventos de pageview, CTA, sucesso no client e cadastro com utm_campaign=launch_waitlist.",
+  campaignCtas: "Eventos launch_cta_clicked marcados com a campanha launch_waitlist.",
+  campaignSignups: "Eventos signup_created marcados com a campanha launch_waitlist.",
+  campaignConversion: "Cadastros com UTM divididos pelo total de sinais da campanha.",
+  pageviews: "Eventos landing_viewed e launch_page_viewed nos últimos 30 dias.",
+  visitorSignupRate: "Cadastros criados nos últimos 30 dias divididos por visitantes identificados por distinctId.",
+  visitorCtaRate: "Cliques em CTA nos últimos 30 dias divididos por visitantes identificados por distinctId.",
+  clientSuccess: "Eventos waitlist_submit_success no navegador; inclui novos cadastros e reenvios/fluxos já existentes.",
+  topPages: "Pageviews por path, somando landing_viewed e launch_page_viewed.",
+  trafficSources: "Eventos de tráfego agrupados por source_type, UTM ou source.",
+  topCtas: "Eventos launch_cta_clicked agrupados por label ou source.",
+  signupSources: "Eventos signup_created agrupados por UTM/source_type/source.",
+} as const;
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className={styles.infoTooltip} tabIndex={0} aria-label={text}>
+      <span aria-hidden="true">?</span>
+      <span className={styles.tooltipBubble}>{text}</span>
+    </span>
+  );
+}
+
+function LabelWithTooltip({ children, definition }: { children: ReactNode; definition?: string }) {
+  if (!definition) return <>{children}</>;
+  return (
+    <span className={styles.labelWithTooltip}>
+      <span>{children}</span>
+      <InfoTooltip text={definition} />
+    </span>
+  );
 }
 
 function emailHygieneLabel(eventName: string) {
@@ -270,16 +336,20 @@ function MetricCard({
   label,
   note,
   tone = "neutral",
+  definition,
 }: {
   value: string;
   label: string;
   note: string;
   tone?: "neutral" | "warn" | "good";
+  definition?: string;
 }) {
   return (
-    <article className={`${styles.card} ${styles[tone]}`}>
+    <article className={cx(styles.card, styles[tone])}>
       <div className={styles.metricValue}>{value}</div>
-      <div className={styles.metricLabel}>{label}</div>
+      <div className={styles.metricLabel}>
+        <LabelWithTooltip definition={definition}>{label}</LabelWithTooltip>
+      </div>
       <div className={styles.metricNote}>{note}</div>
     </article>
   );
@@ -290,16 +360,18 @@ function SignalRow({
   value,
   note,
   tone = "neutral",
+  definition,
 }: {
   label: string;
   value: string;
   note?: string;
   tone?: "good" | "warn" | "neutral";
+  definition?: string;
 }) {
   return (
-    <div className={`${styles.signalRow} ${styles[tone]}`}>
+    <div className={cx(styles.signalRow, styles[tone])}>
       <span>
-        {label}
+        <LabelWithTooltip definition={definition}>{label}</LabelWithTooltip>
         {note ? <small>{note}</small> : null}
       </span>
       <strong>{value}</strong>
@@ -307,12 +379,24 @@ function SignalRow({
   );
 }
 
-function BreakdownList({ title, rows, empty = "Ainda sem dados suficientes." }: { title: string; rows: BreakdownRow[]; empty?: string }) {
+function BreakdownList({
+  title,
+  rows,
+  empty = "Ainda sem dados suficientes.",
+  definition,
+}: {
+  title: string;
+  rows: BreakdownRow[];
+  empty?: string;
+  definition?: string;
+}) {
   const total = rows.reduce((sum, row) => sum + asNumber(row.total), 0);
 
   return (
     <article className={styles.signalCard}>
-      <h3 className={styles.cardTitle}>{title}</h3>
+      <h3 className={styles.cardTitle}>
+        <LabelWithTooltip definition={definition}>{title}</LabelWithTooltip>
+      </h3>
       {rows.length ? (
         rows.map((row) => {
           const rowTotal = asNumber(row.total);
@@ -384,27 +468,77 @@ async function getDashboardData() {
 
   const topReferrers = rows<TopReferrerRow>(
     await db.execute(sql`
+      with referral_counts as (
+        select
+          referred_by_code,
+          count(*)::int as total_invites,
+          count(*) filter (where confirmed_at is not null)::int as confirmed_invites,
+          max(confirmed_at) as last_confirmed_at
+        from waitlist
+        where referred_by_code is not null
+        group by referred_by_code
+      ),
+      event_counts as (
+        select
+          waitlist_id,
+          count(*) filter (where event_name = 'referral_room_viewed')::int as room_views,
+          count(*) filter (where event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared'))::int as share_actions
+        from waitlist_events
+        where waitlist_id is not null
+        group by waitlist_id
+      ),
+      code_events as (
+        select
+          code,
+          count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as link_views,
+          count(distinct metadata->>'distinctId') filter (
+            where event_name in ('landing_viewed', 'launch_page_viewed')
+              and nullif(metadata->>'distinctId', '') is not null
+          )::int as link_visitors,
+          count(*) filter (where event_name = 'waitlist_submit_success')::int as form_successes,
+          count(*) filter (where event_name = 'signup_created')::int as signup_events
+        from (
+          select
+            coalesce(
+              nullif(metadata->>'referredByCode', ''),
+              nullif(metadata->>'referred_by_code', ''),
+              nullif(metadata->>'referral_code', '')
+            ) as code,
+            event_name,
+            metadata
+          from waitlist_events
+          where metadata is not null
+        ) events_by_code
+        where code is not null
+        group by code
+      )
       select
         w.email,
         wp.name,
         w.referral_code as "referralCode",
-        count(distinct r.id)::int as "totalInvites",
-        count(distinct r.id) filter (where r.confirmed_at is not null)::int as "confirmedInvites",
-        max(r.confirmed_at) as "lastConfirmedAt",
+        coalesce(rc.total_invites, 0)::int as "totalInvites",
+        coalesce(rc.confirmed_invites, 0)::int as "confirmedInvites",
+        rc.last_confirmed_at as "lastConfirmedAt",
         w.milestone_notified as "milestoneNotified",
-        count(distinct room_events.id)::int as "roomViews",
-        count(distinct share_events.id)::int as "shareActions"
+        coalesce(ec.room_views, 0)::int as "roomViews",
+        coalesce(ec.share_actions, 0)::int as "shareActions",
+        coalesce(ce.link_views, 0)::int as "linkViews",
+        coalesce(ce.link_visitors, 0)::int as "linkVisitors",
+        coalesce(ce.form_successes, 0)::int as "formSuccesses",
+        coalesce(ce.signup_events, 0)::int as "signupEvents"
       from waitlist w
       left join waitlist_profile wp on wp.waitlist_id = w.id
-      left join waitlist r on r.referred_by_code = w.referral_code
-      left join waitlist_events room_events
-        on room_events.waitlist_id = w.id and room_events.event_name = 'referral_room_viewed'
-      left join waitlist_events share_events
-        on share_events.waitlist_id = w.id
-        and share_events.event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared')
-      group by w.id, wp.name
-      having count(distinct r.id) > 0 or count(distinct share_events.id) > 0
-      order by count(distinct r.id) filter (where r.confirmed_at is not null) desc, count(distinct r.id) desc, count(distinct share_events.id) desc
+      left join referral_counts rc on rc.referred_by_code = w.referral_code
+      left join event_counts ec on ec.waitlist_id = w.id
+      left join code_events ce on ce.code = w.referral_code
+      where coalesce(rc.total_invites, 0) > 0
+         or coalesce(ec.share_actions, 0) > 0
+         or coalesce(ce.link_views, 0) > 0
+      order by
+        coalesce(rc.confirmed_invites, 0) desc,
+        coalesce(rc.total_invites, 0) desc,
+        coalesce(ce.link_visitors, 0) desc,
+        coalesce(ec.share_actions, 0) desc
       limit 10
     `),
   );
@@ -729,7 +863,7 @@ async function getDashboardData() {
         (
           select count(*)::int
           from waitlist_events
-          where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
+          where event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
             and metadata is not null
             and nullif(metadata->>'distinctId', '') is null
         ) as "eventsWithoutDistinctId"
@@ -759,8 +893,8 @@ async function getDashboardData() {
   const [traffic] = rows<TrafficSummaryRow>(
     await db.execute(sql`
       select
-        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
-        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
         count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess"
       from waitlist_events
@@ -774,7 +908,7 @@ async function getDashboardData() {
         coalesce(nullif(metadata->>'path', ''), nullif(metadata->>'page', ''), 'sem página') as label,
         count(*)::int as total
       from waitlist_events
-      where event_name = 'launch_page_viewed'
+      where event_name in ('landing_viewed', 'launch_page_viewed')
         and created_at >= now() - interval '30 days'
       group by 1
       order by count(*) desc
@@ -788,7 +922,7 @@ async function getDashboardData() {
         coalesce(nullif(metadata->>'source_type', ''), nullif(metadata->>'utm_source', ''), nullif(source, ''), 'direct') as label,
         count(*)::int as total
       from waitlist_events
-      where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+      where event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
         and created_at >= now() - interval '30 days'
       group by 1
       order by count(*) desc
@@ -831,12 +965,12 @@ async function getDashboardData() {
         from waitlist_events
         where created_at >= now() - interval '30 days'
           and metadata->>'utm_campaign' = 'launch_waitlist'
-          and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+          and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       ),
       page_distinct as (
         select distinct metadata->>'distinctId' as distinct_id
         from campaign_events
-        where event_name = 'launch_page_viewed'
+        where event_name in ('landing_viewed', 'launch_page_viewed')
           and nullif(metadata->>'distinctId', '') is not null
       )
       select
@@ -846,8 +980,8 @@ async function getDashboardData() {
           waitlist_id::text,
           nullif(metadata->>'sessionId', '')
         ))::int as "campaignPeople",
-        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
-        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
         count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess",
         count(*) filter (where event_name = 'signup_created')::int as "signups",
@@ -870,7 +1004,7 @@ async function getDashboardData() {
       from waitlist_events
       where created_at >= now() - interval '30 days'
         and metadata->>'utm_campaign' = 'launch_waitlist'
-        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+        and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       group by 1
       order by count(*) desc
       limit 8
@@ -885,7 +1019,7 @@ async function getDashboardData() {
       from waitlist_events
       where created_at >= now() - interval '30 days'
         and metadata->>'utm_campaign' = 'launch_waitlist'
-        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+        and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       group by 1
       order by count(*) desc
       limit 8
@@ -1086,18 +1220,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             value={healthMessage}
             note={`${data.health.internalEmails} emails internos separados da sujeira real`}
             tone={dataHealthGood ? "good" : "warn"}
+            definition={help.dataHealth}
           />
           <SignalRow
             label="Pendentes acima de 24h"
             value={`${data.health.stalePending} pessoas`}
             note="Quem entrou e ainda não confirmou email"
             tone={data.health.stalePending === 0 ? "good" : "warn"}
+            definition={help.stalePending}
           />
           <SignalRow
             label="Emails enviados"
             value={`${emailSent}`}
             note={`${data.email.delivered} delivered, ${data.email.bounced} bounces, ${data.email.complained} complaints`}
             tone={emailFailures === 0 && data.email.bounced === 0 && data.email.complained === 0 ? "good" : "warn"}
+            definition={help.emailsSent}
           />
         </section>
 
@@ -1107,10 +1244,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>O essencial: lista, confirmação, convite e Ritual de Chegada.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} />
-            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${percent(data.summary.confirmed, data.summary.total)} da lista confirmou`} />
-            <MetricCard value={compactNumber(data.network.invitedConfirmed)} label="Convidados confirmados" note={`${data.network.invitedTotal} convidados gerados pela rede`} />
-            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual`} />
+            <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} definition={help.totalList} />
+            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${percent(data.summary.confirmed, data.summary.total)} da lista confirmou`} definition={help.confirmedEmails} />
+            <MetricCard value={compactNumber(data.network.invitedConfirmed)} label="Convidados confirmados" note={`${data.network.invitedTotal} convidados gerados pela rede`} definition={help.confirmedInvited} />
+            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual`} definition={help.ritualsComplete} />
           </div>
         </section>
 
@@ -1125,42 +1262,49 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               label="Confirmações enviadas"
               note={`${data.email.confirmFailed} falhas ao enviar confirmação`}
               tone={data.email.confirmFailed ? "warn" : "neutral"}
+              definition={help.confirmSent}
             />
             <MetricCard
               value={compactNumber(data.email.statusSent)}
               label="Links de status enviados"
               note={`${data.email.statusFailed} falhas ao enviar sala/status`}
               tone={data.email.statusFailed ? "warn" : "neutral"}
+              definition={help.statusSent}
             />
             <MetricCard
               value={compactNumber(data.email.friendSent)}
               label="Avisos de convidado"
               note={`${data.email.friendFailed} falhas ao avisar convidante`}
               tone={data.email.friendFailed ? "warn" : "neutral"}
+              definition={help.friendSent}
             />
             <MetricCard
               value={compactNumber(data.email.milestoneSent)}
               label="Marcos enviados"
               note={`${data.email.milestoneFailed} falhas em emails de marco`}
               tone={data.email.milestoneFailed ? "warn" : "neutral"}
+              definition={help.milestoneSent}
             />
             <MetricCard
               value={compactNumber(data.email.lifecycleSent)}
               label="Cadência enviada"
               note={`${data.email.lifecycleFailed} falhas em emails de lifecycle`}
               tone={data.email.lifecycleFailed ? "warn" : "neutral"}
+              definition={help.lifecycleSent}
             />
             <MetricCard
               value={compactNumber(data.email.delivered)}
               label="Delivered"
               note={`${data.email.opened} aberturas e ${data.email.clicked} cliques registrados`}
               tone="neutral"
+              definition={help.delivered}
             />
             <MetricCard
               value={compactNumber(data.email.bounced)}
               label="Bounces"
               note={`${data.email.complained} complaints nos últimos 30 dias`}
               tone={data.email.bounced || data.email.complained ? "warn" : "good"}
+              definition={help.bounces}
             />
           </div>
           <div className={styles.noteCard}>
@@ -1186,24 +1330,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               label="Bloqueios duros"
               note={emailHardSignalNote}
               tone={data.emailHealth.hardBlocked ? "warn" : "good"}
+              definition={help.hardBlocked}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.pausedUnconfirmed)}
               label="Pausados 7+ dias"
               note="Não confirmaram e saíram da cadência ativa"
               tone={data.emailHealth.pausedUnconfirmed ? "warn" : "good"}
+              definition={help.paused7d}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.archivedUnconfirmed)}
               label="Arquivados 30+ dias"
               note="Preservados no histórico, fora da operação"
               tone={data.emailHealth.archivedUnconfirmed ? "warn" : "good"}
+              definition={help.archived30d}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.reactivated)}
               label="Reativados"
               note="Pessoas que voltaram ao formulário por vontade própria"
               tone="neutral"
+              definition={help.reactivated}
             />
           </div>
           <div className={styles.split}>
@@ -1270,10 +1418,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>Convidante é quem compartilha. Convidados são as pessoas que entram pelo código. Confirmados são convidados que validaram email.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.network.activeInviters)} label="Convidantes ativos" note="Pessoas que geraram ao menos um convidado" />
-            <MetricCard value={compactNumber(data.network.invitedTotal)} label="Convidados gerados" note={`${data.network.invitedConfirmed} confirmaram email`} />
-            <MetricCard value={ratio(data.network.invitedConfirmed, data.network.activeInviters)} label="Confirmados por convidante" note="Média entre convidantes ativos" />
-            <MetricCard value={percent(data.network.invitedConfirmed, data.network.invitedTotal)} label="Confirmação dos convidados" note="Convidados confirmados sobre convidados gerados" />
+            <MetricCard value={compactNumber(data.network.activeInviters)} label="Convidantes ativos" note="Pessoas que geraram ao menos um convidado" definition={help.activeInviters} />
+            <MetricCard value={compactNumber(data.network.invitedTotal)} label="Convidados gerados" note={`${data.network.invitedConfirmed} confirmaram email`} definition={help.invitedTotal} />
+            <MetricCard value={ratio(data.network.invitedConfirmed, data.network.activeInviters)} label="Confirmados por convidante" note="Média entre convidantes ativos" definition={help.confirmedPerInviter} />
+            <MetricCard value={percent(data.network.invitedConfirmed, data.network.invitedTotal)} label="Confirmação dos convidados" note="Convidados confirmados sobre convidados gerados" definition={help.inviteConfirmRate} />
+            <MetricCard value={compactNumber(shareEvents.total)} label="Compartilhamentos" note={`${shareEvents.unique} pessoas acionaram compartilhar`} definition={help.shareActions} />
           </div>
           <div className={styles.gridThree}>
             <div className={styles.signalCard}>
@@ -1287,11 +1436,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <thead>
                   <tr>
                     <th>Convidante</th>
-                    <th>Convidados</th>
-                    <th>Convidados confirmados</th>
-                    <th>Taxa</th>
-                    <th>Último</th>
-                    <th>Marco</th>
+                    <th title="Linhas da waitlist cujo referred_by_code é o código dessa pessoa.">Convidados</th>
+                    <th title="Convidados com confirmed_at preenchido.">Confirmados</th>
+                    <th title="Visitantes únicos e envios bem-sucedidos no navegador com o código dessa pessoa. Não é a contagem oficial de cadastros.">Sinais do link</th>
+                    <th title="Cliques para copiar, compartilhar ou abrir WhatsApp feitos pela convidante.">Compart.</th>
+                    <th title="Confirmados divididos por convidados gerados.">Taxa</th>
+                    <th title="Data da última confirmação de convidado.">Último</th>
+                    <th title="Maior marco de convite já notificado para essa pessoa.">Marco</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1304,6 +1455,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                       </td>
                       <td>{person.totalInvites}</td>
                       <td>{person.confirmedInvites}</td>
+                      <td title={`${person.linkViews} pageviews, ${person.formSuccesses} sucessos no client, ${person.signupEvents} cadastros server-side`}>
+                        {person.linkVisitors}/{person.formSuccesses}
+                      </td>
+                      <td>{person.shareActions}</td>
                       <td>{percent(person.confirmedInvites, person.totalInvites)}</td>
                       <td>{formatDate(person.lastConfirmedAt)}</td>
                       <td>{person.milestoneNotified ? `${person.milestoneNotified}+` : "-"}</td>
@@ -1325,10 +1480,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               <thead>
                 <tr>
                   <th>Pessoa</th>
-                  <th>Convidados confirmados</th>
-                  <th>Compartilhamentos</th>
-                  <th>Sala</th>
-                  <th>Ritual</th>
+                  <th title="Convidados com referred_by_code da pessoa e confirmed_at preenchido.">Convidados confirmados</th>
+                  <th title="Eventos de copiar, compartilhar ou WhatsApp.">Compartilhamentos</th>
+                  <th title="Eventos referral_room_viewed ligados ao status/convite da pessoa.">Sala</th>
+                  <th title="Completo quando moment, rhythm, presence e value estão preenchidos no waitlist_profile.">Ritual</th>
                 </tr>
               </thead>
               <tbody>
@@ -1364,6 +1519,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   ? `${compactNumber(data.launchCampaign.pageviews)} pageviews com UTM`
                   : `${compactNumber(data.launchCampaign.campaignPeople)} pessoas/sessões identificáveis`
               }
+              definition={help.campaignSignals}
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.ctaClicks)}
@@ -1373,22 +1529,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   ? `${percent(data.launchCampaign.ctaClicks, data.launchCampaign.campaignSignals)} dos sinais da campanha`
                   : "Nenhum clique de CTA com esta UTM"
               }
+              definition={help.campaignCtas}
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.signups)}
               label="Cadastros com UTM"
               note={`${compactNumber(data.launchCampaign.clientSignupSuccess)} sucessos capturados no client`}
+              definition={help.campaignSignups}
             />
             <MetricCard
               value={percent(data.launchCampaign.signups, data.launchCampaign.campaignSignals)}
               label="Cadastro por sinal"
               note={`${compactNumber(data.launchCampaign.signups)} cadastros / ${compactNumber(data.launchCampaign.campaignSignals)} sinais UTM`}
+              definition={help.campaignConversion}
             />
           </div>
           <div className={styles.gridThree}>
-            <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} />
-            <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} />
-            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} empty="Sem clique de CTA capturado com esta UTM." />
+            <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} definition="Eventos da campanha agrupados por utm_source, source_type ou source." />
+            <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} definition="Eventos da campanha agrupados por utm_content." />
+            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} empty="Sem clique de CTA capturado com esta UTM." definition="Cliques em CTA com utm_campaign=launch_waitlist agrupados por label/source." />
           </div>
         </section>
 
@@ -1398,16 +1557,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>Leitura first-party geral dos últimos 30 dias.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.traffic.pageviews)} label="Pageviews" note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`} />
-            <MetricCard value={percentOrNA(data.summary.signups30, data.traffic.visitors, "sem base")} label="Visitante para cadastro" note={`${compactNumber(data.summary.signups30)} cadastros no período`} />
-            <MetricCard value={percentOrNA(data.traffic.ctaClicks, data.traffic.visitors, "sem base")} label="Visitante para CTA" note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`} />
-            <MetricCard value={compactNumber(data.traffic.clientSignupSuccess)} label="Sucessos no client" note="Confirmações de envio capturadas no navegador" />
+            <MetricCard value={compactNumber(data.traffic.pageviews)} label="Pageviews" note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`} definition={help.pageviews} />
+            <MetricCard value={percentOrNA(data.summary.signups30, data.traffic.visitors, "sem base")} label="Visitante para cadastro" note={`${compactNumber(data.summary.signups30)} cadastros no período`} definition={help.visitorSignupRate} />
+            <MetricCard value={percentOrNA(data.traffic.ctaClicks, data.traffic.visitors, "sem base")} label="Visitante para CTA" note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`} definition={help.visitorCtaRate} />
+            <MetricCard value={compactNumber(data.traffic.clientSignupSuccess)} label="Sucessos no client" note="Confirmações de envio capturadas no navegador" definition={help.clientSuccess} />
           </div>
           <div className={styles.quadSplit}>
-            <BreakdownList title="Páginas mais vistas" rows={data.topPages} />
-            <BreakdownList title="Fontes de tráfego" rows={data.trafficSources} />
-            <BreakdownList title="CTAs mais acionados" rows={data.topCtas} />
-            <BreakdownList title="Origem dos cadastros" rows={data.signupSources} />
+            <BreakdownList title="Páginas mais vistas" rows={data.topPages} definition={help.topPages} />
+            <BreakdownList title="Fontes de tráfego" rows={data.trafficSources} definition={help.trafficSources} />
+            <BreakdownList title="CTAs mais acionados" rows={data.topCtas} definition={help.topCtas} />
+            <BreakdownList title="Origem dos cadastros" rows={data.signupSources} definition={help.signupSources} />
           </div>
         </section>
 
