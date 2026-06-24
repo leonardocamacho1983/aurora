@@ -1,27 +1,81 @@
-# Aurora Design System v2 — referência interna exata
+# Aurora Product System — referência interna exata
 
-Esta referência captura o conteúdo da rota protegida `/design-system` para servir como base de criação de UI/UX da Aurora.
+Esta referência captura o conteúdo completo da rota protegida `/design-system/referencia` e registra a arquitetura do portal `/design-system`.
+
+O Product System separa duas decisões que não devem se misturar:
+
+- Público-alvo e Posicionamento: para quem a Aurora existe, qual promessa pode fazer e quais promessas são proibidas.
+- Design System: como a Aurora aparece, se move e se organiza em interface.
+
+## Arquitetura de rotas
+
+O Product System não deve voltar a ser uma página infinita. A navegação viva fica dividida assim:
+
+- `/design-system`: portal com orb hero canônico, entrada para Design System e entrada para Público-alvo e Posicionamento.
+- `/design-system/posicionamento`: definição, USP, público-alvo, limites, mensagens e explicações prontas.
+- `/design-system/fundamentos`: tokens, cores, tipografia e guardrails de escala.
+- `/design-system/biblioteca`: aba específica da biblioteca de componentes.
+- `/design-system/patterns`: aba específica com Responsive Screen Lab para patterns de tela por ambiente e cenário.
+- `/design-system/referencia`: referência completa preservada para auditoria e paridade.
+- `/design-system/roadmap`: encaixe das próximas fases: componentes, patterns e migração das telas.
 
 Rota local de validação:
 
-- `http://localhost:3017/design-system?token=local-ds-token`
+- `http://localhost:3000/design-system/referencia?token=local-ds-token`
 
 Rota de produção:
 
-- `/design-system?token=<DESIGN_SYSTEM_ADMIN_TOKEN>`
+- `/design-system/referencia?token=<DESIGN_SYSTEM_ADMIN_TOKEN>`
 
 ## Contrato de paridade
 
-Este arquivo deve refletir a página consultável. Se a rota mudar, este arquivo deve mudar no mesmo pull/patch. Se este arquivo mudar, a rota deve ser conferida para manter o mesmo conteúdo conceitual.
+Este arquivo deve refletir a página consultável completa. Se a rota `/design-system/referencia` mudar, este arquivo deve mudar no mesmo pull/patch. Se este arquivo mudar, a rota deve ser conferida para manter o mesmo conteúdo conceitual.
 
 Antes de criar qualquer tela nova da Aurora, o agente deve ler:
 
-1. `docs/design-system/reference.md`
-2. `docs/design-system/component-inventory.md`
-3. `docs/design-system/ui-ux-creation-brief.md`
-4. `docs/design-system/tokens.md`
-5. `docs/design-system/qa-checklist.md`
-6. `docs/agent-guardrails/design-system.md`
+1. `docs/personas-publico-alvo-usp-comunicacao.md`
+2. `docs/design-system/reference.md`
+3. `docs/design-system/component-inventory.md`
+4. `docs/design-system/ui-ux-creation-brief.md`
+5. `docs/design-system/tokens.md`
+6. `docs/design-system/qa-checklist.md`
+7. `docs/agent-guardrails/design-system.md`
+
+## Portal `/design-system`
+
+Conteúdo da capa:
+
+- Título: `Aurora Product System`
+- Texto: `Tudo que agentes, designers, product managers e developers precisam consultar antes de criar uma tela, escrever uma copy ou propor uma feature da Aurora.`
+- CTA primário: `Entrar no Design System` -> `/design-system/fundamentos`
+- CTA secundário: `Ver posicionamento` -> `/design-system/posicionamento`
+- Visual: `Orb` real em estado `reflecting`, usado como hero canônico dominante.
+
+Entradas principais:
+
+| Entrada | Função | Checks |
+| --- | --- | --- |
+| `Design System` | Criar ou revisar telas, componentes, tokens, motion, responsividade e padrões de produto. | `Escolher tokens e escala`; `Reutilizar componentes`; `Validar patterns por ambiente` |
+| `Público-alvo e Posicionamento` | Escrever copy, propor feature, desenhar onboarding ou explicar a Aurora. | `Confirmar o que Aurora é`; `Evitar promessas proibidas`; `Usar a USP aprovada` |
+
+Regras para agentes na capa:
+
+1. Antes de criar uma tela, escolha um pattern existente ou documente por que ele não serve.
+2. Antes de escrever copy, confira posicionamento, promessa permitida e promessa proibida.
+3. Mobile, tablet e desktop são composições específicas, não resize automático.
+4. Se uma peça aparecer em duas superfícies, ela pertence à biblioteca.
+
+## Rota `/design-system/posicionamento`
+
+Esta rota é a leitura operacional de `docs/personas-publico-alvo-usp-comunicacao.md`.
+
+Conteúdo obrigatório:
+
+- Definição: `Aurora é um diário por voz para organizar o que você sente, pensa e quer colocar em prática, percebendo padrões, ideias e próximos passos com mais clareza.`
+- USP: `Aurora transforma o que você sente, pensa e quer colocar em prática em clareza, padrões e próximos passos, a partir da sua própria voz.`
+- Público-alvo: adultos em carga emocional, mental ou prática, incluindo crise, transição, crescimento, procrastinação, excesso de ideias ou sustentação de fase boa.
+- Limites: Aurora é diário por voz com inteligência orientadora; não é chat generalista, terapia, diagnóstico, tratamento, emergência, lista de tarefas soltas ou conversa infinita.
+- Comunicação: começar por situação concreta, usar linguagem cotidiana e evitar promessas clínicas, cura, diagnóstico ou produtividade total.
 
 ## Tela protegida
 
@@ -49,13 +103,14 @@ O header autenticado usa logo Aurora horizontal e navegação por âncoras.
 Links, na ordem:
 
 1. `Fundamentos` -> `#tokens`
-2. `Componentes` -> `#componentes`
-3. `Orb` -> `#orb`
-4. `Padrões` -> `#padroes`
-5. `Exemplos` -> `#exemplos`
-6. `Voz` -> `#voz`
-7. `Movimento` -> `#motion`
-8. `QA` -> `#qa`
+2. `Sistema` -> `#product-ui-system`
+3. `Biblioteca de Componentes` -> `#biblioteca-componentes`
+4. `Orb` -> `#orb`
+5. `Padrões` -> `#padroes`
+6. `Exemplos` -> `#exemplos`
+7. `Voz` -> `#voz`
+8. `Movimento` -> `#motion`
+9. `QA` -> `#qa`
 
 ## Hero
 
@@ -104,16 +159,37 @@ Seção:
 - Título: `O tamanho serve o conteúdo.`
 - Texto: `Produto e admin não usam escala de hero. Fraunces fica reservado para marca, prompt e reflexão.`
 
-| Uso | Escala | Fonte | Contexto |
-| --- | --- | --- | --- |
-| `Marketing Display` | `56-64` | `Fraunces ou Inter` | `Hero e landing` |
-| `Product PageTitle` | `32-40` | `Inter 600` | `Produto, máximo 1 por tela` |
-| `Mobile PageTitle` | `26-32` | `Inter 600` | `Linha curta` |
-| `Reflection` | `20-40` | `Fraunces italic` | `Diário e insight` |
-| `PanelTitle` | `18-24` | `Inter 560` | `Cards, sheets e seções` |
-| `Body` | `16/24` | `Inter 400` | `Leitura padrão` |
-| `Small` | `14/20` | `Inter 400` | `Metadados legíveis` |
-| `Meta` | `12/16` | `Inter 650 + caps` | `Status e labels` |
+| Uso | Token | Escala | Fonte | Contexto |
+| --- | --- | --- | --- | --- |
+| `Hero Display` | `--type-hero` | `56-64` | `Fraunces ou Inter` | `Landing, manifesto e DS` |
+| `Product ScreenTitle` | `--type-screen-title` | `28-32` | `Inter 650` | `Produto, máximo 1 por tela` |
+| `Mobile ScreenTitle` | `--type-mobile-title` | `24-28` | `Inter 650` | `Linha curta em 390px` |
+| `SectionTitle` | `--type-section-title` | `20-24` | `Inter 640` | `Seções e padrões` |
+| `CardTitle` | `--type-card-title` | `16-18` | `Inter 650` | `Cards, sheets e painéis` |
+| `Body` | `--type-body` | `15-16 / 24` | `Inter 450` | `Leitura padrão` |
+| `Small` | `--type-small` | `13-14 / 20` | `Inter 450` | `Metadados legíveis` |
+| `Meta` | `--type-meta` | `11-13 / 16` | `Inter 700 + caps` | `Status e labels` |
+| `Reflection` | `--type-reflection` | `18-22` | `Fraunces italic` | `Diário e insight` |
+| `Reflection Feature` | `--type-reflection-feature` | `24-28` | `Fraunces italic` | `Destaque reflexivo controlado` |
+
+Regra: produto, timeline, fio, conta e admin não usam escala de hero. `40px+` é reservado para landing, manifesto, Design System ou momento editorial explicitamente justificado.
+
+### Product UI System
+
+Seção:
+
+- ID: `product-ui-system`
+- Kicker: `Product UI System`
+- Título: `A tela nasce da camada certa.`
+- Texto: `Aurora usa design atômico de forma pragmática: tokens, primitivos, componentes de produto, padrões e receitas de tela.`
+
+| Camada | Papel | Regra |
+| --- | --- | --- |
+| `Tokens` | `Base` | `Cores, tipografia, spacing, radius e motion. Nada de valor de estilo solto por tela.` |
+| `UI` | `Primitivos` | `Button, IconButton, CardSurface, Panel, Chip, Tabs e estados básicos.` |
+| `Product` | `Componentes Aurora` | `OrbControl, ReflectionCard, TimelineEntryCard, ThreadCard, FlipCard e ContinueThreadButton.` |
+| `Patterns` | `Receitas reutilizáveis` | `DiaryCapture, ReflectionResult, TimelineList, OpenThread e EmptyThread.` |
+| `Screens` | `Composição final` | `Pages montam padrões existentes. Tela complexa não nasce artesanal em page.tsx.` |
 
 ### Espaçamento
 
@@ -171,31 +247,48 @@ Cards base:
 | `DataTable` | `admin denso` | `Inter, escaneável, sem escala editorial.` |
 | `PrivacyChip` | `local / privado / anônimo` | `Sinal de confiança discreto, nunca invasivo.` |
 
-### Inventário completo renderizado
+### Biblioteca de Componentes
 
 Segunda seção:
 
-- ID: `inventario`
-- Kicker: `Componentes`
-- Título: `Componentes com intenção. Cada um no seu lugar.`
-- Texto: `Cada componente tem variantes por estado e tamanho. Nenhum é decorativo: todos servem uma ação.`
+- ID: `biblioteca-componentes`
+- Kicker: `Biblioteca de Componentes`
+- Título: `Peças prontas para montar telas.`
+- Texto: `Esta aba concentra só componentes: camada, nome, variantes e regra de uso. Fundamentos, padrões e exemplos ficam fora daqui.`
 
-Todos os itens aparecem com status visual `Completo`.
+Todos os itens aparecem com status visual `Biblioteca`.
 
-| Componente | Variantes | Regra |
-| --- | --- | --- |
-| `Button` | `primário · secundário · ghost · perigo` | `44px mínimo, carregamento e foco visível.` |
-| `Orb` | `repouso · gravação · reflexão · resultado · erro` | `Controle principal, não ornamento.` |
-| `ReflectionCard` | `compacto · expandido · resultado` | `Fraunces apenas no texto reflexivo.` |
-| `TimelineEntryCard` | `padrão · ativo · fio` | `Humor discreto como ponto/chip.` |
-| `SegmentedTabs` | `semana · mês · tudo` | `Foco e seleção por contraste.` |
-| `DataTable` | `admin denso` | `Inter, sem hero editorial.` |
-| `StreamingText` | `streaming · concluído` | `Cursor piscante durante geração de IA.` |
-| `BottomNav` | `diário · timeline · fio · perfil` | `Áreas de toque de 44px e estado ativo por cor.` |
-| `EmptyState` | `diário · timeline · fio` | `Copy específica por contexto.` |
-| `WaitlistBlock` | `idle · enviado · confirmado` | `CTA conversão + microprivacidade.` |
-| `FeedbackMicro` | `fez sentido · não tanto` | `Coleta silenciosa pós-insight.` |
-| `PrivacyChip` | `local · privado · anônimo` | `Sinal de confiança discreto, nunca invasivo.` |
+Estado de implementação:
+
+- Fase 2B está implementada em código e demonstrada em `/design-system/biblioteca`.
+- Componentes UI: `components/ui/Button.tsx`, `components/ui/IconButton.tsx`, `components/ui/CardSurface.tsx`, `components/ui/Panel.tsx`, `components/ui/Chip.tsx`.
+- Componentes Product: `components/product/ReflectionCard.tsx`, `components/product/TimelineEntryCard.tsx`, `components/product/ThreadCard.tsx`, `components/product/ContinueThreadButton.tsx`.
+- Fase 2B.1 está implementada com `components/product/FlipCard.tsx`, incluindo frente, verso, expansão antes do flip, foco, teclado e reduced motion.
+- Fase 2C está implementada com `components/ui/SegmentedTabs.tsx`, `components/product/StreamingText.tsx`, `components/product/BottomNav.tsx`, `components/product/EmptyState.tsx`, `components/product/FeedbackMicro.tsx` e `components/product/PrivacyChip.tsx`.
+- Fase 3 está implementada com `components/patterns/DiaryCapturePattern.tsx`, `components/patterns/ReflectionResultPattern.tsx`, `components/patterns/TimelineListPattern.tsx`, `components/patterns/OpenThreadPattern.tsx` e `components/patterns/EmptyThreadPattern.tsx`.
+- Fase 3.1 está implementada com `components/patterns/responsive/responsive-pattern-config.ts`, `components/patterns/responsive/ResponsivePatternFrame.tsx`, `components/patterns/responsive/PatternControls.tsx`, `components/patterns/responsive/ResponsivePatternLab.tsx`, `components/patterns/responsive/ResponsivePatterns.module.css` e `components/patterns/responsive/index.ts`.
+- Ajuste de feedback da Fase 3.1: Diário começa sem botões abaixo do orb e com textura estrelada; Resultado espelha a devolutiva de produção; Timeline usa FlipCard como padrão e `Sem flip` como exceção; controles não se sobrepõem; tipografia por área usa presets fechados do DS.
+- Próximo passo: Fase 4, migrando `/diario`, `/timeline` e `/fios` usando esses patterns e o Responsive Screen Lab.
+
+| Camada | Componente | Variantes | Regra |
+| --- | --- | --- | --- |
+| `UI` | `Button` | `primário · secundário · ghost · perigo` | `44px mínimo, carregamento e foco visível.` |
+| `UI` | `IconButton` | `voltar · fechar · ordenar · reproduzir` | `Ação compacta com alvo de toque de 44px.` |
+| `UI` | `CardSurface` | `padrão · elevado · compacto · interativo` | `Base de cards antes de conteúdo de produto.` |
+| `UI` | `Panel` | `padrão · elevado · compacto` | `Superfície funcional com glass e borda hairline.` |
+| `UI` | `SegmentedTabs` | `semana · mês · tudo` | `Foco e seleção por contraste.` |
+| `Product` | `OrbControl` | `idle · recording · reflecting · saved · disabled` | `Controle principal, não ornamento.` |
+| `Product` | `ReflectionCard` | `compacto · expandido · resultado` | `Fraunces apenas no texto reflexivo.` |
+| `Product` | `TimelineEntryCard` | `padrão · ativo · fio` | `Humor discreto como ponto/chip.` |
+| `Product` | `ThreadCard` | `último momento · padrão · pergunta viva` | `Organiza continuidade do fio sem virar decoração.` |
+| `Product` | `ContinueThreadButton` | `idle · loading · disabled · erro` | `Ação de retomada com estado claro.` |
+| `Product` | `FlipCard` | `front · back · expanded · flipped` | `Texto longo expande antes do flip para a devolutiva.` |
+| `Product` | `StreamingText` | `streaming · concluído` | `Cursor discreto durante geração de IA.` |
+| `Product` | `BottomNav` | `diário · timeline · fio · perfil` | `Áreas de toque de 44px e estado ativo por cor.` |
+| `Product` | `EmptyState` | `diário · timeline · fio` | `Copy específica por contexto.` |
+| `Growth` | `WaitlistBlock` | `idle · enviado · confirmado` | `CTA conversão + microprivacidade.` |
+| `Feedback` | `FeedbackMicro` | `fez sentido · não tanto` | `Coleta silenciosa pós-insight.` |
+| `Trust` | `PrivacyChip` | `local · privado · anônimo` | `Sinal de confiança discreto, nunca invasivo.` |
 
 ## Sistema do orb
 
@@ -285,6 +378,37 @@ Seção:
 | `Timeline` | `Leitura densa e calma. Humor aparece como sinal discreto, não decoração.` |
 | `Onboarding` | `Educa o uso sem parecer tutorial pesado. Explica que Aurora não é chat genérico.` |
 | `Admin` | `Operacional, denso e utilitário. Métricas primeiro, diagnósticos depois, tabelas por último.` |
+
+### Responsive Screen Lab
+
+Rota:
+
+- `/design-system/patterns?token=<DESIGN_SYSTEM_ADMIN_TOKEN>`
+
+Função:
+
+- renderizar tela inteira, não só componente isolado;
+- alternar `Pattern`, `Ambiente` e `Cenário`;
+- conferir mobile, tablet e desktop como composições específicas;
+- preparar a Fase 4 antes de mexer em `/diario`, `/timeline` e `/fios`.
+
+Arquivos:
+
+- `components/patterns/responsive/responsive-pattern-config.ts`
+- `components/patterns/responsive/ResponsivePatternFrame.tsx`
+- `components/patterns/responsive/PatternControls.tsx`
+- `components/patterns/responsive/ResponsivePatternLab.tsx`
+- `components/patterns/responsive/ResponsivePatterns.module.css`
+- `components/patterns/responsive/index.ts`
+
+Regra: mobile, tablet e desktop não são versões reduzidas da mesma tela. Cada ambiente pode mudar densidade, navegação, foco de ação, contexto lateral e quantidade de conteúdo visível.
+
+Regras atuais:
+
+- Diário usa fundo estrelado e não mostra botões abaixo do orb por default.
+- Os controles `Ações` e `Fundo` existem para testar exceções futuras do Diário.
+- Resultado deve permanecer fiel à tela real de devolutiva em produção.
+- Timeline usa `FlipCard` como padrão; `Sem flip` é cenário de exceção.
 
 ## Telas de exemplo
 

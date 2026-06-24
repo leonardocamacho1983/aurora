@@ -1,0 +1,185 @@
+.flipCard {
+  min-width: 0;
+  height: 100%;
+  cursor: pointer;
+  perspective: 1200px;
+}
+
+.frame {
+  position: relative;
+  height: 100%;
+  min-height: var(--flip-card-min-height, 320px);
+  border-radius: var(--r-md);
+}
+
+.inner {
+  position: relative;
+  height: 100%;
+  min-height: inherit;
+  transform-style: preserve-3d;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.flipCard[data-flipped="true"] .inner {
+  transform: rotateY(180deg);
+}
+
+.face {
+  height: 100%;
+  min-height: inherit;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: var(--space-5);
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  border: 1px solid var(--hairline-md);
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(169, 155, 217, 0.1), transparent 34%),
+    rgba(255, 255, 255, 0.045);
+  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  backface-visibility: hidden;
+}
+
+.face > div:first-child {
+  min-width: 0;
+}
+
+.back {
+  position: absolute;
+  inset: 0;
+  border-color: rgba(169, 155, 217, 0.24);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(169, 155, 217, 0.16), transparent 38%),
+    radial-gradient(circle at 100% 16%, rgba(127, 208, 196, 0.09), transparent 36%),
+    rgba(169, 155, 217, 0.07);
+  transform: rotateY(180deg);
+}
+
+.faceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.meta {
+  margin: 0;
+  color: rgba(248, 246, 252, 0.46);
+  font: 760 var(--type-meta) / 1.2 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--aurora);
+  box-shadow: 0 0 24px rgba(169, 155, 217, 0.26);
+}
+
+.text {
+  margin: 0;
+  color: rgba(248, 246, 252, 0.88);
+  font: 560 var(--type-reflection) / var(--leading-longform) var(--font-serif);
+  font-style: italic;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.flipCard[data-typeface="product"] .text {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  font-style: normal;
+  font-weight: 520;
+  line-height: var(--leading-body);
+}
+
+.flipCard[data-typeface="compact"] .text {
+  font-family: var(--font-sans);
+  font-size: var(--type-card-title);
+  font-style: normal;
+  font-weight: 620;
+  line-height: var(--leading-title);
+}
+
+.flipCard[data-typeface="editorial"] .text {
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.back .text {
+  color: rgba(248, 246, 252, 0.92);
+}
+
+.support {
+  margin: var(--space-3) 0 0;
+  color: rgba(248, 246, 252, 0.56);
+  font: 500 var(--type-small) / var(--leading-body) var(--font-sans);
+}
+
+.actions {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-self: end;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.actions button {
+  max-width: 100%;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    transition: none;
+    transform-style: flat;
+  }
+
+  .flipCard[data-flipped="true"] .inner {
+    transform: none;
+  }
+
+  .face {
+    backface-visibility: visible;
+  }
+
+  .back {
+    position: static;
+    display: none;
+    transform: none;
+  }
+
+  .flipCard[data-flipped="true"] .front {
+    display: none;
+  }
+
+  .flipCard[data-flipped="true"] .back {
+    display: grid;
+  }
+}
+
+@media (max-width: 560px) {
+  .faceHeader,
+  .actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+}

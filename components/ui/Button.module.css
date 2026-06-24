@@ -1,0 +1,111 @@
+.button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  padding: 0 var(--space-4);
+  font: 750 var(--type-small) / 1 var(--font-sans);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled,
+.loading {
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button:disabled {
+  opacity: 0.48;
+}
+
+.primary {
+  color: #0b0714;
+  background: var(--accent);
+  box-shadow: 0 18px 44px -24px rgba(236, 182, 210, 0.72);
+}
+
+.primary:hover {
+  background: var(--accent-soft);
+}
+
+.secondary {
+  color: rgba(248, 246, 252, 0.84);
+  border-color: var(--hairline-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.secondary:hover {
+  border-color: var(--hairline-strong);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ghost {
+  color: rgba(248, 246, 252, 0.72);
+  background: transparent;
+}
+
+.ghost:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.danger {
+  color: #0b0714;
+  background: var(--status-error);
+}
+
+.danger:hover {
+  background: #ffd1c1;
+}
+
+.small {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  font-size: var(--type-meta);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.spinner {
+  width: 0.85em;
+  height: 0.85em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: button-spin 760ms linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .spinner {
+    animation: none;
+    transition: none;
+  }
+
+  .button:hover {
+    transform: none;
+  }
+}

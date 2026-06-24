@@ -1,6 +1,97 @@
-# Aurora Design System v2 — inventário de componentes
+# Aurora Design System v2 — Biblioteca de Componentes
 
-Este inventário transforma a rota `/design-system` em referência prática para criação de UI/UX. Ele não substitui `reference.md`; ele organiza os componentes por função, estado e regra de uso.
+Esta biblioteca transforma a rota `/design-system/biblioteca` em referência prática para criação de UI/UX. Ela não substitui `reference.md`; ela organiza os componentes por camada, função, estado e regra de uso.
+
+A raiz `/design-system` deve continuar curta. Componentes, variantes, estados e fases entram nesta biblioteca operacional; a página longa completa fica em `/design-system/referencia`.
+
+A aba `/design-system/patterns` concentra as receitas de tela. Ela existe para mostrar composições completas antes de migrar rotas reais.
+
+Desde a Fase 3.1, essa aba funciona como Responsive Screen Lab: o mesmo pattern pode ser visto em mobile, tablet e desktop, com cenário controlável. Esses ambientes não são versões reduzidas da mesma tela; são composições específicas para cada contexto.
+
+## Fase 2B implementada
+
+A biblioteca mínima já existe em código e é demonstrada em `/design-system/biblioteca`.
+
+Arquivos criados:
+
+- `components/ui/Button.tsx`
+- `components/ui/IconButton.tsx`
+- `components/ui/CardSurface.tsx`
+- `components/ui/Panel.tsx`
+- `components/ui/Chip.tsx`
+- `components/product/ReflectionCard.tsx`
+- `components/product/TimelineEntryCard.tsx`
+- `components/product/ThreadCard.tsx`
+- `components/product/ContinueThreadButton.tsx`
+
+## Fase 2B.1 implementada
+
+O comportamento de flip já existe em código e é demonstrado em `/design-system/biblioteca`.
+
+Arquivo criado:
+
+- `components/product/FlipCard.tsx`
+
+Regras:
+
+- frente mostra a fala do usuário;
+- verso mostra a devolutiva da Aurora;
+- texto longo expande com Ver tudo antes do flip;
+- flip acontece por ação explícita, nunca automático;
+- foco, teclado e `prefers-reduced-motion` precisam continuar legíveis.
+
+## Fase 2C implementada
+
+Estados, navegação e feedback de IA já existem em código e são demonstrados em `/design-system/biblioteca`.
+
+Arquivos criados:
+
+- `components/ui/SegmentedTabs.tsx`
+- `components/product/StreamingText.tsx`
+- `components/product/BottomNav.tsx`
+- `components/product/EmptyState.tsx`
+- `components/product/FeedbackMicro.tsx`
+- `components/product/PrivacyChip.tsx`
+
+## Fase 3 implementada
+
+Patterns de tela já existem em código e são demonstrados em `/design-system/patterns`.
+
+Arquivos criados:
+
+- `components/patterns/DiaryCapturePattern.tsx`
+- `components/patterns/ReflectionResultPattern.tsx`
+- `components/patterns/TimelineListPattern.tsx`
+- `components/patterns/OpenThreadPattern.tsx`
+- `components/patterns/EmptyThreadPattern.tsx`
+
+## Fase 3.1 implementada
+
+O Responsive Screen Lab já existe em código e é demonstrado em `/design-system/patterns`.
+
+Arquivos criados:
+
+- `components/patterns/responsive/responsive-pattern-config.ts`
+- `components/patterns/responsive/ResponsivePatternFrame.tsx`
+- `components/patterns/responsive/PatternControls.tsx`
+- `components/patterns/responsive/ResponsivePatternLab.tsx`
+- `components/patterns/responsive/ResponsivePatterns.module.css`
+- `components/patterns/responsive/index.ts`
+
+Regras:
+
+- mobile, tablet e desktop têm composição própria;
+- cenário é uma entrada de design, não só estado técnico;
+- pattern pode mudar conteúdo, densidade, navegação e ação principal por ambiente;
+- Diário usa a experiência de produção como default: orb como ação principal, sem botões abaixo, com textura estrelada;
+- Diário pode testar exceções via controles `Ações` e `Fundo`, sem mudar o default de produção;
+- controles do laboratório devem ser navegáveis: seções separadas, tablists com quebra de linha e zero sobreposição entre grupos;
+- tipografia por área usa presets fechados do DS (`Produto`, `Editorial`, `Compacta`) para `Título`, `Apoio` e `Reflexão`; não é campo livre de fonte;
+- Resultado deve espelhar a tela de devolutiva de produção, com orb, card de leitura e ações dentro do card;
+- Timeline usa `FlipCard` como padrão; o cenário `Sem flip` existe apenas como exceção;
+- a Fase 4 deve migrar telas reais comparando contra este laboratório.
+
+Próximo passo: Fase 4, migrando `/diario`, `/timeline` e `/fios` usando esses patterns e o Responsive Screen Lab.
 
 ## Regra central
 
@@ -16,15 +107,39 @@ Nenhum componente existe para decorar. Todo componente precisa cumprir uma desta
 
 Se a função não estiver clara, o componente não deve entrar na tela.
 
+## Arquitetura Product UI System
+
+| Camada | Função | Exemplos |
+| --- | --- | --- |
+| Tokens | Base visual | `--type-screen-title`, `--surface`, `--space-4`, `--r-md` |
+| UI | Primitivos reutilizáveis | `Button`, `IconButton`, `CardSurface`, `Panel`, `Chip`, `SegmentedTabs` |
+| Product | Componentes Aurora | `OrbControl`, `ReflectionCard`, `TimelineEntryCard`, `ThreadCard`, `FlipCard`, `ContinueThreadButton` |
+| Patterns | Receitas de tela | `DiaryCapturePattern`, `ReflectionResultPattern`, `TimelineListPattern`, `OpenThreadPattern` |
+| Responsive Lab | Validação por ambiente | `ResponsivePatternLab`, `PatternControls`, `ResponsivePatternFrame` |
+| Screens | Composição final | Rotas em `app/.../page.tsx` que montam padrões existentes |
+
+Tela complexa não deve nascer artesanalmente direto em `page.tsx`. Se a peça aparece em mais de uma superfície, ela pertence à biblioteca.
+
+Camadas de código esperadas:
+
+- `components/ui`
+- `components/product`
+- `components/patterns`
+
 ## Componentes base
 
 | Componente | Função | Variantes renderizadas | Regra de uso |
 | --- | --- | --- | --- |
 | `Orb` | Controle principal e assinatura viva | repouso, gravação, reflexão, resultado, erro | Controle principal no Diário; visual-chave em marketing apenas quando o contexto ensina a marca. |
 | `Button` | Ação explícita | primário, secundário, ghost, perigo | Mínimo de 44px, carregamento, indisponível e foco visível. |
+| `IconButton` | Ação compacta | voltar, fechar, abrir, ordenar, reproduzir | Usar ícone ou rótulo curto; manter 44px de alvo de toque. |
+| `CardSurface` | Base de cards | padrão, elevado, compacto, interativo | Define glass, borda, padding e radius antes do conteúdo. |
 | `Panel` | Superfície funcional | padrão, elevado, compacto | Glass com contraste; não usar como moldura decorativa. |
 | `ReflectionCard` | Leitura reflexiva | compacto, expandido, resultado | Fraunces apenas no texto reflexivo. |
 | `TimelineEntryCard` | Registro e devolutiva na timeline | padrão, ativo, fio | Humor discreto por ponto/chip. |
+| `ThreadCard` | Síntese de fio | último momento, padrão, pergunta viva | Usar para organizar continuidade, não como card decorativo. |
+| `ContinueThreadButton` | Retomar fio | idle, loading, disabled, erro | Ação de produto com estado claro e copy curta. |
+| `FlipCard` | Frente e verso entre fala e devolutiva | front, back, expanded, flipped | Texto longo expande antes do flip para a devolutiva. |
 | `SegmentedTabs` | Alternância de período ou visão | semana, mês, tudo | Seleção por contraste, sem disputar com o conteúdo. |
 | `DataTable` | Operação/admin | admin denso | Inter, escaneável, sem hero editorial. |
 | `PrivacyChip` | Sinal de confiança | local, privado, anônimo | Discreto, nunca invasivo. |

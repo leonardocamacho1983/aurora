@@ -226,6 +226,7 @@
 }
 
 .colorGrid,
+.systemGrid,
 .componentGrid,
 .orbStateGrid,
 .orbDetailGrid,
@@ -277,7 +278,520 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.hubHero {
+  max-width: 820px;
+  padding: clamp(42px, 7vw, 74px) 0 clamp(18px, 4vw, 38px);
+}
+
+.hubHero h1 {
+  margin: 18px 0 0;
+  max-width: 760px;
+  color: var(--ink);
+  font: 720 clamp(2.25rem, 5vw, 3.45rem)/1.04 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.hubHero p:not(.kicker) {
+  margin: 18px 0 0;
+  max-width: 660px;
+  color: rgba(248, 246, 252, 0.64);
+  font: 450 1rem/1.68 var(--font-sans);
+}
+
+.portalHero {
+  position: relative;
+  min-height: min(680px, calc(100vh - 120px));
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1fr);
+  align-items: center;
+  gap: clamp(28px, 6vw, 88px);
+  padding: clamp(36px, 7vw, 86px) 0 clamp(28px, 5vw, 64px);
+  overflow: hidden;
+}
+
+.portalHero::before {
+  content: "";
+  position: absolute;
+  inset: 8% -8% 0 34%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 54% 38%, rgba(169, 155, 217, 0.2), transparent 30%),
+    radial-gradient(circle at 70% 58%, rgba(127, 208, 196, 0.11), transparent 32%),
+    linear-gradient(90deg, transparent, rgba(248, 246, 252, 0.035), transparent);
+  filter: blur(2px);
+  opacity: 0.9;
+}
+
+.portalHeroCopy,
+.portalHeroOrb {
+  position: relative;
+  z-index: 1;
+}
+
+.portalHeroCopy {
+  max-width: 620px;
+}
+
+.portalHeroCopy h1 {
+  margin: 0;
+  max-width: 12ch;
+  color: var(--ink);
+  font: 730 clamp(3rem, 7vw, 5.7rem) / 0.96 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.portalHeroCopy > p {
+  margin: 26px 0 0;
+  max-width: 580px;
+  color: rgba(248, 246, 252, 0.68);
+  font: 450 clamp(1rem, 1.25vw, 1.15rem) / 1.7 var(--font-sans);
+}
+
+.portalHeroOrb {
+  min-height: 480px;
+  display: grid;
+  place-items: center;
+  --orb-size: clamp(280px, 35vw, 520px);
+}
+
+.portalHeroOrb::before {
+  content: "";
+  position: absolute;
+  width: min(720px, 82vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(236, 182, 210, 0.19), transparent 38%),
+    radial-gradient(circle, rgba(127, 208, 196, 0.12), transparent 66%);
+  filter: blur(16px);
+  animation: aurora-halo 6.4s ease-in-out infinite;
+}
+
+.portalEntranceGrid,
+.positioningGrid,
+.positioningMatrix,
+.positioningList {
+  display: grid;
+  gap: 14px;
+}
+
+.portalEntranceGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.portalEntranceCard,
+.positioningCard,
+.positioningMatrix article,
+.positioningList article {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(169, 155, 217, 0.09), transparent 34%),
+    rgba(255, 255, 255, 0.043);
+  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.portalEntranceCard {
+  min-height: 320px;
+  display: grid;
+  align-content: space-between;
+  gap: 22px;
+  padding: clamp(22px, 3vw, 34px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.portalEntranceCard:hover,
+.portalEntranceCard:focus-visible {
+  border-color: rgba(236, 182, 210, 0.24);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(236, 182, 210, 0.12), transparent 36%),
+    rgba(255, 255, 255, 0.055);
+}
+
+.portalEntranceCard span,
+.positioningCard span,
+.positioningMatrix span {
+  width: fit-content;
+  color: rgba(127, 208, 196, 0.9);
+  font: 800 10px/1 var(--font-sans);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.portalEntranceCard h2 {
+  margin: 0;
+  max-width: 12ch;
+  color: var(--ink);
+  font: 720 clamp(1.65rem, 3vw, 2.45rem) / 1.06 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.portalEntranceCard p,
+.positioningCard p,
+.positioningMatrix p,
+.positioningList p {
+  margin: 0;
+  color: rgba(248, 246, 252, 0.66);
+  font: 500 0.95rem / 1.65 var(--font-sans);
+}
+
+.portalEntranceCard ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portalEntranceCard li {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(248, 246, 252, 0.76);
+  font: 650 0.85rem / 1.45 var(--font-sans);
+}
+
+.portalEntranceCard li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aurora-mint);
+  box-shadow: 0 0 16px rgba(127, 208, 196, 0.5);
+}
+
+.positioningGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.positioningCard {
+  min-height: 190px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 22px;
+}
+
+.positioningCard p {
+  color: rgba(248, 246, 252, 0.82);
+  font-size: 1rem;
+}
+
+.positioningMatrix {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.positioningMatrix article {
+  min-height: 148px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 18px;
+}
+
+.positioningMatrix article[data-mode="É"] {
+  border-color: rgba(127, 208, 196, 0.18);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(127, 208, 196, 0.1), transparent 36%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.positioningMatrix article[data-mode="Não é"] {
+  border-color: rgba(244, 182, 160, 0.16);
+}
+
+.positioningMatrix article[data-mode="Não é"] span {
+  color: rgba(244, 182, 160, 0.86);
+}
+
+.positioningList {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.positioningList article {
+  min-height: 172px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+}
+
+.positioningList h2 {
+  margin: 0;
+  color: var(--ink);
+  font: 730 var(--type-card-title) / var(--leading-title) var(--font-sans);
+  letter-spacing: 0;
+}
+
+.hubGrid,
+.ruleList,
+.roadmapStack {
+  display: grid;
+  gap: 14px;
+}
+
+.hubGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.hubCard,
+.ruleList article,
+.nextStepPanel,
+.roadmapCard {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(169, 155, 217, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.hubCard {
+  min-height: 220px;
+  display: grid;
+  align-content: space-between;
+  gap: 22px;
+  padding: 20px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hubCard:hover,
+.hubCard:focus-visible {
+  border-color: var(--hairline-strong);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(236, 182, 210, 0.11), transparent 36%),
+    rgba(255, 255, 255, 0.055);
+}
+
+.hubCard span,
+.roadmapCard span,
+.roadmapCard strong,
+.nextStepPanel strong {
+  width: fit-content;
+  color: rgba(127, 208, 196, 0.9);
+  font: 800 10px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hubCard h2,
+.roadmapCard h2 {
+  margin: 0;
+  color: var(--ink);
+  font: 760 18px/1.25 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.hubCard p,
+.ruleList p,
+.nextStepPanel p,
+.roadmapCard p,
+.roadmapCard small {
+  margin: 0;
+  color: rgba(248, 246, 252, 0.64);
+  font: 500 13px/1.58 var(--font-sans);
+}
+
+.ruleList {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ruleList article {
+  min-height: 136px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 18px;
+}
+
+.ruleList span {
+  color: var(--accent);
+  font: 800 12px/1 var(--font-sans);
+  letter-spacing: 0.16em;
+}
+
+.nextStepPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px;
+}
+
+.nextStepPanel > div {
+  display: grid;
+  gap: 10px;
+}
+
+.libraryFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.libraryFilters span {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: 0 13px;
+  color: rgba(248, 246, 252, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  font: 750 12px/1 var(--font-sans);
+}
+
+.libraryFilters span:first-child {
+  color: #171126;
+  border-color: transparent;
+  background: var(--accent);
+}
+
+.componentDemoGrid,
+.productDemoGrid,
+.threadDemoStack,
+.flipDemoGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.componentDemoGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.productDemoGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flipDemoGrid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  align-items: stretch;
+}
+
+.componentDemoPanel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 190px;
+}
+
+.componentDemoPanel h2 {
+  margin: 0;
+  color: var(--ink);
+  font: 760 var(--type-card-title) / var(--leading-title) var(--font-sans);
+  letter-spacing: 0;
+}
+
+.componentDemoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.behaviorList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.behaviorList li {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(248, 246, 252, 0.66);
+  font: 500 13px/1.58 var(--font-sans);
+}
+
+.behaviorList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px rgba(169, 155, 217, 0.4);
+}
+
+.patternCatalog {
+  display: grid;
+  gap: clamp(22px, 5vw, 44px);
+}
+
+.patternPreview {
+  display: grid;
+  gap: 18px;
+}
+
+.patternPreviewHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.patternPreviewHeader h2 {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font: 760 var(--type-section-title) / var(--leading-title) var(--font-sans);
+  letter-spacing: 0;
+}
+
+.patternPreviewHeader p:not(.panelKicker) {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: rgba(248, 246, 252, 0.62);
+  font: 500 13px/1.58 var(--font-sans);
+}
+
+.patternPreviewHeader > span {
+  flex: 0 0 auto;
+  width: fit-content;
+  border: 1px solid rgba(127, 208, 196, 0.18);
+  border-radius: var(--r-pill);
+  padding: 7px 10px;
+  color: rgba(127, 208, 196, 0.88);
+  font: 800 10px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roadmapStack {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.roadmapCard {
+  min-height: 260px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 20px;
+}
+
+.roadmapCard > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.roadmapCard strong {
+  color: rgba(248, 246, 252, 0.56);
+}
+
 .colorCard,
+.systemCard,
 .componentCard,
 .orbStateCard,
 .orbPanel,
@@ -361,7 +875,16 @@
   color: rgba(248, 246, 252, 0.78);
 }
 
+.tableNote {
+  margin: 0;
+  padding: 14px 18px 16px;
+  color: rgba(248, 246, 252, 0.64);
+  border-top: 1px solid var(--hairline);
+  font: 650 12px/1.5 var(--font-sans);
+}
+
 .componentCard,
+.systemCard,
 .orbStateCard,
 .orbPanel,
 .usageDo,
@@ -584,6 +1107,7 @@
 }
 
 .componentCard h3,
+.systemCard h3,
 .orbRuleCard h3,
 .patternCard h3,
 .qaCard h3 {
@@ -593,6 +1117,7 @@
 }
 
 .componentCard p,
+.systemCard p,
 .orbRuleCard p,
 .patternCard p,
 .guardrailCard p,
@@ -605,6 +1130,28 @@
 .componentCard small {
   color: rgba(248, 246, 252, 0.44);
   font: 500 12px/1.5 var(--font-sans);
+}
+
+.systemGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.systemCard {
+  min-height: 188px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.systemCard span {
+  width: fit-content;
+  border-radius: var(--r-pill);
+  padding: 6px 9px;
+  color: rgba(127, 208, 196, 0.9);
+  background: rgba(127, 208, 196, 0.1);
+  font: 800 10px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .orbRuleCard {
@@ -859,6 +1406,19 @@
   min-height: 104px;
 }
 
+.componentRow div > span {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 10px;
+  border-radius: var(--r-pill);
+  padding: 6px 9px;
+  color: rgba(127, 208, 196, 0.9);
+  background: rgba(127, 208, 196, 0.1);
+  font: 800 10px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .componentRow p {
   margin: 12px 0 8px;
   color: rgba(248, 246, 252, 0.82);
@@ -894,7 +1454,7 @@
 }
 
 .productState h3 {
-  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  font-size: var(--type-screen-title);
 }
 
 .productState p {
@@ -1862,6 +2422,7 @@
 
 @media (max-width: 1040px) {
   .hero,
+  .portalHero,
   .sectionHeader {
     grid-template-columns: 1fr;
   }
@@ -1871,6 +2432,21 @@
     flex-direction: column-reverse;
     align-items: stretch;
     min-height: auto;
+  }
+
+  .portalHero {
+    min-height: auto;
+    gap: 18px;
+  }
+
+  .portalHeroCopy {
+    max-width: 760px;
+  }
+
+  .portalHeroOrb {
+    min-height: 340px;
+    justify-items: start;
+    --orb-size: clamp(240px, 46vw, 360px);
   }
 
   .heroOrb {
@@ -1887,6 +2463,17 @@
   }
 
   .colorGrid,
+  .hubGrid,
+  .portalEntranceGrid,
+  .positioningGrid,
+  .positioningMatrix,
+  .positioningList,
+  .ruleList,
+  .roadmapStack,
+  .componentDemoGrid,
+  .productDemoGrid,
+  .flipDemoGrid,
+  .systemGrid,
   .componentGrid,
   .orbStateGrid,
   .orbUsageGrid,
@@ -1913,6 +2500,16 @@
   .productState {
     grid-template-columns: 1fr;
   }
+
+  .nextStepPanel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .patternPreviewHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 680px) {
@@ -1936,9 +2533,37 @@
     padding-top: 26px;
   }
 
+  .portalHero {
+    padding-top: 28px;
+  }
+
+  .portalHeroCopy h1 {
+    max-width: 10ch;
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .portalHeroCopy > p {
+    font-size: 0.98rem;
+  }
+
+  .portalHeroOrb {
+    min-height: 240px;
+    --orb-size: min(210px, 62vw);
+  }
+
   .hero h1 {
     font-size: 2.65rem;
     line-height: 1.04;
+  }
+
+  .hubHero {
+    padding-top: 34px;
+  }
+
+  .hubHero h1 {
+    font-size: 2.2rem;
+    line-height: 1.08;
   }
 
   .sectionHeader h2 {
@@ -1951,6 +2576,17 @@
   }
 
   .colorGrid,
+  .hubGrid,
+  .portalEntranceGrid,
+  .positioningGrid,
+  .positioningMatrix,
+  .positioningList,
+  .ruleList,
+  .roadmapStack,
+  .componentDemoGrid,
+  .productDemoGrid,
+  .flipDemoGrid,
+  .systemGrid,
   .componentGrid,
   .orbStateGrid,
   .orbDetailGrid,

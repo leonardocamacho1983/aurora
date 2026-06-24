@@ -44,6 +44,30 @@ Escala base de 4px:
 
 `4, 8, 12, 16, 20, 24, 32, 40, 48, 64`
 
+## Type scale
+
+Produto fala baixo. A escala abaixo é fechada para evitar que agentes criem títulos gigantes por padrão. Ela alimenta o Product UI System e impede escala de hero em telas funcionais.
+
+| Token | Escala | Uso |
+| --- | --- | --- |
+| `--type-hero` | 56-64px | Landing, manifesto e página do Design System. |
+| `--type-screen-title` | 28-32px | Título principal de tela de produto, máximo um por tela. |
+| `--type-mobile-title` | 24-28px | Título principal em mobile 390px. |
+| `--type-section-title` | 20-24px | Seções, padrões e blocos maiores. |
+| `--type-card-title` | 16-18px | Títulos dentro de cards, sheets e painéis. |
+| `--type-body` | 15-16px | Texto funcional e leitura padrão. |
+| `--type-small` | 13-14px | Apoio, metadados e descrições curtas. |
+| `--type-meta` | 11-13px | Status, labels e navegação compacta. |
+| `--type-reflection` | 18-22px | Texto reflexivo comum em Fraunces italic. |
+| `--type-reflection-feature` | 24-28px | Destaque reflexivo controlado, nunca tabela, botão ou métrica. |
+
+Regras:
+
+- Não usar `40px+` em produto, timeline, fio, conta ou admin.
+- Não usar `clamp()` com `vw` para texto funcional fora dos tokens globais.
+- Títulos dentro de cards ficam em `--type-card-title`.
+- Reflexão pode ter presença, mas só usa `--type-reflection-feature` quando o card inteiro é o momento principal da tela.
+
 ## Radius
 
 | Token | Valor |
