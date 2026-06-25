@@ -1,21 +1,23 @@
 .stage {
   min-height: 100svh;
+  min-height: 100dvh;
   color: var(--ink);
   background:
-    radial-gradient(ellipse 74% 46% at 50% 0%, rgba(244, 182, 160, 0.12), transparent 68%),
-    radial-gradient(ellipse 60% 42% at 50% 100%, rgba(127, 208, 196, 0.08), transparent 72%),
-    linear-gradient(180deg, #100c1d 0%, #080612 58%, #05040a 100%);
+    radial-gradient(ellipse 72% 44% at 50% 0%, rgba(244, 182, 160, 0.1), transparent 66%),
+    radial-gradient(ellipse 54% 40% at 88% 86%, rgba(127, 208, 196, 0.08), transparent 72%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-base) 58%, var(--bg-base) 100%);
 }
 
 .shell {
-  width: min(100%, 620px);
+  width: min(100%, 980px);
   min-height: 100svh;
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 22px;
+  padding: max(var(--space-5), env(safe-area-inset-top)) var(--space-5)
+    max(var(--space-5), env(safe-area-inset-bottom));
+  display: grid;
+  align-content: center;
+  gap: var(--space-4);
 }
 
 .brand {
@@ -26,144 +28,803 @@
   color: var(--ink);
   text-decoration: none;
   font-family: var(--font-serif);
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
 .brand span {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--aurora);
-  box-shadow: 0 0 22px rgba(201, 162, 212, 0.42);
+  box-shadow: var(--shadow-brand);
 }
 
-.copy {
+.slides {
+  min-width: 0;
   display: grid;
-  gap: 12px;
+  gap: var(--space-4);
+}
+
+.progressShell {
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progressShell span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--aurora-warm), var(--accent), var(--aurora-mint));
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+.slideFrame {
+  min-height: 470px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(360px, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+  animation: slideEnter var(--duration-screen) var(--ease-out);
+}
+
+.slideCopy {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .kicker {
   margin: 0;
-  color: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
+  color: var(--accent-soft);
+  font-size: var(--type-meta);
+  font-weight: 820;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.copy h1 {
-  max-width: 12ch;
+.slideCopy h1 {
+  max-width: 17ch;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(2.15rem, 10vw, 3.8rem);
-  font-weight: 450;
-  line-height: 1.02;
+  font-size: var(--type-section-title);
+  font-weight: 680;
+  line-height: var(--leading-title);
+  letter-spacing: 0;
 }
 
-.copy p {
-  max-width: 34rem;
+.slideCopy p {
+  max-width: 35rem;
   margin: 0;
   color: var(--ink-soft);
-  font-size: 1rem;
-  line-height: 1.58;
+  font-size: var(--type-small);
+  line-height: var(--leading-body);
 }
 
-.signals {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+.contextLine {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--accent);
 }
 
-.signals span {
+.visualVoice,
+.visualReflection {
+  --onboarding-orb-size: 176px;
+  min-height: 340px;
   display: grid;
-  gap: 4px;
-  padding: 13px 14px;
-  border-radius: 18px;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-5);
+}
+
+.demoOrb {
+  position: relative;
+  width: var(--onboarding-orb-size, 176px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: block;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 207, 224, 0.92) 0 18%, transparent 42%),
+    radial-gradient(circle at 70% 28%, rgba(155, 188, 255, 0.82) 0 20%, transparent 44%),
+    radial-gradient(circle at 56% 72%, rgba(255, 168, 108, 0.72) 0 18%, transparent 44%),
+    radial-gradient(circle at 37% 68%, rgba(138, 226, 198, 0.5) 0 16%, transparent 38%),
+    radial-gradient(circle at 50% 50%, rgba(118, 94, 178, 0.78), rgba(35, 27, 70, 0.92));
+  box-shadow:
+    0 0 34px rgba(169, 155, 217, 0.24),
+    inset -18px -20px 42px rgba(9, 7, 24, 0.22);
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.demoOrb::before,
+.demoOrb::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.demoOrb::before {
+  inset: -18%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 40% 40%, rgba(255, 195, 220, 0.28), transparent 42%),
+    radial-gradient(circle at 64% 46%, rgba(155, 188, 255, 0.2), transparent 48%),
+    radial-gradient(circle at 48% 76%, rgba(138, 226, 198, 0.16), transparent 56%);
+  filter: blur(18px);
+  opacity: 0.7;
+  animation: demoHalo 2400ms var(--ease-out) infinite alternate;
+}
+
+.demoOrb::after {
+  inset: 12%;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.12) 80deg,
+    transparent 180deg,
+    rgba(255, 255, 255, 0.08) 280deg,
+    transparent 360deg
+  );
+  mix-blend-mode: screen;
+  opacity: 0.46;
+  animation: demoSpin 18s linear infinite;
+}
+
+.demoOrbRecording {
+  animation: demoBreathe 1600ms var(--ease-out) infinite alternate;
+}
+
+.demoOrbRecording::after {
+  inset: -7%;
+  border-color: rgba(200, 170, 255, 0.18);
+  background: transparent;
+  opacity: 0.66;
+  animation: demoRing 1900ms var(--ease-out) infinite;
+}
+
+.voiceCaption {
+  width: min(100%, 280px);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.voiceCaption span {
+  height: 9px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.12);
+  animation: captionPulse 1200ms var(--ease-out) infinite alternate;
+}
+
+.voiceCaption span:nth-child(2) {
+  width: 74%;
+  animation-delay: 140ms;
+}
+
+.voiceCaption span:nth-child(3) {
+  width: 46%;
+  animation-delay: 260ms;
+}
+
+.visualExchange {
+  min-height: 360px;
+  display: grid;
+  align-content: center;
+  gap: var(--space-4);
+}
+
+.voiceNote,
+.reflectionCard,
+.privateBox,
+.reportBox,
+.finalReflection {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-panel);
+}
+
+.voiceNote {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.voiceNote strong,
+.privateBox strong,
+.reportBox strong {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-size: var(--type-card-title);
+  line-height: var(--leading-title);
 }
 
-.signals small {
-  color: var(--ink-faint);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.form {
-  display: grid;
-  gap: 12px;
-}
-
-.field {
-  display: grid;
-  gap: 8px;
-}
-
-.field span {
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.field small {
+.voiceNote p,
+.reflectionCard p,
+.privateBox p,
+.finalReflection p {
+  margin: var(--space-1) 0 0;
   color: var(--ink-soft);
+  font-size: var(--type-small);
   line-height: 1.45;
 }
 
-.field input,
-.field select {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 18px;
-  padding: 0 16px;
-  background: rgba(7, 5, 18, 0.62);
-  color: var(--ink);
-  font: 500 1rem var(--font-sans);
-  outline: none;
+.notePulse {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--aurora);
+  box-shadow: 0 0 26px rgba(169, 155, 217, 0.42);
+  animation: noteBreathe 1600ms var(--ease-out) infinite alternate;
 }
 
-.field input:focus-visible,
-.field select:focus-visible {
-  border-color: rgba(236, 182, 210, 0.46);
-  box-shadow: 0 0 0 4px rgba(236, 182, 210, 0.1);
+.exchangeLine {
+  width: 2px;
+  height: 46px;
+  margin-left: 31px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--accent-soft), rgba(169, 155, 217, 0));
 }
 
-.field input::placeholder {
-  color: rgba(179, 173, 196, 0.58);
+.reflectionCard {
+  width: min(100%, 360px);
+  justify-self: end;
+  padding: var(--space-4);
+  transform: translateY(0);
+  animation: reflectionArrive 2200ms var(--ease-out) infinite;
+}
+
+.reflectionCard small,
+.finalReflection small {
+  color: var(--accent-soft);
+  font-size: var(--type-meta);
+  font-weight: 820;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.visualPrivacy {
+  min-height: 360px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.privateBox,
+.reportBox {
+  min-height: 220px;
+  display: grid;
+  align-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.privateBox span {
+  position: relative;
+  width: 48px;
+  height: 42px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.16), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
+    var(--raised);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 30px rgba(0, 0, 0, 0.18);
+}
+
+.privateBox span::before,
+.privateBox span::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  pointer-events: none;
+}
+
+.privateBox span::before {
+  width: 25px;
+  height: 22px;
+  top: -17px;
+  border: 3px solid rgba(236, 232, 246, 0.7);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  transform: translateX(-50%);
+}
+
+.privateBox span::after {
+  width: 6px;
+  height: 14px;
+  top: 15px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  box-shadow: 0 0 14px rgba(169, 155, 217, 0.36);
+  transform: translateX(-50%);
+}
+
+.reportBox {
+  background: rgba(255, 255, 255, 0.034);
+}
+
+.reportBox span {
+  min-height: 30px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: var(--type-meta);
+  font-weight: 760;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.visualReflection {
+  grid-template-rows: auto auto;
+}
+
+.finalReflection {
+  width: min(100%, 380px);
+  padding: var(--space-4);
+  animation: finalFloat 2400ms var(--ease-out) infinite alternate;
+}
+
+.slideNav {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.dotButton {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dotButton::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--hairline-md);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition:
+    width var(--duration-fast) var(--ease-out),
+    border-radius var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.dotButton[aria-current="step"]::after {
+  width: 28px;
+  border-radius: var(--r-pill);
+  border-color: transparent;
+  background: var(--accent);
+}
+
+.slideActions {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.finalSlideActions {
+  min-height: 44px;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.finalActionForm {
+  min-width: 0;
+  display: grid;
 }
 
 .primary,
 .secondary {
-  min-height: 52px;
-  border-radius: 999px;
-  border: 0;
-  padding: 0 18px;
-  font: 800 0.98rem var(--font-sans);
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  padding: 0 var(--space-4);
+  display: grid;
+  place-items: center;
+  font: 820 var(--type-small) / 1 var(--font-sans);
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
 .primary {
-  margin-top: 6px;
-  color: #1b1830;
+  border: 0;
+  color: var(--bg-base);
   background: var(--accent);
-  box-shadow: 0 18px 46px -24px rgba(169, 155, 217, 0.85);
+  box-shadow: 0 18px 42px rgba(169, 155, 217, 0.24);
 }
 
 .secondary {
+  border: 1px solid var(--hairline-md);
   color: var(--ink-soft);
   background: transparent;
 }
 
-@media (min-width: 700px) {
+.secondary:disabled,
+.secondary[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.34;
+}
+
+.primary:hover,
+.secondary:not(:disabled):not([aria-disabled="true"]):hover {
+  transform: translateY(-1px);
+}
+
+@keyframes slideEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes captionPulse {
+  from {
+    opacity: 0.48;
+    transform: scaleX(0.78);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes noteBreathe {
+  from {
+    transform: scale(0.92);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes reflectionArrive {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateY(4px);
+  }
+  44%,
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes finalFloat {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes demoBreathe {
+  from {
+    transform: scale(0.985);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes demoHalo {
+  from {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 0.76;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes demoRing {
+  from {
+    transform: scale(0.92);
+    opacity: 0.64;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes demoSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 860px) {
   .shell {
-    padding-inline: 32px;
+    align-content: start;
   }
 
-  .signals {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .slideFrame {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .slideCopy h1 {
+    max-width: 20ch;
+  }
+
+  .visualVoice,
+  .visualExchange,
+  .visualPrivacy,
+  .visualReflection {
+    min-height: 240px;
+  }
+
+  .visualVoice,
+  .visualReflection {
+    --onboarding-orb-size: 136px;
+  }
+}
+
+@media (max-width: 560px) {
+  .stage,
+  .shell {
+    min-height: 100dvh;
+  }
+
+  .shell {
+    padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-4)
+      max(calc(var(--space-3) + 2px), env(safe-area-inset-bottom));
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    gap: var(--space-2);
+  }
+
+  .brand {
+    gap: var(--space-2);
+    font-size: 1rem;
+  }
+
+  .brand span {
+    width: 18px;
+    height: 18px;
+  }
+
+  .slides,
+  .slideCopy {
+    gap: var(--space-2);
+  }
+
+  .slides {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    align-content: stretch;
+  }
+
+  .progressShell {
+    height: 2px;
+  }
+
+  .slideFrame {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: auto minmax(clamp(168px, 29dvh, 256px), 1fr);
+    align-items: stretch;
+    gap: clamp(var(--space-2), 1.6dvh, var(--space-3));
+  }
+
+  .slideCopy h1 {
+    max-width: 22ch;
+  }
+
+  .slideCopy p {
+    line-height: 1.45;
+  }
+
+  .contextLine {
+    padding-left: var(--space-2);
+  }
+
+  .visualVoice,
+  .visualExchange,
+  .visualPrivacy,
+  .visualReflection {
+    min-height: clamp(168px, 29dvh, 256px);
+    height: 100%;
+  }
+
+  .visualVoice,
+  .visualReflection {
+    --onboarding-orb-size: clamp(104px, 18dvh, 148px);
+    gap: clamp(var(--space-2), 1.4dvh, var(--space-3));
+  }
+
+  .slidesFinal .slideFrame {
+    grid-template-rows: auto minmax(clamp(156px, 27dvh, 236px), 1fr);
+  }
+
+  .slidesFinal .visualReflection {
+    min-height: clamp(156px, 27dvh, 236px);
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto;
+    justify-content: center;
+    align-items: center;
+    --onboarding-orb-size: clamp(76px, 14dvh, 112px);
+  }
+
+  .demoOrb::before {
+    filter: blur(13px);
+    animation: none;
+  }
+
+  .demoOrb::after,
+  .demoOrbRecording,
+  .demoOrbRecording::after {
+    animation: none;
+  }
+
+  .voiceCaption {
+    width: min(100%, 160px);
+    gap: 5px;
+  }
+
+  .voiceCaption span {
+    height: 6px;
+  }
+
+  .visualExchange {
+    gap: clamp(var(--space-2), 1.2dvh, var(--space-3));
+  }
+
+  .voiceNote {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .notePulse {
+    width: 24px;
+    height: 24px;
+    animation: none;
+  }
+
+  .exchangeLine {
+    height: 20px;
+    margin-left: 23px;
+  }
+
+  .reflectionCard,
+  .finalReflection {
+    padding: var(--space-3);
+    animation: none;
+  }
+
+  .visualPrivacy {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: var(--space-2);
+  }
+
+  .privateBox,
+  .reportBox {
+    min-height: 128px;
+    padding: var(--space-3);
+  }
+
+  .privateBox span {
+    width: 38px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .privateBox span::before {
+    width: 20px;
+    height: 18px;
+    top: -14px;
+    border-width: 2px;
+  }
+
+  .privateBox span::after {
+    height: 10px;
+    top: 13px;
+  }
+
+  .reportBox span {
+    min-height: 24px;
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+  }
+
+  .slideNav {
+    gap: 0;
+  }
+
+  .dotButton {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dotButton::after {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dotButton[aria-current="step"]::after {
+    width: 22px;
+  }
+
+  .slideActions {
+    min-height: 40px;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  }
+
+  .finalSlideActions {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    gap: var(--space-2);
+  }
+
+  .primary,
+  .secondary {
+    min-height: 40px;
+    width: 100%;
+    padding: 0 var(--space-3);
+  }
+
+  .slideFrame,
+  .progressShell span {
+    animation: none;
+    transition: none;
+  }
+
+  .primary:hover,
+  .secondary:not(:disabled):not([aria-disabled="true"]):hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slideFrame,
+  .progressShell span,
+  .voiceCaption span,
+  .notePulse,
+  .reflectionCard,
+  .finalReflection,
+  .demoOrb,
+  .demoOrb::before,
+  .demoOrb::after,
+  .primary,
+  .secondary {
+    animation: none;
+    transition: none;
+  }
+
+  .primary:hover,
+  .secondary:not(:disabled):not([aria-disabled="true"]):hover {
+    transform: none;
   }
 }

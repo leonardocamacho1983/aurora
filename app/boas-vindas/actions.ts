@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -15,6 +16,11 @@ const LIMITS: Record<keyof OnboardingProfile, number> = {
   presence: 40,
   value: 160,
 };
+
+const ONBOARDING_SOURCE = "product_onboarding_alpha";
+const ONBOARDING_VARIANT = "alpha";
+const FIRST_VALUE_GOAL = "first_reflection";
+const ALPHA_PREPARATION_STEPS = "voice_diary,privacy,first_entry,first_reflection";
 
 function clean(value: FormDataEntryValue | null, max: number) {
   return String(value ?? "")
@@ -79,7 +85,11 @@ export async function completeOnboarding(formData: FormData) {
     ...context.profile,
     ...patch,
     skipped: intent === "skip",
-    completed_from: "product_onboarding",
+    completed_from: ONBOARDING_SOURCE,
+    onboarding_variant: ONBOARDING_VARIANT,
+    first_value_goal: FIRST_VALUE_GOAL,
+    privacy_copy_seen: true,
+    alpha_preparation_steps: ALPHA_PREPARATION_STEPS,
     completed_at: new Date().toISOString(),
   };
 
@@ -94,22 +104,40 @@ export async function completeOnboarding(formData: FormData) {
     .where(eq(users.id, user.id));
 
   const distinctId = referralCode ? `ref_${referralCode}` : `user_${user.id}`;
-  if (Object.keys(patch).length > 0) {
-    await captureAuroraServer("product_onboarding_answered", distinctId, {
-      source: "product_onboarding",
-      fields: Object.keys(patch).join(","),
-      field_count: Object.keys(patch).length,
-    });
-  }
-  await captureAuroraServer(
-    intent === "skip" ? "product_onboarding_skipped" : "product_onboarding_completed",
-    distinctId,
-    {
-      source: "product_onboarding",
-      completion: context.completion,
-      completed_fields: context.completedFields,
-    },
-  );
+  const patchKeys = Object.keys(patch);
+  after(async () => {
+    const events = [
+      captureAuroraServer(
+        intent === "skip" ? "product_onboarding_skipped" : "product_onboarding_completed",
+        distinctId,
+        {
+          source: ONBOARDING_SOURCE,
+          variant: ONBOARDING_VARIANT,
+          first_value_goal: FIRST_VALUE_GOAL,
+          preparation_steps: ALPHA_PREPARATION_STEPS,
+          completion: context.completion,
+          completed_fields: context.completedFields,
+          field_count: patchKeys.length,
+          next_route: "/diario",
+        },
+      ),
+    ];
+
+    if (patchKeys.length > 0) {
+      events.push(
+        captureAuroraServer("product_onboarding_answered", distinctId, {
+          source: ONBOARDING_SOURCE,
+          variant: ONBOARDING_VARIANT,
+          first_value_goal: FIRST_VALUE_GOAL,
+          preparation_steps: ALPHA_PREPARATION_STEPS,
+          fields: patchKeys.join(","),
+          field_count: patchKeys.length,
+        }),
+      );
+    }
+
+    await Promise.all(events);
+  });
 
   redirect("/diario");
 }

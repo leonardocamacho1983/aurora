@@ -14,12 +14,15 @@ export type OnboardingContext = {
   userId: string;
   email: string;
   completedAt: Date | null;
+  onboardingVariant: string | null;
   profile: OnboardingProfile;
   completedFields: number;
   totalFields: number;
   completion: "empty" | "partial" | "complete";
   nextField: keyof OnboardingProfile | null;
 };
+
+export const REQUIRED_ONBOARDING_VARIANT = "alpha";
 
 const PROFILE_FIELDS: Array<keyof OnboardingProfile> = [
   "name",
@@ -38,31 +41,39 @@ function nextMissing(profile: OnboardingProfile) {
   return PROFILE_FIELDS.find((field) => !profile[field]) ?? null;
 }
 
+type SavedOnboardingContext = Partial<Record<keyof OnboardingProfile, unknown>> & {
+  onboarding_variant?: unknown;
+};
+
 export async function getOnboardingContext(userId: string, email: string): Promise<OnboardingContext> {
   const normalizedEmail = email.trim().toLowerCase();
-  const [userRow] = await db
-    .select({
-      onboardingCompletedAt: users.onboardingCompletedAt,
-      onboardingContext: users.onboardingContext,
-    })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  const [userRows, rows] = await Promise.all([
+    db
+      .select({
+        onboardingCompletedAt: users.onboardingCompletedAt,
+        onboardingContext: users.onboardingContext,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
+    db
+      .select({
+        name: waitlistProfile.name,
+        moment: waitlistProfile.moment,
+        rhythm: waitlistProfile.rhythm,
+        presence: waitlistProfile.presence,
+        value: waitlistProfile.value,
+      })
+      .from(waitlist)
+      .leftJoin(waitlistProfile, eq(waitlistProfile.waitlistId, waitlist.id))
+      .where(eq(waitlist.email, normalizedEmail))
+      .limit(1),
+  ]);
 
-  const rows = await db
-    .select({
-      name: waitlistProfile.name,
-      moment: waitlistProfile.moment,
-      rhythm: waitlistProfile.rhythm,
-      presence: waitlistProfile.presence,
-      value: waitlistProfile.value,
-    })
-    .from(waitlist)
-    .leftJoin(waitlistProfile, eq(waitlistProfile.waitlistId, waitlist.id))
-    .where(eq(waitlist.email, normalizedEmail))
-    .limit(1);
-
-  const savedContext = (userRow?.onboardingContext ?? {}) as Partial<Record<keyof OnboardingProfile, unknown>>;
+  const userRow = userRows[0];
+  const savedContext = (userRow?.onboardingContext ?? {}) as SavedOnboardingContext;
+  const onboardingVariant =
+    typeof savedContext.onboarding_variant === "string" ? savedContext.onboarding_variant : null;
   const profile: OnboardingProfile = {
     name: clean(rows[0]?.name),
     moment: clean(rows[0]?.moment),
@@ -87,6 +98,7 @@ export async function getOnboardingContext(userId: string, email: string): Promi
     userId,
     email: normalizedEmail,
     completedAt: userRow?.onboardingCompletedAt ?? null,
+    onboardingVariant,
     profile,
     completedFields,
     totalFields: PROFILE_FIELDS.length,
@@ -95,6 +107,6 @@ export async function getOnboardingContext(userId: string, email: string): Promi
   };
 }
 
-export function needsOnboarding(context: Pick<OnboardingContext, "completedAt">) {
-  return !context.completedAt;
+export function needsOnboarding(context: Pick<OnboardingContext, "completedAt" | "onboardingVariant">) {
+  return !context.completedAt || context.onboardingVariant !== REQUIRED_ONBOARDING_VARIANT;
 }
