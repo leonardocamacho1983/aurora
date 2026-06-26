@@ -24,6 +24,22 @@ type LifecycleEmailInput = {
   confirmedInvites?: number;
 };
 
+export type AlphaCadenceEmailKind =
+  | "access_granted"
+  | "account_ready"
+  | "first_entry_prompt"
+  | "first_reflection_feedback"
+  | "invite_companion"
+  | "last_call"
+  | "construction_note";
+
+type AlphaCadenceEmailInput = {
+  row: WaitlistEmailRow & { name?: string | null };
+  kind: AlphaCadenceEmailKind;
+  baseUrl: string;
+  hasAccount?: boolean;
+};
+
 let resend: Resend | null = null;
 
 function getResend(): Resend | null {
@@ -327,5 +343,156 @@ Abrir minha sala Aurora: ${status}
 
 ${leoSignatureText()}`,
     scheduledAt,
+  });
+}
+
+export async function sendAlphaCadenceEmail(input: AlphaCadenceEmailInput) {
+  const baseUrl = input.baseUrl.replace(/\/+$/, "");
+  const status = statusUrl(input.row.statusToken, input.baseUrl);
+  const ritual = `${baseUrl}/chegada?token=${encodeURIComponent(input.row.statusToken)}`;
+  const login = `${baseUrl}/login?mode=${input.hasAccount ? "signin" : "signup"}`;
+  const diary = `${baseUrl}/diario`;
+  const variants: Record<AlphaCadenceEmailKind, { subject: string; html: string; text: string }> = {
+    access_granted: {
+      subject: "Seu acesso à Aurora foi liberado",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu acesso à Aurora foi liberado.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">${input.hasAccount ? "Você já pode entrar no app e fazer seu primeiro registro." : "Crie sua conta usando o mesmo email da lista para entrar no app."}</p>
+        ${button(input.hasAccount ? "Entrar na Aurora" : "Criar minha conta", login)}
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Essa ainda é uma versão Alpha. Se algo parecer confuso, responda este email. Seu retorno ajuda muito.</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}seu acesso à Aurora foi liberado.
+
+${input.hasAccount ? "Você já pode entrar no app e fazer seu primeiro registro." : "Crie sua conta usando o mesmo email da lista para entrar no app."}
+
+${input.hasAccount ? "Entrar na Aurora" : "Criar minha conta"}: ${login}
+
+Essa ainda é uma versão Alpha. Se algo parecer confuso, responda este email. Seu retorno ajuda muito.
+
+${leoSignatureText()}`,
+    },
+    account_ready: {
+      subject: "Sua Aurora já está pronta para começar",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}a sua entrada no Alpha já está liberada.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O próximo passo é criar sua conta com o mesmo email da lista. Assim a Aurora consegue guardar seus registros com segurança.</p>
+        ${button("Criar minha conta", `${baseUrl}/login?mode=signup`)}
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Não precisa começar grande. Um primeiro registro de poucos minutos já é suficiente.</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}a sua entrada no Alpha já está liberada.
+
+O próximo passo é criar sua conta com o mesmo email da lista. Assim a Aurora consegue guardar seus registros com segurança.
+
+Criar minha conta: ${baseUrl}/login?mode=signup
+
+Não precisa começar grande. Um primeiro registro de poucos minutos já é suficiente.
+
+${leoSignatureText()}`,
+    },
+    first_entry_prompt: {
+      subject: "Faça seu primeiro registro quando tiver 3 minutos",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}sua conta já está pronta.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quando tiver três minutos, faça o primeiro registro no diário. Pode ser uma frase simples sobre como você chega hoje.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora funciona melhor quando começa pequena: uma fala, uma pausa, uma resposta para te ajudar a se escutar.</p>
+        ${button("Fazer meu primeiro registro", diary)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}sua conta já está pronta.
+
+Quando tiver três minutos, faça o primeiro registro no diário. Pode ser uma frase simples sobre como você chega hoje.
+
+A Aurora funciona melhor quando começa pequena: uma fala, uma pausa, uma resposta para te ajudar a se escutar.
+
+Fazer meu primeiro registro: ${diary}
+
+${leoSignatureText()}`,
+    },
+    first_reflection_feedback: {
+      subject: "Como foi sua primeira conversa com a Aurora?",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}vi que você já fez seu primeiro registro na Aurora.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Queria te fazer uma pergunta simples: a resposta da Aurora te ajudou a se escutar melhor?</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Pode responder este email com uma frase. O que estava claro, estranho ou faltando já me ajuda a ajustar o Alpha.</p>
+        ${button("Voltar para a Aurora", diary)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}vi que você já fez seu primeiro registro na Aurora.
+
+Queria te fazer uma pergunta simples: a resposta da Aurora te ajudou a se escutar melhor?
+
+Pode responder este email com uma frase. O que estava claro, estranho ou faltando já me ajuda a ajustar o Alpha.
+
+Voltar para a Aurora: ${diary}
+
+${leoSignatureText()}`,
+    },
+    invite_companion: {
+      subject: "Quer chamar alguém para testar com você?",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}se a Aurora fez sentido para você, talvez ela faça sentido para uma pessoa próxima também.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Neste começo, os melhores convites são pequenos e pessoais. Não precisa divulgar. Basta pensar em alguém que poderia precisar de um lugar mais calmo para se escutar.</p>
+        ${button("Abrir minha sala Aurora", status)}
+        <p style="font-size:14px;line-height:1.6;color:#948fa8">Sugestão: “pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.”</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}se a Aurora fez sentido para você, talvez ela faça sentido para uma pessoa próxima também.
+
+Neste começo, os melhores convites são pequenos e pessoais. Não precisa divulgar. Basta pensar em alguém que poderia precisar de um lugar mais calmo para se escutar.
+
+Abrir minha sala Aurora: ${status}
+
+Sugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.
+
+${leoSignatureText()}`,
+    },
+    last_call: {
+      subject: "Ainda quer ficar na próxima leva?",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}passando só para fechar este ciclo com calma.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Se você ainda quiser entrar na próxima leva do Alpha, complete o Ritual de Chegada. Ele ajuda a Aurora a entender melhor como te receber.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Se não for o momento, tudo bem. A Aurora continua por aqui, e novas entradas vão abrir com mais calma depois.</p>
+        ${button("Completar meu Ritual", ritual)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}passando só para fechar este ciclo com calma.
+
+Se você ainda quiser entrar na próxima leva do Alpha, complete o Ritual de Chegada. Ele ajuda a Aurora a entender melhor como te receber.
+
+Se não for o momento, tudo bem. A Aurora continua por aqui, e novas entradas vão abrir com mais calma depois.
+
+Completar meu Ritual: ${ritual}
+
+${leoSignatureText()}`,
+    },
+    construction_note: {
+      subject: "A Aurora ainda está em construção",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}obrigado por testar a Aurora neste começo.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Ela ainda está em construção. Algumas partes podem parecer simples demais, lentas ou menos claras do que deveriam.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O que eu mais preciso observar agora é onde a Aurora já traz presença e onde ainda atrapalha. Se notar algo, responda este email.</p>
+        ${button("Voltar para a Aurora", diary)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}obrigado por testar a Aurora neste começo.
+
+Ela ainda está em construção. Algumas partes podem parecer simples demais, lentas ou menos claras do que deveriam.
+
+O que eu mais preciso observar agora é onde a Aurora já traz presença e onde ainda atrapalha. Se notar algo, responda este email.
+
+Voltar para a Aurora: ${diary}
+
+${leoSignatureText()}`,
+    },
+  };
+
+  const variant = variants[input.kind];
+  return sendEmail({
+    to: input.row.email,
+    subject: variant.subject,
+    html: variant.html,
+    text: variant.text,
   });
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { waitlistEvents } from "@/lib/db/schema";
 import { sendLifecycleEmail, type LifecycleEmailKind } from "@/lib/email/waitlist";
 import { siteUrl } from "@/lib/referral/urls";
+import { runAlphaCadenceAutomation } from "@/lib/waitlist/alpha-cadence";
 import { runWaitlistMaintenance } from "@/lib/waitlist/maintenance";
 
 export const runtime = "nodejs";
@@ -386,6 +387,17 @@ async function runLifecycle(request: Request) {
   }
 
   const sentCount = results.filter((result) => result.sent).length;
+  let alphaCadence: Awaited<ReturnType<typeof runAlphaCadenceAutomation>> | { error: string };
+  try {
+    alphaCadence = await runAlphaCadenceAutomation({
+      baseUrl,
+      dryRun,
+      limit: 100,
+    });
+  } catch (error) {
+    alphaCadence = { error: error instanceof Error ? error.message : "alpha_cadence_error" };
+  }
+
   if (!dryRun) {
     await db.insert(waitlistEvents).values({
       eventName: "waitlist_lifecycle_run",
@@ -406,6 +418,7 @@ async function runLifecycle(request: Request) {
     status: "ok",
     dryRun,
     maintenance,
+    alphaCadence,
     selected: candidates.length,
     sent: sentCount,
     results,
