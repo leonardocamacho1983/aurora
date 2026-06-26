@@ -37,7 +37,7 @@ function fromAddress(): string | null {
   return process.env.EMAIL_FROM?.trim() || null;
 }
 
-async function sendEmail(input: { to: string; subject: string; html: string; text: string }) {
+async function sendEmail(input: { to: string; subject: string; html: string; text: string; scheduledAt?: string }) {
   const client = getResend();
   const from = fromAddress();
   if (!client || !from) {
@@ -71,6 +71,17 @@ function button(label: string, href: string): string {
 
 function quietLink(label: string, href: string): string {
   return `<a href="${href}" style="color:#cfc6f6;text-decoration:underline;text-underline-offset:3px">${label}</a>`;
+}
+
+function leoSignatureHtml() {
+  return `<p style="font-size:14px;line-height:1.6;color:#948fa8">Com carinho,<br>Leo<br>Criador da Aurora · ${quietLink("@camacho__leo", "https://instagram.com/camacho__leo")}</p>`;
+}
+
+function leoSignatureText() {
+  return `Com carinho,
+Leo
+Criador da Aurora
+@camacho__leo: https://instagram.com/camacho__leo`;
 }
 
 function inboxInstruction(): string {
@@ -245,41 +256,76 @@ export async function sendLifecycleEmail(input: LifecycleEmailInput) {
 export async function sendAlphaTesterRitualEmail(
   row: WaitlistEmailRow & { name?: string | null },
   baseUrl: string,
+  scheduledAt?: string,
+) {
+  const status = statusUrl(row.statusToken, baseUrl);
+  const ritual = `${baseUrl.replace(/\/+$/, "")}/chegada?token=${encodeURIComponent(row.statusToken)}`;
+  return sendEmail({
+    to: row.email,
+    subject: "Ainda dá tempo de preparar sua Aurora",
+    html: shell(`
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Oi, aqui é o Leo, criador da Aurora.</p>
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Estou organizando a próxima leva do Alpha da Aurora hoje.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Ainda dá tempo de entrar na seleção. O próximo passo é completar o Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Não precisa escrever muito. A ideia é só preparar a Aurora para te receber com mais cuidado antes do diário abrir.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Se a Aurora ainda faz sentido para este momento da sua vida, complete o Ritual hoje.</p>
+      ${button("Completar meu Ritual", ritual)}
+      <p style="font-size:13px;line-height:1.6;color:#948fa8">Se o botão não abrir, acesse sua sala Aurora por este link: ${quietLink(status, status)}. Lá, clique em “Preparar minha Aurora”.</p>
+      ${leoSignatureHtml()}
+    `),
+    text: `Oi, aqui é o Leo, criador da Aurora.
+
+Estou organizando a próxima leva do Alpha da Aurora hoje.
+
+Ainda dá tempo de entrar na seleção. O próximo passo é completar o Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.
+
+Não precisa escrever muito. A ideia é só preparar a Aurora para te receber com mais cuidado antes do diário abrir.
+
+Se a Aurora ainda faz sentido para este momento da sua vida, complete o Ritual hoje.
+
+Completar meu Ritual: ${ritual}
+
+Se o botão não abrir, acesse sua sala Aurora por este link:
+${status}
+
+Lá, clique em "Preparar minha Aurora".
+
+${leoSignatureText()}`,
+    scheduledAt,
+  });
+}
+
+export async function sendAlphaTesterCompleteEmail(
+  row: WaitlistEmailRow & { name?: string | null },
+  baseUrl: string,
+  scheduledAt?: string,
 ) {
   const status = statusUrl(row.statusToken, baseUrl);
   return sendEmail({
     to: row.email,
-    subject: "Vou abrir o primeiro grupo Alpha da Aurora",
+    subject: "Ainda dá tempo de entrar no Alpha",
     html: shell(`
       <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Oi, aqui é o Leo, criador da Aurora.</p>
-      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Nesta sexta-feira, 26 de junho, vou começar a escolher as primeiras pessoas que vão entrar no Alpha da Aurora.</p>
-      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Além do caminho pelos convites, vou abrir essa segunda porta para quem completar o Ritual de Chegada.</p>
-      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O Ritual é breve: algumas perguntas para a Aurora entender melhor seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.</p>
-      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quem completar o Ritual até sexta será considerado para o primeiro grupo Alpha.</p>
-      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Alpha Testers vão entrar antes da abertura mais ampla, usar a Aurora ainda em construção e me ajudar a perceber o que precisa ficar mais claro, mais simples e mais cuidadoso.</p>
-      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Se você sente que a Aurora pode fazer sentido para este momento da sua vida, esse é o melhor próximo passo.</p>
-      ${button("Completar meu Ritual de Chegada", status)}
-      <p style="font-size:14px;line-height:1.6;color:#948fa8">Com carinho,<br>Leo<br>Criador da Aurora · ${quietLink("@camacho__leo", "https://instagram.com/camacho__leo")}</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Você já completou o Ritual de Chegada. Esse era o passo mais importante para a Aurora entender melhor como te receber.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Estou organizando a próxima leva do Alpha hoje, e ainda dá tempo de entrar nesse grupo.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Você não precisa repetir o Ritual. Só mantenha este email por perto: os próximos passos chegam por aqui.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Se quiser fortalecer sua entrada, ainda pode convidar uma pessoa para conhecer a Aurora pela sua sala.</p>
+      ${button("Abrir minha sala Aurora", status)}
+      ${leoSignatureHtml()}
     `),
     text: `Oi, aqui é o Leo, criador da Aurora.
 
-Nesta sexta-feira, 26 de junho, vou começar a escolher as primeiras pessoas que vão entrar no Alpha da Aurora.
+Você já completou o Ritual de Chegada. Esse era o passo mais importante para a Aurora entender melhor como te receber.
 
-Além do caminho pelos convites, vou abrir essa segunda porta para quem completar o Ritual de Chegada.
+Estou organizando a próxima leva do Alpha hoje, e ainda dá tempo de entrar nesse grupo.
 
-O Ritual é breve: algumas perguntas para a Aurora entender melhor seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.
+Você não precisa repetir o Ritual. Só mantenha este email por perto: os próximos passos chegam por aqui.
 
-Quem completar o Ritual até sexta será considerado para o primeiro grupo Alpha.
+Se quiser fortalecer sua entrada, ainda pode convidar uma pessoa para conhecer a Aurora pela sua sala.
 
-Alpha Testers vão entrar antes da abertura mais ampla, usar a Aurora ainda em construção e me ajudar a perceber o que precisa ficar mais claro, mais simples e mais cuidadoso.
+Abrir minha sala Aurora: ${status}
 
-Se você sente que a Aurora pode fazer sentido para este momento da sua vida, esse é o melhor próximo passo.
-
-Completar meu Ritual de Chegada: ${status}
-
-Com carinho,
-Leo
-Criador da Aurora
-@camacho__leo: https://instagram.com/camacho__leo`,
+${leoSignatureText()}`,
+    scheduledAt,
   });
 }
