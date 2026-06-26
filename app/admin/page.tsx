@@ -1696,7 +1696,7 @@ async function getDashboardData() {
   const [alphaQualitativeSummary] = rows<AlphaQualitativeSummaryRow>(
     await db.execute(sql`
       with real_waitlist as (
-        select w.id, w.confirmed_at, w.unlocked_at
+        select w.id, w.email, w.confirmed_at, w.unlocked_at
         from waitlist w
         where w.created_at >= ${ALPHA_COHORT_START}
           and w.confirmed_at is not null
@@ -1707,7 +1707,15 @@ async function getDashboardData() {
       )
       select
         count(*)::int as "confirmedWaitlistReal",
-        count(*) filter (where rw.unlocked_at is not null)::int as "unlockedReal",
+        count(*) filter (
+          where rw.unlocked_at is not null
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(rw.email)
+                and ai.sent_at is not null
+            )
+        )::int as "unlockedReal",
         count(*) filter (where wp.waitlist_id is not null)::int as "profileStarted",
         count(*) filter (
           where nullif(trim(wp.moment), '') is not null

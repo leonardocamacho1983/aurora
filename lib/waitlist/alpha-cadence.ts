@@ -131,6 +131,34 @@ function noRecentAlphaEmailFilter(hours: number) {
   `;
 }
 
+function alphaAccessFilter() {
+  return sql`
+    (
+      w.unlocked_at is not null
+      or exists (
+        select 1
+        from access_invites invite
+        where lower(invite.email) = lower(w.email)
+          and invite.sent_at is not null
+      )
+    )
+  `;
+}
+
+function alphaAccessDate() {
+  return sql`
+    coalesce(
+      (
+        select min(invite.sent_at)
+        from access_invites invite
+        where lower(invite.email) = lower(w.email)
+          and invite.sent_at is not null
+      ),
+      w.unlocked_at
+    )
+  `;
+}
+
 async function selectAccessGranted(limit: number) {
   return rows<AlphaCadenceRow>(
     await db.execute(sql`
@@ -147,10 +175,12 @@ async function selectAccessGranted(limit: number) {
       from waitlist w
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
-        and w.unlocked_at is not null
+        and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and not exists (select 1 from users u where lower(u.email) = lower(w.email))
         and ${notSentFilter("access_granted")}
-      order by w.unlocked_at asc
+        and ${noRecentAlphaEmailFilter(20)}
+      order by ${alphaAccessDate()} asc
       limit ${limit}
     `),
   );
@@ -170,7 +200,7 @@ async function selectAccountReady(limit: number) {
       from waitlist w
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
-        and w.unlocked_at is not null
+        and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
         and not exists (select 1 from users u where lower(u.email) = lower(w.email))
         and exists (
@@ -182,7 +212,7 @@ async function selectAccountReady(limit: number) {
         )
         and ${notSentFilter("account_ready")}
         and ${noRecentAlphaEmailFilter(20)}
-      order by w.unlocked_at asc
+      order by ${alphaAccessDate()} asc
       limit ${limit}
     `),
   );
@@ -203,7 +233,7 @@ async function selectFirstEntryPrompt(limit: number) {
       inner join users u on lower(u.email) = lower(w.email)
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
-        and w.unlocked_at is not null
+        and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
         and u.created_at <= now() - interval '6 hours'
         and not exists (select 1 from entries entry where entry.user_id = u.id)
@@ -230,7 +260,7 @@ async function selectFirstReflectionFeedback(limit: number) {
       inner join users u on lower(u.email) = lower(w.email)
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
-        and w.unlocked_at is not null
+        and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
         and exists (
           select 1
@@ -343,7 +373,7 @@ async function selectConstructionNote(limit: number) {
       inner join users u on lower(u.email) = lower(w.email)
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
-        and w.unlocked_at is not null
+        and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
         and exists (
           select 1
