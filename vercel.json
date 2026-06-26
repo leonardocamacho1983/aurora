@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/waitlist/lifecycle",
-      "schedule": "0 13 * * *"
+      "schedule": "15 13 * * *"
     }
   ]
 }
