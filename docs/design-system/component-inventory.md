@@ -51,6 +51,7 @@ Arquivos criados:
 - `components/product/BottomNav.tsx`
 - `components/product/EmptyState.tsx`
 - `components/product/FeedbackMicro.tsx`
+- `components/product/PmfPrompt.tsx`
 - `components/product/PrivacyChip.tsx`
 
 ## Fase 3 implementada
@@ -153,6 +154,7 @@ Camadas de código esperadas:
 | `EmptyState` | Orientar quando não há conteúdo | diário, timeline, fio | Copy específica; nunca usar texto genérico como "sem dados". |
 | `WaitlistBlock` | Conversão com privacidade | idle, enviado, confirmado | Sempre trazer microcopy de privacidade. |
 | `FeedbackMicro` | Feedback pós-insight | fez sentido, não tanto | Sem pontuação visível, sem rating invasivo. |
+| `PmfPrompt` | PMF declarada pós-valor | microfeedback, pergunta PMF, follow-up fechado, obrigado, erro | Opcional, pós-reflexão, sem texto livre e sem bloquear ações principais. |
 
 ## Orb
 
@@ -291,6 +293,13 @@ FeedbackMicro:
 - Dois botões: `Fez sentido`, `Não tanto`.
 - Não mostrar pontuação.
 - Não transformar feedback em avaliação de performance do usuário.
+
+PmfPrompt:
+
+- Mostrar depois de valor recebido, nunca antes da primeira reflexão normal.
+- Usar pergunta PMF fechada e follow-up fechado.
+- Sempre permitir `Agora não` ou `Perguntar depois`.
+- Não enviar diário, transcrição, reflexão ou resposta aberta para analytics.
 
 ## Navegação mobile
 

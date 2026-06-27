@@ -12,7 +12,8 @@ Use este checklist antes de publicar uma tela nova ou uma mudança visual releva
 - [ ] Quando o orb aparece como componente, ele usa `components/orb/Orb.tsx` e não uma recriação local.
 - [ ] Estados `idle`, `recording`, `reflecting`, `saved` e `disabled` foram considerados quando a tela tem fluxo de voz.
 - [ ] Rings/waveform aparecem apenas em `recording`; spiral aparece apenas em `reflecting`.
-- [ ] Tema Crepúsculo/Amanhecer está correto para o contexto.
+- [ ] A tela usa fundo escuro em tons do DS; onboarding e boas-vindas não usam fundo claro.
+- [ ] `/boas-vindas` não usa `data-theme="dawn"` nem tokens claros para compor o fundo.
 
 ## Tipografia
 
@@ -55,7 +56,8 @@ Use este checklist antes de publicar uma tela nova ou uma mudança visual releva
 
 ## Cobertura do Design System
 
-- [ ] `/design-system` funciona como hub curto, com regras críticas e próximo encaixe.
+- [ ] `/design-system` funciona como portal do Aurora Product System, com entrada para Design System e entrada para Público-alvo e Posicionamento.
+- [ ] `/design-system/posicionamento` mostra definição, USP, público-alvo, o que Aurora é/não é e regras de comunicação.
 - [ ] `/design-system/fundamentos` mostra cores, tipografia, espaçamento, radius e glass.
 - [ ] `/design-system/biblioteca` mostra camada, nome, variantes e regra de uso de cada componente.
 - [ ] `/design-system/biblioteca` cobre StreamingText, BottomNav, EmptyState, WaitlistBlock, FeedbackMicro e PrivacyChip.
@@ -82,6 +84,7 @@ Use este checklist antes de publicar uma tela nova ou uma mudança visual releva
 - [ ] Não promete terapia, diagnóstico, cura, tratamento ou suporte emergencial.
 - [ ] Não coleta dado sensível sem decisão separada.
 - [ ] Não envia email, nome, áudio, transcrição, reflexão ou resposta aberta para analytics.
+- [ ] Feedback PMF usa apenas respostas fechadas, é opcional e aparece depois de valor recebido.
 
 ## Verificação técnica
 
