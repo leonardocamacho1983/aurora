@@ -4,11 +4,40 @@ import { db } from "@/lib/db";
 import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
 import { runReflectPipeline, createReflectDeps } from "@/lib/ai/reflect";
 import { embedText } from "@/lib/ai/embeddings";
+import {
+  bucketLatency,
+  bucketTranscriptLength,
+  classifyReflectionError,
+  createProcessingRequestId,
+} from "@/lib/ai/error-classification";
+import { recordProductEvent, type ProductEventMetadata } from "@/lib/analytics/product-events";
 
 export const runtime = "nodejs"; // postgres-js + IA precisam do runtime Node
 export const dynamic = "force-dynamic";
 
+type ReflectBody = {
+  transcript?: string;
+  language?: string;
+  locale?: string;
+  entryMode?: string;
+  clientRequestId?: string;
+  attempt?: number;
+};
+
+const DIARY_ENTRY_SAVED_WITHOUT_AI =
+  "Seu registro foi guardado no diário. A Aurora não conseguiu preparar uma leitura agora, mas a entrada ficou salva na sua Timeline para você consultar quando quiser.";
+
+function normalizeAttempt(value: number | undefined) {
+  if (!Number.isFinite(value) || !value || value < 1) return 1;
+  return Math.min(Math.floor(value), 10);
+}
+
+function normalizeEntryMode(value: string | undefined) {
+  return value === "continue" || value === "reformulate" ? value : "new";
+}
+
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   // Auth: a sessão Supabase identifica o dono (RLS por user_id = auth.uid()).
   const supabase = await createClient();
   const {
@@ -18,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { transcript?: string; language?: string; locale?: string };
+  let body: ReflectBody;
   try {
     body = await request.json();
   } catch {
@@ -31,6 +60,26 @@ export async function POST(request: Request) {
   }
   const language = body.language ?? null;
   const locale = body.locale ?? "pt-BR";
+  const entryMode = normalizeEntryMode(body.entryMode);
+  const requestId =
+    typeof body.clientRequestId === "string" && body.clientRequestId.trim()
+      ? body.clientRequestId.trim().slice(0, 120)
+      : createProcessingRequestId();
+  const attempt = normalizeAttempt(body.attempt);
+  const baseMetadata: ProductEventMetadata = {
+    request_id: requestId,
+    provider: "anthropic_openai",
+    entry_mode: entryMode,
+    transcript_length_bucket: bucketTranscriptLength(transcript),
+    attempt,
+  };
+
+  await recordProductEvent({
+    userId: user.id,
+    eventName: "product_reflection_attempted",
+    source: "reflect_api",
+    metadata: baseMetadata,
+  });
 
   try {
     const result = await runReflectPipeline(
@@ -57,12 +106,25 @@ export async function POST(request: Request) {
         shownResources: true,
       });
 
+      await recordProductEvent({
+        userId: user.id,
+        eventName: "product_reflection_succeeded",
+        source: "reflect_api",
+        metadata: {
+          ...baseMetadata,
+          status: "crisis",
+          risk_level: "high",
+          latency_bucket: bucketLatency(Date.now() - startedAt),
+        },
+      });
+
       return NextResponse.json({
         status: "crisis",
         risk: "high",
         type: result.type,
         resources: result.resources,
         entryId: entry.id,
+        requestId,
       });
     }
 
@@ -92,16 +154,98 @@ export async function POST(request: Request) {
       // Falha ao indexar não deve derrubar a reflexão já entregue.
     }
 
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_reflection_succeeded",
+      source: "reflect_api",
+      metadata: {
+        ...baseMetadata,
+        status: "ok",
+        risk_level: result.risk,
+        has_mood: Boolean(result.mood),
+        reflection_type: result.mood ? "with_mood" : "without_mood",
+        latency_bucket: bucketLatency(Date.now() - startedAt),
+      },
+    });
+
     return NextResponse.json({
       status: "ok",
       risk: result.risk,
       reflection: result.reflection,
       mood: result.mood,
       entryId: entry.id,
+      requestId,
     });
   } catch (error) {
-    // Fail-loud: classificador/pipeline falhou → NÃO inventamos reflexão (§13).
+    // Não inventa reflexão quando a IA falha, mas não perde a entrada do diário.
     console.error("/api/reflect pipeline error:", error);
-    return NextResponse.json({ error: "pipeline_failed" }, { status: 500 });
+    const failure = classifyReflectionError(error);
+
+    try {
+      const [entry] = await db
+        .insert(entries)
+        .values({
+          userId: user.id,
+          transcript,
+          language,
+          reflection: DIARY_ENTRY_SAVED_WITHOUT_AI,
+          mood: null,
+          riskLevel: "none",
+        })
+        .returning({ id: entries.id });
+
+      await recordProductEvent({
+        userId: user.id,
+        eventName: "product_reflection_fallback_saved",
+        source: "reflect_api",
+        metadata: {
+          ...baseMetadata,
+          status: String(failure.status),
+          error_class: failure.errorClass,
+          error_code: failure.errorCode,
+          retryable: failure.retryable,
+          fallback_saved: true,
+          latency_bucket: bucketLatency(Date.now() - startedAt),
+        },
+      });
+
+      return NextResponse.json({
+        status: "ok",
+        risk: "none",
+        reflection: DIARY_ENTRY_SAVED_WITHOUT_AI,
+        mood: null,
+        entryId: entry.id,
+        requestId,
+        fallbackSaved: true,
+      });
+    } catch (saveError) {
+      console.error("/api/reflect fallback save error:", saveError);
+      const saveFailure = classifyReflectionError(saveError);
+      await recordProductEvent({
+        userId: user.id,
+        eventName: "product_reflection_failed",
+        source: "reflect_api",
+        metadata: {
+          ...baseMetadata,
+          status: String(saveFailure.status),
+          error_class: saveFailure.errorClass,
+          error_code: saveFailure.errorCode,
+          retryable: saveFailure.retryable,
+          fallback_saved: false,
+          latency_bucket: bucketLatency(Date.now() - startedAt),
+        },
+      });
+      return NextResponse.json(
+        {
+          error: "pipeline_failed",
+          errorCode: saveFailure.errorCode,
+          errorClass: saveFailure.errorClass,
+          retryable: saveFailure.retryable,
+          requestId,
+          userMessage: saveFailure.userMessage,
+        },
+        { status: saveFailure.status },
+      );
+    }
   }
 }
