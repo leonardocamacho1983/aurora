@@ -43,6 +43,20 @@
       "when": 1781910775046,
       "tag": "0005_sad_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782244983758,
+      "tag": "0006_adorable_mandrill",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782350000000,
+      "tag": "0007_pmf_feedback_alpha",
+      "breakpoints": true
     }
   ]
 }

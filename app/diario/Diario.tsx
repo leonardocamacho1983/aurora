@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
+import { PmfPrompt } from "@/components/product/PmfPrompt";
+import { ProductNav } from "@/components/product/ProductNav";
 import {
   CrisisResources,
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
+import { trackAurora } from "@/lib/analytics/client";
 import { renderProse } from "@/lib/render-prose";
 import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
@@ -14,13 +17,49 @@ import styles from "./Diario.module.css";
 type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
 
 type ReflectResponse =
-  | { status: "ok"; risk: string; reflection: string; mood: string | null; entryId: string; intent?: string }
-  | { status: "crisis"; risk: "high"; type: string; resources: CrisisResourcesData; entryId: string; intent?: string }
-  | { error: string };
+  | {
+      status: "ok";
+      risk: string;
+      reflection: string;
+      mood: string | null;
+      entryId: string;
+      threadId?: string | null;
+      requestId?: string;
+      fallbackSaved?: boolean;
+      intent?: string;
+    }
+  | {
+      status: "crisis";
+      risk: "high";
+      type: string;
+      resources: CrisisResourcesData;
+      entryId: string;
+      threadId?: string | null;
+      requestId?: string;
+      intent?: string;
+    }
+  | {
+      error: string;
+      errorCode?: string;
+      errorClass?: string;
+      retryable?: boolean;
+      requestId?: string;
+      userMessage?: string;
+      entryId?: string;
+    };
 
 type TranscribeResponse =
-  | { transcript: string; language?: string | null; entryId?: string; segmentId?: string }
-  | { error: string; entryId?: string; segmentId?: string };
+  | { transcript: string; language?: string | null; entryId?: string; segmentId?: string; requestId?: string }
+  | {
+      error: string;
+      errorCode?: string;
+      errorClass?: string;
+      retryable?: boolean;
+      requestId?: string;
+      userMessage?: string;
+      entryId?: string;
+      segmentId?: string;
+    };
 
 type EntryMode = "new" | "continue" | "reformulate";
 
@@ -41,8 +80,24 @@ const STOP_RECORDING_TIMEOUT_MS = 8000;
 const TRANSCRIBE_TIMEOUT_MS = 45000;
 const REFLECT_TIMEOUT_MS = 45000;
 
-function trackProduct(_eventName: string, _properties: Record<string, unknown>) {
-  // Product analytics are intentionally decoupled from this visual restore.
+function trackProduct(
+  eventName: string,
+  properties: Record<string, string | number | boolean | null | undefined>,
+  distinctId?: string,
+) {
+  trackAurora(
+    eventName,
+    {
+      source_type: "product",
+      ...properties,
+    },
+    distinctId ? { distinctId } : undefined,
+  );
+}
+
+function createClientRequestId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `client_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
 const REFLECTING_HELPERS = [
@@ -108,40 +163,6 @@ function Stars() {
         />
       ))}
     </div>
-  );
-}
-
-function HeaderIcon({ phase }: { phase: Phase }) {
-  if (phase === "idle") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <circle cx="12" cy="12" r="8.2" />
-        <path d="M12 7.5v5l3.3 1.8" />
-      </svg>
-    );
-  }
-
-  if (phase === "recording") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M4 7h7M15 7h5M4 12h3M11 12h9M4 17h10M18 17h2" />
-        <path d="M11 5v4M7 10v4M14 15v4" />
-      </svg>
-    );
-  }
-
-  if (phase === "reflecting") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M12 4.5c.6 4.1 1.4 4.9 5.5 5.5-4.1.6-4.9 1.4-5.5 5.5-.6-4.1-1.4-4.9-5.5-5.5 4.1-.6 4.9-1.4 5.5-5.5Z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M5 7h14M5 12h14M5 17h14M9 5v4M15 10v4M11 15v4" />
-    </svg>
   );
 }
 
@@ -336,9 +357,13 @@ function createMediaRecorder(stream: MediaStream, mimeType: string): ActiveRecor
 export function Diario({
   userEmail = "",
   onboarding,
+  initialContinueEntryId,
+  analyticsId,
 }: {
   userEmail?: string;
   onboarding?: OnboardingProfile;
+  initialContinueEntryId?: string;
+  analyticsId?: string;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
@@ -355,14 +380,26 @@ export function Diario({
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [nextEntryMode, setNextEntryMode] = useState<EntryMode>("new");
   const [canRetry, setCanRetry] = useState(false);
+  const [isFeedbackActive, setIsFeedbackActive] = useState(false);
+
+  function track(eventName: string, properties: Record<string, string | number | boolean | null | undefined>) {
+    trackProduct(eventName, properties, analyticsId);
+  }
 
   useEffect(() => {
-    trackProduct("product_diary_viewed", {
+    track("product_diary_viewed", {
       source: "diary",
       has_onboarding_moment: Boolean(onboarding?.moment),
       has_onboarding_presence: Boolean(onboarding?.presence),
+      entry_mode: initialContinueEntryId ? "continue" : "new",
     });
-  }, [onboarding?.moment, onboarding?.presence]);
+  }, [analyticsId, initialContinueEntryId, onboarding?.moment, onboarding?.presence]);
+
+  useEffect(() => {
+    if (!initialContinueEntryId) return;
+    setActiveEntryId(initialContinueEntryId);
+    setNextEntryMode("continue");
+  }, [initialContinueEntryId]);
 
   function resetToIdle() {
     setPhase("idle");
@@ -375,11 +412,12 @@ export function Diario({
     retryPayloadRef.current = null;
     setActiveEntryId(null);
     setNextEntryMode("new");
+    setIsFeedbackActive(false);
   }
 
-  function fail(message: string) {
+  function fail(message: string, options: { canRetry?: boolean } = {}) {
     setErrorMsg(message);
-    setCanRetry(Boolean(retryPayloadRef.current));
+    setCanRetry(Boolean(retryPayloadRef.current) && options.canRetry !== false);
     setPhase("error");
   }
 
@@ -418,14 +456,14 @@ export function Diario({
       recorderRef.current = recorder;
       recordingStartedAtRef.current = Date.now();
       setPhase("recording");
-      trackProduct("product_diary_recording_started", {
+      track("product_diary_recording_started", {
         source: "diary",
         device_family: family,
         recorder_mime_type: recorder.mimeType.split(";")[0],
         entry_mode: nextEntryMode,
       });
     } catch {
-      trackProduct("product_diary_recording_stopped", {
+      track("product_diary_recording_stopped", {
         source: "diary",
         status: "microphone_denied",
       });
@@ -442,7 +480,7 @@ export function Diario({
     const durationMs = startedAt ? Date.now() - startedAt : 0;
     const durationBucket = bucketSeconds(durationMs);
     lastDurationBucketRef.current = durationBucket;
-    trackProduct("product_diary_recording_stopped", {
+    track("product_diary_recording_stopped", {
       source: "diary",
       status: "stopped",
       duration_bucket: durationBucket,
@@ -471,6 +509,7 @@ export function Diario({
   ) {
     enterReflecting();
     setCanRetry(false);
+    const requestId = createClientRequestId();
     try {
       const form = new FormData();
       const audioType = blob.type || "audio/webm";
@@ -480,6 +519,7 @@ export function Diario({
       form.append("deviceFamily", deviceFamily());
       form.append("entryMode", options?.entryMode ?? nextEntryMode);
       form.append("durationBucket", options?.durationBucket ?? lastDurationBucketRef.current);
+      form.append("clientRequestId", requestId);
       if (options?.entryId) form.append("entryId", options.entryId);
       const tRes = await fetchWithTimeout(
         "/api/transcribe",
@@ -488,29 +528,42 @@ export function Diario({
       );
       const tData = (await tRes.json()) as TranscribeResponse;
       if (!tRes.ok || !("transcript" in tData) || !tData.transcript) {
-        retryPayloadRef.current = {
-          blob,
-          entryId: tData.entryId ?? options?.entryId,
-          entryMode: options?.entryMode ?? nextEntryMode,
-          durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
-        };
-        trackProduct("product_transcription_failed", {
+        const retryable = "retryable" in tData ? tData.retryable !== false : tRes.status >= 500 || tRes.status === 429;
+        retryPayloadRef.current = retryable
+          ? {
+              blob,
+              entryId: tData.entryId ?? options?.entryId,
+              entryMode: options?.entryMode ?? nextEntryMode,
+              durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+            }
+          : null;
+        track("product_transcription_failed", {
           source: "diary_client",
           status: String(tRes.status),
-          error_code: "transcription_response_invalid",
+          error_code: "errorCode" in tData ? tData.errorCode ?? "transcription_response_invalid" : "transcription_response_invalid",
+          error_class: "errorClass" in tData ? tData.errorClass ?? null : null,
+          retryable,
+          request_id: "requestId" in tData ? tData.requestId ?? requestId : requestId,
           device_family: deviceFamily(),
-          recorder_mime_type: audioType.split(";")[0],
+          audio_mime_type: audioType.split(";")[0],
           entry_mode: options?.entryMode ?? nextEntryMode,
+          duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
         });
-        fail("Não consegui transcrever o áudio. Tente de novo.");
+        fail(
+          "userMessage" in tData && tData.userMessage
+            ? tData.userMessage
+            : "Não consegui transcrever o áudio. Tente de novo.",
+          { canRetry: retryable },
+        );
         return;
       }
       await reflectOn(
         tData.transcript,
         tData.language ?? null,
-        tData.entryId,
+        tData.entryId ?? options?.entryId,
         tData.segmentId,
         options?.entryMode ?? nextEntryMode,
+        tData.requestId ?? requestId,
       );
     } catch (error) {
       retryPayloadRef.current = {
@@ -519,11 +572,15 @@ export function Diario({
         entryMode: options?.entryMode ?? nextEntryMode,
         durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
       };
-      trackProduct("product_transcription_failed", {
+      track("product_transcription_failed", {
         source: "diary_client",
         error_code: isAbortError(error) ? "transcription_timeout" : "transcription_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        retryable: true,
+        request_id: requestId,
         device_family: deviceFamily(),
         entry_mode: options?.entryMode ?? nextEntryMode,
+        duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
       });
       fail(isAbortError(error) ? "A transcrição demorou demais. Tente de novo." : "Falha de conexão ao transcrever.");
     }
@@ -535,6 +592,7 @@ export function Diario({
     entryId?: string,
     segmentId?: string,
     entryMode: EntryMode = "new",
+    requestId = createClientRequestId(),
   ) {
     try {
       const rRes = await fetchWithTimeout(
@@ -542,31 +600,50 @@ export function Diario({
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode }),
+          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode, clientRequestId: requestId }),
         },
         REFLECT_TIMEOUT_MS,
       );
       const data = (await rRes.json()) as ReflectResponse;
       if (!rRes.ok || "error" in data) {
-        trackProduct("product_reflection_failed", {
+        track("product_reflection_failed", {
           source: "diary_client",
           status: String(rRes.status),
-          error_code: "reflection_response_invalid",
+          error_code: "errorCode" in data ? data.errorCode ?? "reflection_response_invalid" : "reflection_response_invalid",
+          error_class: "errorClass" in data ? data.errorClass ?? null : null,
+          retryable: "retryable" in data ? data.retryable ?? null : null,
+          request_id: "requestId" in data ? data.requestId ?? requestId : requestId,
           entry_mode: entryMode,
         });
-        fail("A Aurora não conseguiu responder agora. Tente de novo.");
+        fail(
+          "userMessage" in data && data.userMessage
+            ? data.userMessage
+            : "A Aurora não conseguiu responder agora. Tente de novo.",
+          { canRetry: false },
+        );
         return;
       }
       if (data.status === "crisis") {
-        trackProduct("product_crisis_resources_shown", {
+        track("product_crisis_resources_shown", {
           source: "diary_client",
           risk_level: data.risk,
+          request_id: data.requestId ?? requestId,
         });
         setCrisis(data.resources);
         setActiveEntryId(data.entryId);
         setPhase("crisis");
         return;
       }
+      track("product_reflection_received", {
+        source: "diary_client",
+        status: "ok",
+        entry_mode: entryMode,
+        risk_level: data.risk,
+        has_mood: Boolean(data.mood),
+        reflection_type: data.fallbackSaved ? "fallback_saved" : data.mood ? "with_mood" : "without_mood",
+        fallback_saved: Boolean(data.fallbackSaved),
+        request_id: data.requestId ?? requestId,
+      });
       setReflection(data.reflection);
       setIsReflectionExpanded(false);
       setMood(data.mood);
@@ -574,9 +651,12 @@ export function Diario({
       setNextEntryMode("continue");
       setPhase("reflection");
     } catch (error) {
-      trackProduct("product_reflection_failed", {
+      track("product_reflection_failed", {
         source: "diary_client",
         error_code: isAbortError(error) ? "reflection_timeout" : "reflection_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        retryable: true,
+        request_id: requestId,
         entry_mode: entryMode,
       });
       fail(isAbortError(error) ? "A Aurora demorou demais para responder. Tente de novo." : "Falha de conexão ao refletir.");
@@ -598,17 +678,25 @@ export function Diario({
     await startRecording();
   }
 
-  const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
   const firstName = onboarding?.name?.split(" ")[0] ?? "";
-  const idleTitle = firstName ? `${firstName}, o que está vivo agora?` : DEFAULT_PROMPT;
+  const isContinuingThread = nextEntryMode === "continue" && Boolean(activeEntryId);
+  const idleTitle = isContinuingThread
+    ? "Continue este fio no seu tempo."
+    : firstName
+      ? `${firstName}, o que está vivo agora?`
+      : DEFAULT_PROMPT;
   const canExpandReflection = Boolean(
     reflection && (reflection.length > 170 || reflection.trim().split(/\s+/).length > 24),
   );
   const stateCopy: Record<Exclude<Phase, "reflection">, { title: string; body: string; helper: string }> = {
     idle: {
       title: idleTitle,
-      body: onboarding?.moment ? `Se quiser, comece por ${onboarding.moment}.` : "Fale sem organizar antes.",
-      helper: "Toque para falar",
+      body: isContinuingThread
+        ? "A nova fala entra no mesmo fio e preserva a sequência dos momentos."
+        : onboarding?.moment
+          ? `Se quiser, comece por ${onboarding.moment}.`
+          : "Fale sem organizar antes.",
+      helper: isContinuingThread ? "Toque para adicionar outro momento." : "Toque para falar",
     },
     recording: {
       title: "Gravando",
@@ -635,18 +723,10 @@ export function Diario({
   return (
     <main className={styles.stage} data-phase={phase}>
       <Stars />
-      <nav className={styles.nav} aria-label="Navegação do diário">
-        <Link href="/" className={styles.brand}>
-          <span className={styles.brandOrb} aria-hidden="true" />
-          <span>Aurora</span>
-        </Link>
-        <div className={styles.navLinks}>
-          <Link href="/timeline" className={styles.timelineLink} aria-label="Ver linha do tempo">
-            <HeaderIcon phase={phase} />
-          </Link>
-          <Link href="/account" className={styles.accountLink}>{accountLabel}</Link>
-        </div>
-      </nav>
+      <ProductNav
+        active="diario"
+        context={isContinuingThread ? "Continuando fio" : userEmail ? userEmail.split("@")[0] : undefined}
+      />
 
       {phase !== "reflection" ? (
         <div className={styles.center}>
@@ -694,9 +774,24 @@ export function Diario({
               <Orb state="idle" onClick={onOrbClick} ariaLabel="Toque para continuar falando" />
             </div>
 
-            <div className={`${styles.card} ${isReflectionExpanded ? styles.cardExpanded : ""}`}>
+            <div
+              className={`${styles.card} ${isReflectionExpanded ? styles.cardExpanded : ""} ${
+                isFeedbackActive && !isReflectionExpanded ? styles.cardFeedbackFocused : ""
+              }`}
+            >
               <div className={styles.cardContent}>
                 <span className={styles.cardIcon} aria-hidden="true">✦</span>
+                {canExpandReflection && isReflectionExpanded ? (
+                  <button
+                    type="button"
+                    className={`${styles.readMoreAction} ${styles.readMoreActionTop}`}
+                    onClick={() => setIsReflectionExpanded(false)}
+                    aria-expanded={isReflectionExpanded}
+                  >
+                    Recolher devolutiva
+                  </button>
+                ) : null}
+
                 <div
                   role={canExpandReflection ? "button" : undefined}
                   tabIndex={canExpandReflection ? 0 : undefined}
@@ -718,47 +813,59 @@ export function Diario({
                   </div>
                 </div>
 
-                {canExpandReflection && (
+                {canExpandReflection && !isReflectionExpanded ? (
                   <button
                     type="button"
                     className={styles.readMoreAction}
                     onClick={() => setIsReflectionExpanded((expanded) => !expanded)}
                     aria-expanded={isReflectionExpanded}
                   >
-                    {isReflectionExpanded ? "Recolher devolutiva" : "Ler devolutiva inteira"}
+                    Ler devolutiva inteira
                   </button>
-                )}
+                ) : null}
 
-                <div className={styles.metaRow}>
-                  {mood ? (
-                    <span className={styles.mood}>
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: MOOD_COLOR[mood] ?? "var(--ink-faint)",
-                        }}
-                      />
-                      {mood}
-                    </span>
-                  ) : (
+                {!isReflectionExpanded ? (
+                  <div className={styles.metaRow}>
+                    {mood ? (
+                      <span className={styles.mood}>
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            background: MOOD_COLOR[mood] ?? "var(--ink-faint)",
+                          }}
+                        />
+                        {mood}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+
                     <span />
-                  )}
+                  </div>
+                ) : null}
 
-                  <span />
-                </div>
+                <PmfPrompt
+                  entryId={activeEntryId}
+                  entryMode={nextEntryMode}
+                  onActiveChange={setIsFeedbackActive}
+                  source="diary_reflection"
+                  suspended={isReflectionExpanded}
+                />
 
-                <div className={styles.actionRow}>
-                  <button type="button" onClick={() => startWithMode("continue")} className={styles.primaryAction}>
-                    Continuar este registro
-                  </button>
-                  <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
-                    Novo momento
-                  </button>
-                  <Link href="/timeline" className={styles.softLink}>Linha do tempo</Link>
-                </div>
+                {!isFeedbackActive && !isReflectionExpanded ? (
+                  <div className={styles.actionRow}>
+                    <button type="button" onClick={() => startWithMode("continue")} className={styles.primaryAction}>
+                      Continuar este registro
+                    </button>
+                    <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
+                      Novo momento
+                    </button>
+                    <Link href="/timeline" className={styles.softLink}>Linha do tempo</Link>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

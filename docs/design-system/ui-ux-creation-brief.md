@@ -26,6 +26,79 @@ Classifique a superfície antes de desenhar:
 
 Se a tela mistura duas densidades, escolha a dominante. Não tente fazer marketing dentro do admin nem admin dentro do Diário.
 
+## Product UI System
+
+Antes de criar uma tela, escolha a camada de engenharia:
+
+| Camada | Quando usar | Regra |
+| --- | --- | --- |
+| Tokens | Cor, tipo, espaçamento, radius e motion | Não inventar valores soltos quando existir token. |
+| UI | Botão, card-base, painel, chip, input, tabs | Primitivo não carrega regra profunda de produto. |
+| Product | OrbControl, ReflectionCard, TimelineEntryCard, ThreadCard, FlipCard | Carrega linguagem, estados e comportamento Aurora. |
+| Patterns | Diário, resultado, timeline, fio aberto, vazio | Combina componentes para evitar tela artesanal. |
+| Responsive Lab | Mobile, tablet, desktop e cenário | Testa telas inteiras antes da migração real. |
+| Screens | `app/.../page.tsx` | Monta padrões existentes e coordena dados/rotas. |
+
+Regra operacional:
+
+- Não criar tela complexa direto em `page.tsx`.
+- Se faltar componente recorrente, criar primeiro na camada `components/ui` ou `components/product`.
+- Se faltar composição recorrente, criar em `components/patterns`.
+- Toda peça nova precisa aparecer em `/design-system/biblioteca` ou ser registrada como lacuna explícita no handoff.
+- A rota `/design-system` permanece hub curto; referência longa fica em `/design-system/referencia`.
+
+Fase 2B disponível:
+
+- `components/ui/Button.tsx`
+- `components/ui/IconButton.tsx`
+- `components/ui/CardSurface.tsx`
+- `components/ui/Panel.tsx`
+- `components/ui/Chip.tsx`
+- `components/product/ReflectionCard.tsx`
+- `components/product/TimelineEntryCard.tsx`
+- `components/product/ThreadCard.tsx`
+- `components/product/ContinueThreadButton.tsx`
+- `components/product/FlipCard.tsx`
+
+Fase 2B.1 disponível: `FlipCard` para frente/verso entre fala do usuário e devolutiva da Aurora, com expansão antes do flip.
+
+Fase 2C disponível:
+
+- `components/ui/SegmentedTabs.tsx`
+- `components/product/StreamingText.tsx`
+- `components/product/BottomNav.tsx`
+- `components/product/EmptyState.tsx`
+- `components/product/FeedbackMicro.tsx`
+- `components/product/PrivacyChip.tsx`
+
+Fase 3 disponível:
+
+- `components/patterns/DiaryCapturePattern.tsx`
+- `components/patterns/ReflectionResultPattern.tsx`
+- `components/patterns/TimelineListPattern.tsx`
+- `components/patterns/OpenThreadPattern.tsx`
+- `components/patterns/EmptyThreadPattern.tsx`
+
+Fase 3.1 disponível:
+
+- `components/patterns/responsive/responsive-pattern-config.ts`
+- `components/patterns/responsive/ResponsivePatternFrame.tsx`
+- `components/patterns/responsive/PatternControls.tsx`
+- `components/patterns/responsive/ResponsivePatternLab.tsx`
+
+Use o Responsive Screen Lab em `/design-system/patterns` antes de migrar uma rota real.
+
+Regras atuais do laboratório:
+
+- `DiaryCapturePattern` começa como a produção atual: fundo estrelado, ProductNav, orb como controle principal e sem botões abaixo do orb.
+- Os controles `Ações` e `Fundo` existem para testar exceções futuras do Diário; não são o default.
+- Os controles do Responsive Screen Lab devem ser divididos por seção e nunca podem sobrepor outro grupo.
+- A tipografia por área do laboratório usa presets fechados do DS (`Produto`, `Editorial`, `Compacta`) para `Título`, `Apoio` e `Reflexão`.
+- `ReflectionResultPattern` deve seguir a estrutura de produção da devolutiva: orb, card de leitura, leitura inteira e ações dentro do card.
+- `TimelineListPattern` usa `FlipCard` como padrão; `Sem flip` é cenário de exceção.
+
+Próximo passo do sistema: Fase 4, migrando rotas reais a partir dos patterns e do laboratório responsivo.
+
 ## Regra do orb
 
 Antes de usar o orb, escreva a função dele:
@@ -73,6 +146,8 @@ Se o componente não está no inventário, só crie novo quando:
 
 ## Layout por breakpoint
 
+Mobile, tablet e desktop não são versões reduzidas ou expandidas da mesma tela. Desenhe a intenção de cada ambiente antes de ajustar CSS.
+
 Mobile 390px:
 
 - Sem overflow horizontal.
@@ -93,6 +168,12 @@ Desktop 1440px:
 - Conteúdo à direita.
 - Barra de navegação no topo.
 - Sem sidebar por padrão no DS v2.
+
+Regra de laboratório:
+
+- O pattern deve aceitar `viewport` e `scenario` quando fizer parte da Fase 3.1.
+- Cenário controla estado de produto, como gravação, streaming, flip, erro ou fio vazio.
+- A mudança de ambiente pode alterar navegação, grid, quantidade de contexto e ação principal.
 
 Admin:
 
@@ -130,6 +211,28 @@ Não usar Fraunces em:
 - status;
 - nav;
 - admin.
+
+Escala obrigatória:
+
+| Uso | Token | Escala |
+| --- | --- | --- |
+| Hero | `--type-hero` | 56-64px |
+| Título de produto | `--type-screen-title` | 28-32px |
+| Título mobile | `--type-mobile-title` | 24-28px |
+| Título de seção | `--type-section-title` | 20-24px |
+| Título de card | `--type-card-title` | 16-18px |
+| Corpo | `--type-body` | 15-16px |
+| Meta | `--type-meta` | 11-13px |
+| Reflexão | `--type-reflection` | 18-22px |
+| Reflexão em destaque | `--type-reflection-feature` | 24-28px |
+
+Proibições de escala:
+
+- Não usar escala de hero em produto, timeline, fio, conta ou admin.
+- Não usar `40px+` em Diário, Timeline, Fio, Conta ou Admin.
+- Não usar `clamp()` com `vw` para texto funcional fora dos tokens globais.
+- Não usar `text-4xl`, `text-5xl`, `text-6xl` ou equivalentes em produto sem justificativa explícita.
+- Título dentro de card não passa de `--type-card-title`.
 
 ## Voz e microcopy
 

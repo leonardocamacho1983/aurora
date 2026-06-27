@@ -201,22 +201,25 @@ export async function sendLifecycleEmail(input: LifecycleEmailInput) {
     confirmed_no_invite_24h: {
       subject: "Seu acesso antecipado à Aurora está registrado",
       html: shell(`
-        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu acesso antecipado está registrado. Agora você pode convidar pessoas queridas para chegar junto.</p>
-        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora cresce melhor quando chega por uma indicação íntima, não por barulho.</p>
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}seu acesso antecipado está registrado. Agora você pode abrir essa porta para uma ou duas pessoas queridas.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora cresce melhor quando chega como um gesto de cuidado, de alguém que pensou: isso pode fazer bem para você.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Convide quem talvez precise de um lugar simples para falar, respirar e se escutar com mais clareza. Faz bem para a pessoa, fortalece uma rede mais íntima ao redor dela e ajuda a Aurora a nascer pelas mãos certas.</p>
         ${button("Ver meu acesso antecipado", status)}
+        <p style="font-size:14px;line-height:1.6;color:#948fa8">Sugestão: “pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.”</p>
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Seu link direto: ${share}</p>
       `),
-      text: `${greeting(input.row.name)}seu acesso antecipado está registrado: ${status}\n\nSeu link direto: ${share}`,
+      text: `${greeting(input.row.name)}seu acesso antecipado está registrado.\n\nAgora você pode abrir essa porta para uma ou duas pessoas queridas. A Aurora cresce melhor quando chega como um gesto de cuidado, de alguém que pensou: isso pode fazer bem para você.\n\nConvide quem talvez precise de um lugar simples para falar, respirar e se escutar com mais clareza. Faz bem para a pessoa, fortalece uma rede mais íntima ao redor dela e ajuda a Aurora a nascer pelas mãos certas.\n\nVer seu acesso antecipado: ${status}\n\nSugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.\n\nSeu link direto: ${share}`,
     },
     share_no_confirmed_invite_24h: {
       subject: "Seu convite só conta quando a pessoa confirma",
       html: shell(`
         <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}vi que você já mexeu no convite. Um detalhe importante: ele só vira indicação quando a pessoa confirma o email.</p>
-        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Vale mandar para uma ou duas pessoas com uma frase simples, pessoal, sem cara de divulgação.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Vale mandar para uma ou duas pessoas com uma frase simples, pessoal, sem cara de divulgação. O convite funciona melhor quando parece cuidado, não campanha.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Pense em alguém para quem a Aurora possa ser uma pausa boa nos dias: uma forma de falar com mais liberdade, organizar o que sente e chegar com mais clareza no que importa.</p>
         ${button("Ver meu acesso antecipado", status)}
         <p style="font-size:14px;line-height:1.6;color:#948fa8">Sugestão: “pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.”</p>
       `),
-      text: `${greeting(input.row.name)}seu convite só conta quando a pessoa confirma o email.\n\nVeja seu acesso antecipado: ${status}\n\nAs próximas liberações chegam por email. Mantenha a Aurora na sua caixa principal.\n\nSugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.`,
+      text: `${greeting(input.row.name)}seu convite só conta quando a pessoa confirma o email.\n\nVale mandar para uma ou duas pessoas com uma frase simples, pessoal, sem cara de divulgação. O convite funciona melhor quando parece cuidado, não campanha.\n\nPense em alguém para quem a Aurora possa ser uma pausa boa nos dias: uma forma de falar com mais liberdade, organizar o que sente e chegar com mais clareza no que importa.\n\nVeja seu acesso antecipado: ${status}\n\nSugestão: pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.`,
     },
     confirmed_no_ritual_24h: {
       subject: "Prepare sua Aurora em poucos minutos",
@@ -236,5 +239,47 @@ export async function sendLifecycleEmail(input: LifecycleEmailInput) {
     subject: variant.subject,
     html: variant.html,
     text: variant.text,
+  });
+}
+
+export async function sendAlphaTesterRitualEmail(
+  row: WaitlistEmailRow & { name?: string | null },
+  baseUrl: string,
+) {
+  const status = statusUrl(row.statusToken, baseUrl);
+  return sendEmail({
+    to: row.email,
+    subject: "Vou abrir o primeiro grupo Alpha da Aurora",
+    html: shell(`
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Oi, aqui é o Leo, criador da Aurora.</p>
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">Nesta sexta-feira, 26 de junho, vou começar a escolher as primeiras pessoas que vão entrar no Alpha da Aurora.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Além do caminho pelos convites, vou abrir essa segunda porta para quem completar o Ritual de Chegada.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O Ritual é breve: algumas perguntas para a Aurora entender melhor seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quem completar o Ritual até sexta será considerado para o primeiro grupo Alpha.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Alpha Testers vão entrar antes da abertura mais ampla, usar a Aurora ainda em construção e me ajudar a perceber o que precisa ficar mais claro, mais simples e mais cuidadoso.</p>
+      <p style="font-size:15px;line-height:1.6;color:#d8d3e6">Se você sente que a Aurora pode fazer sentido para este momento da sua vida, esse é o melhor próximo passo.</p>
+      ${button("Completar meu Ritual de Chegada", status)}
+      <p style="font-size:14px;line-height:1.6;color:#948fa8">Com carinho,<br>Leo<br>Criador da Aurora · ${quietLink("@camacho__leo", "https://instagram.com/camacho__leo")}</p>
+    `),
+    text: `Oi, aqui é o Leo, criador da Aurora.
+
+Nesta sexta-feira, 26 de junho, vou começar a escolher as primeiras pessoas que vão entrar no Alpha da Aurora.
+
+Além do caminho pelos convites, vou abrir essa segunda porta para quem completar o Ritual de Chegada.
+
+O Ritual é breve: algumas perguntas para a Aurora entender melhor seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.
+
+Quem completar o Ritual até sexta será considerado para o primeiro grupo Alpha.
+
+Alpha Testers vão entrar antes da abertura mais ampla, usar a Aurora ainda em construção e me ajudar a perceber o que precisa ficar mais claro, mais simples e mais cuidadoso.
+
+Se você sente que a Aurora pode fazer sentido para este momento da sua vida, esse é o melhor próximo passo.
+
+Completar meu Ritual de Chegada: ${status}
+
+Com carinho,
+Leo
+Criador da Aurora
+@camacho__leo: https://instagram.com/camacho__leo`,
   });
 }

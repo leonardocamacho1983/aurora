@@ -9,6 +9,7 @@ import {
   vector,
   index,
 } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 /**
  * Modelo de dados — Handoff §4 (fonte da verdade).
@@ -34,6 +35,27 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
+// entry_threads — fios de continuidade entre momentos do diário.
+export const entryThreads = pgTable(
+  "entry_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    rootEntryId: uuid("root_entry_id"),
+    title: text("title"),
+    summary: text("summary"),
+    status: text("status").default("active").notNull(), // active|archived
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userIdx: index("entry_threads_user_id_idx").on(t.userId),
+    rootEntryIdx: index("entry_threads_root_entry_id_idx").on(t.rootEntryId),
+  }),
+);
+
 // entries — gravação → transcrição → reflexão da Aurora.
 export const entries = pgTable(
   "entries",
@@ -48,11 +70,20 @@ export const entries = pgTable(
     reflection: text("reflection"), // resposta da Aurora
     mood: text("mood"), // leve|calmo|pesado|sensível|ansioso (opcional)
     riskLevel: text("risk_level").default("none").notNull(), // none|low|high
+    threadId: uuid("thread_id").references(() => entryThreads.id, { onDelete: "set null" }),
+    threadPosition: integer("thread_position"),
+    continuedFromEntryId: uuid("continued_from_entry_id").references(
+      (): AnyPgColumn => entries.id,
+      { onDelete: "set null" },
+    ),
+    entryMode: text("entry_mode").default("new").notNull(), // new|continue|reformulate
     shared: boolean("shared").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
     userIdx: index("entries_user_id_idx").on(t.userId),
+    threadIdx: index("entries_thread_id_idx").on(t.threadId),
+    continuedFromIdx: index("entries_continued_from_entry_id_idx").on(t.continuedFromEntryId),
   }),
 );
 
