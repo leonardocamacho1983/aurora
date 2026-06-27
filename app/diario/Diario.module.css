@@ -221,6 +221,11 @@
   text-align: center;
 }
 
+.errorPanel .retryNotice {
+  color: rgba(230, 222, 255, 0.68);
+  font-size: 0.84rem;
+}
+
 .errorIcon {
   position: relative;
   width: 28px;
@@ -258,6 +263,11 @@
   color: rgba(255, 200, 166, 0.98);
   font: 700 0.96rem var(--font-sans);
   cursor: pointer;
+}
+
+.errorActions button:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .composition {
