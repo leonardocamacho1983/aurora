@@ -17,7 +17,36 @@ export const metadata: Metadata = {
   },
 };
 
-type SearchParams = Promise<{ token?: string }>;
+type AdminTab = "launch" | "access" | "product" | "technical";
+
+type SearchParams = Promise<{ token?: string; tab?: string }>;
+
+const ADMIN_TABS: Array<{
+  id: AdminTab;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "launch",
+    label: "Lançamento",
+    description: "Waitlist, email, campanha e conversão.",
+  },
+  {
+    id: "access",
+    label: "Acesso",
+    description: "Convites, rede e pessoas engajadas.",
+  },
+  {
+    id: "product",
+    label: "Produto",
+    description: "Transcrição, reflexão e falhas do Alpha.",
+  },
+  {
+    id: "technical",
+    label: "Técnico",
+    description: "Saúde dos dados e eventos operacionais.",
+  },
+];
 
 type CountRow = {
   total: number;
@@ -338,6 +367,14 @@ function retryableLabel(value: string) {
   if (value === "true") return "sim";
   if (value === "false") return "não";
   return "sem sinal";
+}
+
+function isAdminTab(value: string | undefined): value is AdminTab {
+  return ADMIN_TABS.some((tab) => tab.id === value);
+}
+
+function adminHref(adminToken: string, tab: AdminTab) {
+  return `/admin?token=${encodeURIComponent(adminToken)}&tab=${tab}`;
 }
 
 function PrivateScreen({ configured }: { configured: boolean }) {
@@ -1445,13 +1482,15 @@ async function getDashboardData() {
 }
 
 export default async function AdminPage({ searchParams }: { searchParams: SearchParams }) {
-  const { token } = await searchParams;
+  const { tab, token } = await searchParams;
   const adminToken = process.env.WAITLIST_ADMIN_TOKEN?.trim();
 
   if (!adminToken || token !== adminToken) {
     return <PrivateScreen configured={Boolean(adminToken)} />;
   }
 
+  const activeTab = isAdminTab(tab) ? tab : "launch";
+  const activeTabMeta = ADMIN_TABS.find((item) => item.id === activeTab) ?? ADMIN_TABS[0];
   const data = await getDashboardData();
   const shareEvents = data.eventSummary
     .filter((event) => ["invite_whatsapp_clicked", "invite_copied", "invite_shared"].includes(event.eventName))
@@ -1496,6 +1535,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         : "Atenção técnica";
   const exportHref = `/api/waitlist/export?token=${encodeURIComponent(adminToken)}`;
   const maintenanceDryRunHref = `/api/waitlist/maintenance?token=${encodeURIComponent(adminToken)}&dryRun=1`;
+  const refreshHref = adminHref(adminToken, activeTab);
   const highestDailyValue = Math.max(
     1,
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
@@ -1510,16 +1550,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               <span className={styles.orb} />
               Aurora Cockpit
             </div>
-            <h1 className={styles.title}>Lançamento, emails e rede de convites.</h1>
+            <h1 className={styles.title}>{activeTabMeta.label}</h1>
             <p className={styles.lead}>
-              Painel operacional para entender confirmação, campanha, indicação e dados que pedem ação.
+              {activeTabMeta.description}
             </p>
           </div>
           <div className={styles.actions}>
-            <Link className={styles.button} href={exportHref}>
-              Exportar CSV
-            </Link>
-            <Link className={styles.secondary} href={`/admin?token=${encodeURIComponent(adminToken)}`}>
+            {activeTab === "launch" ? (
+              <Link className={styles.button} href={exportHref}>
+                Exportar CSV
+              </Link>
+            ) : null}
+            <Link className={styles.secondary} href={refreshHref}>
               Atualizar
             </Link>
             <Link className={styles.secondary} href="/">
@@ -1527,6 +1569,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             </Link>
           </div>
         </section>
+
+        <nav className={styles.tabNav} aria-label="Seções do cockpit">
+          {ADMIN_TABS.map((item) => (
+            <Link
+              aria-current={item.id === activeTab ? "page" : undefined}
+              className={cx(styles.tabLink, item.id === activeTab && styles.active)}
+              href={adminHref(adminToken, item.id)}
+              key={item.id}
+            >
+              <strong>{item.label}</strong>
+              <span>{item.description}</span>
+            </Link>
+          ))}
+        </nav>
 
         <section className={styles.alertStrip}>
           <SignalRow
@@ -1552,7 +1608,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           />
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Lançamento</h2>
             <p>O essencial: lista, confirmação, convite e Ritual de Chegada.</p>
@@ -1565,7 +1621,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Email</h2>
             <p>Envios transacionais da waitlist e sinais recebidos pelo webhook do Resend.</p>
@@ -1626,7 +1682,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <div>
               <h2>Saúde de e-mail</h2>
@@ -1726,7 +1782,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "product"}>
           <div className={styles.sectionHeader}>
             <div>
               <h2>Alertas técnicos</h2>
@@ -1783,7 +1839,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "access"}>
           <div className={styles.sectionHeader}>
             <h2>Rede de convites</h2>
             <p>Convidante é quem compartilha. Convidados são as pessoas que entram pelo código. Confirmados são convidados que validaram email.</p>
@@ -1841,7 +1897,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "access"}>
           <div className={styles.sectionHeader}>
             <h2>Pessoas mais engajadas</h2>
             <p>Ranking operacional: convites confirmados, gestos de compartilhamento, visitas à sala e Ritual completo.</p>
@@ -1876,7 +1932,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Campanha launch_waitlist</h2>
             <p>Recorte por UTM oficial. Os volumes abaixo vêm dos eventos e cadastros marcados com a campanha.</p>
@@ -1922,7 +1978,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Tráfego e conversão</h2>
             <p>Leitura first-party geral dos últimos 30 dias.</p>
@@ -1941,7 +1997,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Últimos 14 dias</h2>
             <p>Ritmo diário para perceber se publicação, conversa ou ajuste de copy mudou comportamento.</p>
@@ -1971,7 +2027,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "technical"}>
           <div className={styles.sectionHeader}>
             <h2>Saúde dos dados</h2>
             <p>Separação entre dados internos, teste real e problemas técnicos acionáveis.</p>
@@ -2038,7 +2094,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "launch"}>
           <div className={styles.sectionHeader}>
             <h2>Sinais de desejo</h2>
             <p>Respostas recentes do Ritual para entender promessa, linguagem e primeiro uso.</p>
@@ -2060,7 +2116,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section className={styles.section} hidden={activeTab !== "technical"}>
           <div className={styles.sectionHeader}>
             <h2>Eventos recentes</h2>
             <p>Últimos sinais server-side do fluxo de lançamento.</p>
