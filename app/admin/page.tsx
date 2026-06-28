@@ -146,6 +146,27 @@ type EmailHygieneEventRow = {
   createdAt: Date | string;
 };
 
+type ProductTechnicalSummaryRow = {
+  events: number;
+  requests: number;
+  people: number;
+  failureEvents: number;
+  failureRequests: number;
+  failurePeople: number;
+  retryableFailures: number;
+  nonRetryableFailures: number;
+  latestEventAt: Date | string | null;
+  latestFailureAt: Date | string | null;
+};
+
+type ProductFailureAlertRow = {
+  errorClass: string;
+  retryable: string;
+  requests: number;
+  people: number;
+  latestAt: Date | string | null;
+};
+
 type FlaggedRow = {
   email: string;
   reason: string;
@@ -161,6 +182,8 @@ type EngagedRow = {
   roomViews: number;
   ritualComplete: boolean;
 };
+
+const ALPHA_COHORT_START = "2026-06-19T00:00:00.000Z";
 
 function rows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
@@ -246,6 +269,10 @@ const help = {
   paused7d: "Pessoas não confirmadas após 7 dias que foram pausadas pela higiene de email.",
   archived30d: "Pessoas não confirmadas após 30 dias que foram arquivadas operacionalmente.",
   reactivated: "Eventos em que uma pessoa pausada/arquivada voltou ao formulário e foi reativada.",
+  technicalStatus: "Requests únicos de transcrição/reflexão com erro nas últimas 24h, deduplicados por request_id.",
+  technicalPeople: "Pessoas reais impactadas por falhas técnicas, excluindo emails internos/testes.",
+  technicalRetryable: "Falhas marcadas como recuperáveis por retry/backoff versus falhas não recuperáveis.",
+  technicalLatest: "Último sinal técnico registrado em product_events para transcrição/reflexão.",
   activeInviters: "Pessoas cujo referral_code aparece em pelo menos um cadastro novo como referred_by_code.",
   invitedTotal: "Cadastros na tabela waitlist criados com referred_by_code válido.",
   confirmedPerInviter: "Convidados confirmados dividido por convidantes ativos.",
@@ -305,6 +332,12 @@ function emailHygieneReason(reason: string | null) {
     hard_email_signal: "bloqueio duro de entrega",
   };
   return reason ? reasons[reason] ?? reason : "execução";
+}
+
+function retryableLabel(value: string) {
+  if (value === "true") return "sim";
+  if (value === "false") return "não";
+  return "sem sinal";
 }
 
 function PrivateScreen({ configured }: { configured: boolean }) {
@@ -414,6 +447,52 @@ function BreakdownList({
         <p className={styles.emptyState}>{empty}</p>
       )}
     </article>
+  );
+}
+
+function ProductFailureAlertTable({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: ProductFailureAlertRow[];
+  empty: string;
+}) {
+  return (
+    <div>
+      <h3 className={styles.cardTitle}>{title}</h3>
+      <div className={styles.tableCard}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Classe</th>
+              <th>Requests</th>
+              <th>Pessoas</th>
+              <th>Retry</th>
+              <th>Último sinal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length ? (
+              rows.map((row) => (
+                <tr key={`${title}-${row.errorClass}-${row.retryable}`}>
+                  <td>{row.errorClass}</td>
+                  <td>{compactNumber(asNumber(row.requests))}</td>
+                  <td>{compactNumber(asNumber(row.people))}</td>
+                  <td>{retryableLabel(row.retryable)}</td>
+                  <td>{formatDate(row.latestAt)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5}>{empty}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -744,6 +823,208 @@ async function getDashboardData() {
       )
       order by created_at desc
       limit 10
+    `),
+  );
+
+  const [productTechnical24h] = rows<ProductTechnicalSummaryRow>(
+    await db.execute(sql`
+      with real_events as (
+        select pe.*
+        from product_events pe
+        left join users u on u.id = pe.user_id
+        where pe.created_at >= now() - interval '24 hours'
+          and pe.event_name in (
+            'product_transcription_attempted',
+            'product_transcription_succeeded',
+            'product_transcription_failed',
+            'product_reflection_attempted',
+            'product_reflection_succeeded',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed',
+            'product_reflection_received'
+          )
+          and lower(coalesce(u.email, '')) not like '%test%'
+          and lower(coalesce(u.email, '')) not like '%launchtest%'
+          and lower(coalesce(u.email, '')) not like '%example.%'
+          and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      )
+      select
+        count(*)::int as events,
+        count(distinct coalesce(metadata->>'request_id', id::text))::int as requests,
+        count(distinct user_id)::int as people,
+        count(*) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failureEvents",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failureRequests",
+        count(distinct user_id) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failurePeople",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+            and metadata->>'retryable' = 'true'
+        )::int as "retryableFailures",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+            and metadata->>'retryable' = 'false'
+        )::int as "nonRetryableFailures",
+        max(created_at) as "latestEventAt",
+        max(created_at) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        ) as "latestFailureAt"
+      from real_events
+    `),
+  );
+
+  const [productTechnicalSinceAlpha] = rows<ProductTechnicalSummaryRow>(
+    await db.execute(sql`
+      with real_events as (
+        select pe.*
+        from product_events pe
+        left join users u on u.id = pe.user_id
+        where pe.created_at >= cast(${ALPHA_COHORT_START} as timestamptz)
+          and pe.event_name in (
+            'product_transcription_attempted',
+            'product_transcription_succeeded',
+            'product_transcription_failed',
+            'product_reflection_attempted',
+            'product_reflection_succeeded',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed',
+            'product_reflection_received'
+          )
+          and lower(coalesce(u.email, '')) not like '%test%'
+          and lower(coalesce(u.email, '')) not like '%launchtest%'
+          and lower(coalesce(u.email, '')) not like '%example.%'
+          and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      )
+      select
+        count(*)::int as events,
+        count(distinct coalesce(metadata->>'request_id', id::text))::int as requests,
+        count(distinct user_id)::int as people,
+        count(*) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failureEvents",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failureRequests",
+        count(distinct user_id) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        )::int as "failurePeople",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+            and metadata->>'retryable' = 'true'
+        )::int as "retryableFailures",
+        count(distinct coalesce(metadata->>'request_id', id::text)) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+            and metadata->>'retryable' = 'false'
+        )::int as "nonRetryableFailures",
+        max(created_at) as "latestEventAt",
+        max(created_at) filter (
+          where event_name in (
+            'product_transcription_failed',
+            'product_reflection_fallback_saved',
+            'product_reflection_failed'
+          )
+        ) as "latestFailureAt"
+      from real_events
+    `),
+  );
+
+  const productFailureAlerts24h = rows<ProductFailureAlertRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(pe.metadata->>'error_class', ''), 'sem classe') as "errorClass",
+        coalesce(nullif(pe.metadata->>'retryable', ''), 'desconhecido') as retryable,
+        count(distinct coalesce(pe.metadata->>'request_id', pe.id::text))::int as requests,
+        count(distinct pe.user_id)::int as people,
+        max(pe.created_at) as "latestAt"
+      from product_events pe
+      left join users u on u.id = pe.user_id
+      where pe.created_at >= now() - interval '24 hours'
+        and pe.event_name in (
+          'product_transcription_failed',
+          'product_reflection_fallback_saved',
+          'product_reflection_failed'
+        )
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1, 2
+      order by requests desc, "latestAt" desc
+      limit 8
+    `),
+  );
+
+  const productFailureAlertsSinceAlpha = rows<ProductFailureAlertRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(pe.metadata->>'error_class', ''), 'sem classe') as "errorClass",
+        coalesce(nullif(pe.metadata->>'retryable', ''), 'desconhecido') as retryable,
+        count(distinct coalesce(pe.metadata->>'request_id', pe.id::text))::int as requests,
+        count(distinct pe.user_id)::int as people,
+        max(pe.created_at) as "latestAt"
+      from product_events pe
+      left join users u on u.id = pe.user_id
+      where pe.created_at >= cast(${ALPHA_COHORT_START} as timestamptz)
+        and pe.event_name in (
+          'product_transcription_failed',
+          'product_reflection_fallback_saved',
+          'product_reflection_failed'
+        )
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1, 2
+      order by requests desc, "latestAt" desc
+      limit 8
     `),
   );
 
@@ -1098,6 +1379,32 @@ async function getDashboardData() {
       lastLifecycleAt: emailHealth?.lastLifecycleAt ?? null,
     },
     emailHygieneEvents,
+    productTechnical24h: {
+      events: asNumber(productTechnical24h?.events),
+      requests: asNumber(productTechnical24h?.requests),
+      people: asNumber(productTechnical24h?.people),
+      failureEvents: asNumber(productTechnical24h?.failureEvents),
+      failureRequests: asNumber(productTechnical24h?.failureRequests),
+      failurePeople: asNumber(productTechnical24h?.failurePeople),
+      retryableFailures: asNumber(productTechnical24h?.retryableFailures),
+      nonRetryableFailures: asNumber(productTechnical24h?.nonRetryableFailures),
+      latestEventAt: productTechnical24h?.latestEventAt ?? null,
+      latestFailureAt: productTechnical24h?.latestFailureAt ?? null,
+    },
+    productTechnicalSinceAlpha: {
+      events: asNumber(productTechnicalSinceAlpha?.events),
+      requests: asNumber(productTechnicalSinceAlpha?.requests),
+      people: asNumber(productTechnicalSinceAlpha?.people),
+      failureEvents: asNumber(productTechnicalSinceAlpha?.failureEvents),
+      failureRequests: asNumber(productTechnicalSinceAlpha?.failureRequests),
+      failurePeople: asNumber(productTechnicalSinceAlpha?.failurePeople),
+      retryableFailures: asNumber(productTechnicalSinceAlpha?.retryableFailures),
+      nonRetryableFailures: asNumber(productTechnicalSinceAlpha?.nonRetryableFailures),
+      latestEventAt: productTechnicalSinceAlpha?.latestEventAt ?? null,
+      latestFailureAt: productTechnicalSinceAlpha?.latestFailureAt ?? null,
+    },
+    productFailureAlerts24h,
+    productFailureAlertsSinceAlpha,
     engagedPeople,
     recentProfiles,
     recentEvents,
@@ -1169,6 +1476,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     data.email.milestoneSent +
     data.email.lifecycleSent;
   const emailHardSignalNote = `${data.emailHealth.bouncedPeople} bounce, ${data.emailHealth.complainedPeople} complaint, ${data.emailHealth.providerSuppressedPeople} suppressed`;
+  const productTechnicalStatusNote = data.productTechnical24h.failureRequests
+    ? `${data.productTechnical24h.failureRequests} requests com falha`
+    : "Sem falhas nas últimas 24h";
+  const productTechnicalTone = data.productTechnical24h.failureRequests ? "warn" : "good";
+  const productTechnicalLatestNote = data.productTechnical24h.latestEventAt
+    ? `Último evento: ${formatDate(data.productTechnical24h.latestEventAt)}`
+    : "Sem evento técnico nas últimas 24h";
   const dataHealthGood =
     data.health.testRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -1409,6 +1723,63 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 </tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2>Alertas técnicos</h2>
+              <p>Transcrição e reflexão no Alpha, deduplicadas por request e sem conteúdo sensível.</p>
+            </div>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard
+              value={compactNumber(data.productTechnical24h.failureRequests)}
+              label="Falhas 24h"
+              note={`${productTechnicalStatusNote}; ${data.productTechnical24h.failureEvents} eventos de falha em ${data.productTechnical24h.events} eventos técnicos`}
+              tone={productTechnicalTone}
+              definition={help.technicalStatus}
+            />
+            <MetricCard
+              value={compactNumber(data.productTechnical24h.failurePeople)}
+              label="Pessoas afetadas"
+              note={`${compactNumber(data.productTechnical24h.requests)} requests técnicos nas últimas 24h`}
+              tone={data.productTechnical24h.failurePeople ? "warn" : "good"}
+              definition={help.technicalPeople}
+            />
+            <MetricCard
+              value={`${data.productTechnical24h.retryableFailures}/${data.productTechnical24h.nonRetryableFailures}`}
+              label="Retryable / não"
+              note="Requests únicos com falha"
+              tone={data.productTechnical24h.nonRetryableFailures ? "warn" : "neutral"}
+              definition={help.technicalRetryable}
+            />
+            <MetricCard
+              value={data.productTechnical24h.latestFailureAt ? formatDate(data.productTechnical24h.latestFailureAt) : "sem falha"}
+              label="Última falha"
+              note={productTechnicalLatestNote}
+              tone={data.productTechnical24h.latestFailureAt ? "warn" : "good"}
+              definition={help.technicalLatest}
+            />
+          </div>
+          <div className={styles.split}>
+            <ProductFailureAlertTable
+              title="Falhas nas últimas 24h"
+              rows={data.productFailureAlerts24h}
+              empty="Sem falhas técnicas nas últimas 24h."
+            />
+            <ProductFailureAlertTable
+              title="Falhas desde Alpha"
+              rows={data.productFailureAlertsSinceAlpha}
+              empty="Sem falhas técnicas registradas desde o início Alpha."
+            />
+          </div>
+          <div className={styles.noteCard}>
+            Desde Alpha: {compactNumber(data.productTechnicalSinceAlpha.failureRequests)} requests com falha em{" "}
+            {compactNumber(data.productTechnicalSinceAlpha.requests)} requests técnicos de{" "}
+            {compactNumber(data.productTechnicalSinceAlpha.people)} pessoas reais. A leitura exclui contas internas/teste e usa
+            apenas metadata segura: request_id, attempt, error_class e retryable.
           </div>
         </section>
 
