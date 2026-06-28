@@ -87,7 +87,35 @@ function writeLocal(key: string, value: string) {
   }
 }
 
+function readUrlStatusToken() {
+  try {
+    const token = new URL(window.location.href).searchParams.get("token")?.trim();
+    return token && /^[0-9a-f-]{36}$/i.test(token) ? token : "";
+  } catch {
+    return "";
+  }
+}
+
+function writeStatusToken(statusToken: string) {
+  if (!statusToken) return;
+  try {
+    let context = {};
+    try {
+      const raw = localStorage.getItem("aurora_invite_context");
+      context = raw ? JSON.parse(raw) : {};
+    } catch {
+      context = {};
+    }
+    localStorage.setItem("aurora_invite_context", JSON.stringify({ ...context, statusToken, savedAt: Date.now() }));
+  } catch {
+    /* ignore */
+  }
+}
+
 function readStatusToken() {
+  const urlToken = readUrlStatusToken();
+  if (urlToken) return urlToken;
+
   try {
     const raw = localStorage.getItem("aurora_invite_context");
     const context = raw ? JSON.parse(raw) as { statusToken?: string } : {};
@@ -125,6 +153,7 @@ export function ArrivalRitual() {
   const [draft, setDraft] = useState("");
 
   useEffect(() => {
+    writeStatusToken(readUrlStatusToken());
     const next: Record<string, string> = {};
     questions.forEach((question) => {
       next[question.key] = clean(readLocal(question.key), question.max);

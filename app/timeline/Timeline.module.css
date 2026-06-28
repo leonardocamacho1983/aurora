@@ -34,13 +34,13 @@
   z-index: 1;
   width: min(100%, 1400px);
   margin: 0 auto;
-  padding: max(34px, env(safe-area-inset-top)) clamp(28px, 4.3vw, 64px) 64px;
+  padding: max(116px, calc(env(safe-area-inset-top) + 92px)) clamp(28px, 4.3vw, 64px) 64px;
 }
 
 .header {
   min-height: 48px;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 28px;
   margin-bottom: 34px;
@@ -190,17 +190,20 @@
 }
 
 .nowSection,
+.threadSection,
 .weekSection,
 .archive {
   display: grid;
   gap: 14px;
 }
 
-.nowSection {
+.nowSection,
+.threadSection {
   margin-bottom: 28px;
 }
 
 .nowCard,
+.threadCard,
 .weekCard,
 .patternCard,
 .mobilePatternCard,
@@ -215,6 +218,84 @@
   border: 1px solid var(--timeline-border);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
+}
+
+.weekCard,
+.threadCard,
+.archiveRow {
+  color: inherit;
+  text-decoration: none;
+}
+
+.threadGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.threadCard {
+  min-height: 190px;
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.threadCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 76% 54% at 8% 0%, rgba(169, 155, 217, 0.12), transparent 70%),
+    radial-gradient(ellipse 48% 42% at 94% 100%, rgba(244, 182, 160, 0.08), transparent 74%);
+}
+
+.threadMeta,
+.threadPreview,
+.threadAction,
+.threadCard h2 {
+  position: relative;
+  z-index: 1;
+}
+
+.threadMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: rgba(179, 173, 196, 0.78);
+  font: 700 0.84rem/1.35 var(--font-sans);
+}
+
+.threadCard h2 {
+  margin: 0;
+  color: rgba(250, 247, 255, 0.96);
+  font-size: clamp(1.22rem, 1.8vw, 1.52rem);
+  font-style: italic;
+  font-weight: 450;
+  line-height: 1.22;
+}
+
+.threadPreview {
+  color: rgba(240, 236, 247, 0.76);
+  font: 600 0.94rem/1.5 var(--font-sans);
+}
+
+.threadPreview p {
+  margin: 0;
+}
+
+.threadAction {
+  width: fit-content;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  color: rgba(196, 184, 238, 0.94);
+  background: rgba(169, 155, 217, 0.11);
+  border: 1px solid rgba(169, 155, 217, 0.18);
+  font: 800 0.78rem/1 var(--font-sans);
 }
 
 .nowCard {
@@ -312,6 +393,23 @@
   font: 500 1.45rem/1 var(--font-sans);
 }
 
+.cardThreadAction {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  color: rgba(196, 184, 238, 0.96);
+  text-decoration: none;
+  background: rgba(169, 155, 217, 0.13);
+  border: 1px solid rgba(169, 155, 217, 0.22);
+  font: 800 0.8rem/1 var(--font-sans);
+}
+
 .sectionHeader {
   display: flex;
   align-items: center;
@@ -350,7 +448,8 @@
   scroll-snap-align: start;
   min-width: 0;
   display: grid;
-  align-content: space-between;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
   gap: 16px;
   padding: 24px;
 }
@@ -391,10 +490,23 @@
 .weekText {
   position: relative;
   z-index: 1;
+  min-height: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
   color: rgba(250, 247, 255, 0.96);
-  font-size: clamp(1.12rem, 1.65vw, 1.45rem);
+  font-size: clamp(1rem, 1.35vw, 1.22rem);
   font-weight: 430;
   line-height: 1.34;
+}
+
+.weekCard[data-size="tall"] .weekText {
+  -webkit-line-clamp: 6;
+}
+
+.weekCard[data-size="wide"] .weekText {
+  -webkit-line-clamp: 3;
 }
 
 .roundSummary {
@@ -462,10 +574,14 @@
 
 .patternText {
   color: rgba(250, 247, 255, 0.96);
-  font-size: clamp(1.62rem, 2.5vw, 2rem);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  font-size: clamp(1.26rem, 1.8vw, 1.48rem);
   font-style: italic;
   font-weight: 420;
-  line-height: 1.45;
+  line-height: 1.38;
 }
 
 .softAction {
@@ -672,7 +788,7 @@
 
   .inner {
     width: min(100%, 900px);
-    padding: max(30px, env(safe-area-inset-top)) 24px calc(108px + env(safe-area-inset-bottom));
+    padding: max(92px, calc(env(safe-area-inset-top) + 78px)) 24px calc(108px + env(safe-area-inset-bottom));
   }
 
   .header {
@@ -712,6 +828,15 @@
 
   .header .periodTabs {
     display: none;
+  }
+
+  .threadGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .threadCard {
+    min-height: 184px;
+    border-radius: 18px;
   }
 
   .newEntry {
@@ -837,6 +962,12 @@
     width: 64px;
     height: 64px;
     font-size: 1.8rem;
+  }
+
+  .cardThreadAction {
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 0.86rem;
   }
 
   .weekSection {

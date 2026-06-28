@@ -13,6 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:fios:schema": "node scripts/apply-fios-schema.mjs",
+    "db:fios:schema:dev": "node scripts/apply-fios-schema.mjs --env .env.development.local --reconcile-drizzle-history",
     "db:test": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",

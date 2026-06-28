@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { and, desc, eq, isNotNull, or } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { entries } from "@/lib/db/schema";
+import { entries, entryThreads } from "@/lib/db/schema";
 import { generateInsights, type InsightSource } from "@/lib/ai/insights";
+import { ProductNav } from "@/components/product/ProductNav";
 import { renderProse } from "@/lib/render-prose";
 import styles from "./Timeline.module.css";
 
@@ -42,12 +43,23 @@ type Row = {
   transcript: string | null;
   reflection: string | null;
   mood: string | null;
+  threadId: string | null;
   createdAt: Date;
 };
 
 type TimelineSearchParams = {
   range?: string;
   mood?: string;
+};
+
+type ThreadPreviewRow = {
+  id: string;
+  title: string | null;
+  summary: string | null;
+  updatedAt: Date;
+  momentCount: number;
+  latestText: string | null;
+  latestMood: string | null;
 };
 
 function normalizeRange(value: string | undefined): (typeof RANGES)[number] {
@@ -98,6 +110,12 @@ function entryText(row: Row): string {
 function excerpt(row: Row, max = 124): string {
   const text = entryText(row);
   return text.length > max ? `${text.slice(0, max).trim()}…` : text;
+}
+
+function textExcerpt(text: string, max = 168): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return clean;
+  return clean.length > max ? `${clean.slice(0, max).trim()}…` : clean;
 }
 
 function moodColor(mood: string | null): string {
@@ -204,11 +222,6 @@ function MoodFilters({ range, mood }: { range: (typeof RANGES)[number]; mood: st
 function Header({ range, mood }: { range: (typeof RANGES)[number]; mood: string | null }) {
   return (
     <header className={styles.header}>
-      <Link href="/diario" className={styles.brand} aria-label="Voltar ao diário">
-        <OrbMark />
-        <span>Aurora</span>
-      </Link>
-      <span className={styles.headerDivider} aria-hidden="true" />
       <h1>Linha do tempo</h1>
       <div className={styles.headerFilters}>
         <PeriodTabs range={range} mood={mood} />
@@ -218,6 +231,38 @@ function Header({ range, mood }: { range: (typeof RANGES)[number]; mood: string 
         </Link>
       </div>
     </header>
+  );
+}
+
+function threadTitle(thread: ThreadPreviewRow) {
+  return thread.title ?? textExcerpt(thread.latestText ?? "Fio do diário", 72);
+}
+
+function ThreadRail({ threads }: { threads: ThreadPreviewRow[] }) {
+  if (threads.length === 0) return null;
+
+  return (
+    <section className={styles.threadSection} aria-labelledby="threads-title">
+      <div className={styles.sectionHeader}>
+        <p className={styles.sectionLabel} id="threads-title">Fios</p>
+        <span>Entradas com mais de um momento</span>
+      </div>
+      <div className={styles.threadGrid}>
+        {threads.slice(0, 6).map((thread) => (
+          <Link className={styles.threadCard} href={`/fios/${thread.id}`} key={thread.id}>
+            <div className={styles.threadMeta}>
+              <span>{thread.momentCount} momentos</span>
+              <span>{formatShortDate(thread.updatedAt)}</span>
+            </div>
+            <h2 className="font-serif">{threadTitle(thread)}</h2>
+            <div className={styles.threadPreview}>
+              {renderProse(textExcerpt(thread.summary ?? thread.latestText ?? "", 150))}
+            </div>
+            <span className={styles.threadAction}>Abrir fio</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -249,6 +294,7 @@ function MobileControls({ range, mood }: { range: (typeof RANGES)[number]; mood:
 }
 
 function NowCard({ row }: { row: Row }) {
+  const actionHref = row.threadId ? `/fios/${row.threadId}` : `/diario?continueEntryId=${row.id}`;
   return (
     <section className={styles.nowSection} aria-labelledby="now-title">
       <p className={styles.sectionLabel} id="now-title">Agora</p>
@@ -263,8 +309,12 @@ function NowCard({ row }: { row: Row }) {
         <div className={`font-serif ${styles.nowText}`}>{renderProse(excerpt(row, 140))}</div>
         <div className={styles.nowAside}>
           <span>{entryMeasure(row)}</span>
-          <Link href="/diario" className={styles.roundAction} aria-label="Criar nova entrada no diário">
-            <span aria-hidden="true">›</span>
+          <Link
+            href={actionHref}
+            className={styles.cardThreadAction}
+            aria-label={row.threadId ? "Abrir fio deste registro" : "Continuar este registro como fio"}
+          >
+            {row.threadId ? "Abrir fio" : "Continuar como fio"}
           </Link>
         </div>
       </article>
@@ -293,7 +343,9 @@ function WeekRail({
         <span>Arraste para ver mais</span>
       </div>
       <div className={styles.weekRail}>
-        {rows.slice(0, 5).map((row, index) => (
+        {rows.slice(0, 5).map((row, index) => {
+          const actionHref = row.threadId ? `/fios/${row.threadId}` : `/diario?continueEntryId=${row.id}`;
+          return (
           <article
             className={styles.weekCard}
             data-size={index === 0 ? "tall" : index === 1 ? "wide" : "compact"}
@@ -309,8 +361,12 @@ function WeekRail({
               <MoodDot mood={row.mood} />
               {moodLabel(row.mood)}
             </span>
+            <Link className={styles.cardThreadAction} href={actionHref}>
+              {row.threadId ? "Abrir fio" : "Continuar como fio"}
+            </Link>
           </article>
-        ))}
+          );
+        })}
         <article className={`${styles.weekCard} ${styles.roundSummary}`}>
           <div className={styles.roundIcon} aria-hidden="true">≈</div>
           <p>Seu padrão esta semana</p>
@@ -344,7 +400,7 @@ async function InsightsPanel({
   range: (typeof RANGES)[number];
   mood: string | null;
 }) {
-  let main = latest?.reflection ?? "Há um fio de calma entre criação, descanso e presença.";
+  let main = "A Timeline guarda os sinais recentes sem transformar seu diário em dashboard.";
 
   try {
     const data = await generateInsights(week);
@@ -353,12 +409,14 @@ async function InsightsPanel({
     // Mantém fallback local e evita bloquear a timeline.
   }
 
+  const displayMain = textExcerpt(main, 168);
+
   return (
     <>
       <aside className={styles.insightRail} id="patterns" aria-label="Padrão da semana e filtros">
         <section className={styles.patternCard}>
           <p className={styles.sectionLabel}>Padrão da semana</p>
-          <div className={`font-serif ${styles.patternText}`}>{renderProse(main)}</div>
+          <div className={`font-serif ${styles.patternText}`}>{renderProse(displayMain)}</div>
           <a href="#records" className={styles.softAction}>Entender padrão <span aria-hidden="true">›</span></a>
         </section>
 
@@ -381,7 +439,7 @@ async function InsightsPanel({
         <span className={styles.mobilePatternIcon} aria-hidden="true">✦</span>
         <div>
           <p className={styles.sectionLabel}>Padrão da semana</p>
-          <div className={`font-serif ${styles.mobilePatternText}`}>{renderProse(main)}</div>
+          <div className={`font-serif ${styles.mobilePatternText}`}>{renderProse(textExcerpt(main, 128))}</div>
         </div>
         <a href="#records" aria-label="Ir para registros">
           <span aria-hidden="true">›</span>
@@ -405,12 +463,21 @@ function Archive({ groups }: { groups: [string, Row[]][] }) {
           <h2>{month}</h2>
           <div className={styles.archiveTable}>
             {monthRows.slice(0, 5).map((row) => (
-              <article className={styles.archiveRow} key={row.id}>
-                <time>{formatShortDate(row.createdAt)}</time>
-                <MoodDot mood={row.mood} />
-                <div className={`font-serif ${styles.archiveText}`}>{renderProse(excerpt(row, 104))}</div>
-                <span className={styles.archiveMeasure}>{entryMeasure(row)}</span>
-              </article>
+              row.threadId ? (
+                <Link className={styles.archiveRow} href={`/fios/${row.threadId}`} key={row.id}>
+                  <time>{formatShortDate(row.createdAt)}</time>
+                  <MoodDot mood={row.mood} />
+                  <div className={`font-serif ${styles.archiveText}`}>{renderProse(excerpt(row, 104))}</div>
+                  <span className={styles.archiveMeasure}>Abrir fio</span>
+                </Link>
+              ) : (
+                <Link className={styles.archiveRow} href={`/diario?continueEntryId=${row.id}`} key={row.id}>
+                  <time>{formatShortDate(row.createdAt)}</time>
+                  <MoodDot mood={row.mood} />
+                  <div className={`font-serif ${styles.archiveText}`}>{renderProse(excerpt(row, 104))}</div>
+                  <span className={styles.archiveMeasure}>Continuar</span>
+                </Link>
+              )
             ))}
           </div>
         </div>
@@ -439,17 +506,6 @@ function EmptyState({ hasEntries, range, mood }: { hasEntries: boolean; range: (
   );
 }
 
-function BottomNav() {
-  return (
-    <nav className={styles.bottomNav} aria-label="Navegação principal">
-      <Link href="/diario"><span aria-hidden="true">○</span>Diário</Link>
-      <Link href="/timeline" aria-current="page"><span aria-hidden="true">◔</span>Timeline</Link>
-      <a href="#patterns"><span aria-hidden="true">✧</span>Padrões</a>
-      <Link href="/account"><span aria-hidden="true">♙</span>Conta</Link>
-    </nav>
-  );
-}
-
 export default async function TimelinePage({
   searchParams,
 }: {
@@ -473,6 +529,7 @@ export default async function TimelinePage({
       transcript: entries.transcript,
       reflection: entries.reflection,
       mood: entries.mood,
+      threadId: entries.threadId,
       createdAt: entries.createdAt,
     })
     .from(entries)
@@ -484,6 +541,27 @@ export default async function TimelinePage({
     )
     .orderBy(desc(entries.createdAt))
     .limit(120);
+
+  const threadRows = await db
+    .select({
+      id: entryThreads.id,
+      title: entryThreads.title,
+      summary: entryThreads.summary,
+      updatedAt: entryThreads.updatedAt,
+      momentCount: sql<number>`count(${entries.id})::int`,
+      latestText: sql<string | null>`(
+        array_agg(coalesce(${entries.transcript}, ${entries.reflection}) order by ${entries.createdAt} desc)
+      )[1]`,
+      latestMood: sql<string | null>`(array_agg(${entries.mood} order by ${entries.createdAt} desc))[1]`,
+    })
+    .from(entryThreads)
+    .leftJoin(entries, and(eq(entries.threadId, entryThreads.id), eq(entries.userId, user.id)))
+    .where(and(eq(entryThreads.userId, user.id), isNotNull(entryThreads.rootEntryId)))
+    .groupBy(entryThreads.id)
+    .orderBy(desc(entryThreads.updatedAt))
+    .limit(24);
+
+  const threads = (threadRows as ThreadPreviewRow[]).filter((thread) => thread.momentCount > 1);
 
   const filteredRows = rows.filter((row) => inRange(row, range) && (!mood || row.mood === mood));
   const latest = filteredRows[0] ?? null;
@@ -498,6 +576,10 @@ export default async function TimelinePage({
 
   return (
     <main className={styles.stage}>
+      <ProductNav
+        active="timeline"
+        context={`${rows.length} registros`}
+      />
       <div className={styles.inner}>
         <Header range={range} mood={mood} />
         <MobileControls range={range} mood={mood} />
@@ -508,6 +590,7 @@ export default async function TimelinePage({
           <div className={styles.layout}>
             <div className={styles.contentColumn}>
               {latest && <NowCard row={latest} />}
+              <ThreadRail threads={threads} />
               <WeekRail rows={railRows} mood={mood} range={range} />
               <Suspense fallback={<div className={styles.skeleton}>Lendo os fios da sua semana…</div>}>
                 <InsightsPanel week={week} latest={latest} range={range} mood={mood} />
@@ -517,7 +600,6 @@ export default async function TimelinePage({
           </div>
         )}
       </div>
-      <BottomNav />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ProductNav } from "@/components/product/ProductNav";
 import { getOnboardingContext } from "@/lib/onboarding/context";
 import { signOut } from "../login/actions";
 import styles from "./Account.module.css";
@@ -26,12 +27,8 @@ export default async function AccountPage() {
 
   return (
     <main className={styles.stage}>
+      <ProductNav active="account" context="Perfil" />
       <section className={styles.shell}>
-        <Link href="/diario" className={styles.brand}>
-          <span className={styles.brandOrb} aria-hidden="true" />
-          <span>Aurora</span>
-        </Link>
-
         <div className={styles.copy}>
           <p className={styles.kicker}>Conta</p>
           <h1 className="font-serif">Seu acesso está ativo.</h1>
@@ -52,6 +49,7 @@ export default async function AccountPage() {
         <div className={styles.actions}>
           <Link href="/diario" className={styles.primary}>Voltar ao diário</Link>
           <Link href="/timeline" className={styles.secondary}>Linha do tempo</Link>
+          <Link href="/fios" className={styles.secondary}>Fios</Link>
         </div>
 
         <form action={signOut}>

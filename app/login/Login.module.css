@@ -1,7 +1,10 @@
 .stage {
   min-height: 100svh;
+  min-height: 100dvh;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-padding-bottom: 45vh;
   background:
     radial-gradient(ellipse 86% 54% at 50% 0%, rgba(169, 155, 217, 0.18), transparent 64%),
     radial-gradient(ellipse 52% 38% at 50% 92%, rgba(244, 182, 160, 0.12), transparent 72%),
@@ -27,28 +30,30 @@
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  width: min(980px, 100%);
+  width: min(460px, 100%);
   min-height: 100svh;
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 5vw, 40px) max(22px, env(safe-area-inset-bottom));
+  padding: max(16px, env(safe-area-inset-top)) clamp(16px, 5vw, 24px) max(18px, env(safe-area-inset-bottom));
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto;
   align-content: center;
-  gap: clamp(18px, 3.5vh, 32px);
+  gap: clamp(14px, 2.4svh, 20px);
 }
 
 .brandLine {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  justify-self: center;
+  gap: 10px;
   color: var(--ink);
   text-decoration: none;
   width: fit-content;
 }
 
 .brandOrb {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--aurora);
   box-shadow: 0 0 28px rgba(201, 162, 212, 0.42);
@@ -56,59 +61,37 @@
 
 .brandName {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(1.45rem, 5vw, 1.9rem);
+  font-size: clamp(1.35rem, 5vw, 1.7rem);
   line-height: 1;
-}
-
-.story {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  text-align: center;
-  gap: clamp(14px, 2.6vh, 24px);
-  padding-top: clamp(4px, 3vh, 28px);
 }
 
 .kicker {
   margin: 0;
   color: var(--accent);
-  font-size: clamp(0.68rem, 2.4vw, 0.78rem);
+  font-size: clamp(0.68rem, 2.4vw, 0.76rem);
   font-weight: 700;
-  letter-spacing: 0.32em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
-.story h1,
-.cardHeader h2 {
+.cardHeader h1 {
   font-family: var(--font-fraunces), Georgia, serif;
   font-weight: 450;
   letter-spacing: -0.025em;
   color: var(--ink);
   margin: 0;
-}
-
-.story h1 {
-  max-width: 10ch;
-  font-size: clamp(2.25rem, 11vw, 4.4rem);
-  line-height: 1.02;
-}
-
-.story p {
-  max-width: 30rem;
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: clamp(0.98rem, 2.5vw, 1.08rem);
-  line-height: 1.58;
+  font-size: clamp(2rem, 8vw, 2.45rem);
+  line-height: 1.04;
 }
 
 .card {
   box-sizing: border-box;
-  width: min(100%, 440px);
+  width: min(100%, 430px);
   justify-self: center;
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  padding: clamp(22px, 5vw, 32px);
+  padding: clamp(20px, 5vw, 28px);
   background: rgba(17, 14, 31, 0.68);
   border: 1px solid rgba(255, 255, 255, 0.1);
   -webkit-backdrop-filter: blur(22px);
@@ -129,23 +112,18 @@
 
 .cardHeader,
 .form,
+.modeSwitch,
 .notice,
-.error,
-.toggle {
+.error {
   position: relative;
   z-index: 1;
 }
 
 .cardHeader {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
-  margin-bottom: 22px;
-}
-
-.cardHeader h2 {
-  font-size: clamp(1.55rem, 6.5vw, 2rem);
-  line-height: 1.05;
+  margin-bottom: 18px;
 }
 
 .cardHeader p {
@@ -155,17 +133,51 @@
   text-wrap: balance;
 }
 
+.modeSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(7, 5, 18, 0.48);
+}
+
+.modeButton {
+  min-height: 42px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.modeButton[data-active="true"] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.modeButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .form {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .label {
@@ -176,7 +188,8 @@
 .input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 52px;
+  min-height: 50px;
+  scroll-margin-block: 16px 45vh;
   padding: 0 18px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.11);
@@ -227,7 +240,7 @@
 
 .submit {
   width: 100%;
-  min-height: 54px;
+  min-height: 50px;
   padding: 0 18px;
   border-radius: 999px;
   border: none;
@@ -251,24 +264,6 @@
   transform: none;
 }
 
-.toggle {
-  text-align: center;
-  color: var(--ink-soft);
-  font-size: 0.92rem;
-  margin: 18px 0 0;
-}
-
-.toggleBtn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 10px;
-  min-height: 44px;
-}
-
 .notice,
 .error {
   margin: 0 0 16px;
@@ -285,33 +280,6 @@
   background: rgba(197, 132, 104, 0.16);
 }
 
-@media (min-width: 900px) {
-  .shell {
-    grid-template-rows: auto 1fr;
-    grid-template-columns: minmax(0, 0.86fr) minmax(340px, 440px);
-    align-items: center;
-    column-gap: clamp(44px, 8vw, 90px);
-  }
-
-  .brandLine {
-    grid-column: 1 / -1;
-  }
-
-  .story {
-    justify-items: start;
-    text-align: left;
-  }
-
-  .story h1,
-  .story p {
-    max-width: 100%;
-  }
-
-  .card {
-    justify-self: end;
-  }
-}
-
 @media (max-width: 380px) {
   .shell {
     padding-inline: 14px;
@@ -322,9 +290,7 @@
     padding-inline: 18px;
   }
 
-  .story p,
-  .cardHeader p,
-  .toggle {
+  .cardHeader p {
     font-size: 0.92rem;
   }
 
@@ -336,5 +302,58 @@
     right: 6px;
     padding-inline: 10px;
     font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    transition: padding 180ms ease, gap 180ms ease;
+  }
+
+  .brandLine,
+  .card,
+  .cardHeader,
+  .cardHeader h1,
+  .cardHeader p,
+  .kicker {
+    transition: opacity 180ms ease, font-size 180ms ease, margin 180ms ease, padding 180ms ease, transform 180ms ease;
+  }
+
+  .stage:focus-within .shell {
+    align-content: start;
+    gap: 10px;
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .stage:focus-within {
+    padding-bottom: 240px;
+  }
+
+  .stage:focus-within .brandLine {
+    transform: scale(0.92);
+  }
+
+  .stage:focus-within .card {
+    padding-block: 16px;
+  }
+
+  .stage:focus-within .cardHeader {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .stage:focus-within .kicker {
+    opacity: 0;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .stage:focus-within .cardHeader h1 {
+    font-size: clamp(1.55rem, 7vw, 1.9rem);
+  }
+
+  .stage:focus-within .cardHeader p {
+    font-size: 0.88rem;
+    line-height: 1.35;
   }
 }
