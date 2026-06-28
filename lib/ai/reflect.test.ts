@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
-import { runReflectPipeline, type ReflectDeps } from "./reflect";
+import {
+  NO_REFLECTION_NEEDED,
+  runReflectPipeline,
+  shouldUseSimpleRegistration,
+  type ReflectDeps,
+} from "./reflect";
 import { getCrisisResources } from "./crisis-resources";
 
 function makeDeps(over: Partial<ReflectDeps> = {}): ReflectDeps {
@@ -89,6 +94,58 @@ describe("runReflectPipeline — §13 guardrail", () => {
       expect(result.reflection).toContain("?");
       expect(result.mood).toBe("pesado");
       expect(result.risk).toBe("none");
+    }
+  });
+
+  it("apontamento curto de teste vira registro simples sem chamar reflexão", async () => {
+    const deps = makeDeps();
+
+    const result = await runReflectPipeline(
+      { text: "Ai que legal, eu estou testando a Aurora.", locale: "pt-BR" },
+      deps,
+    );
+
+    expect(result.kind).toBe("reflection");
+    if (result.kind === "reflection") {
+      expect(result.reflection).toBe(NO_REFLECTION_NEEDED);
+      expect(result.mood).toBeNull();
+    }
+    expect(deps.retrieve).not.toHaveBeenCalled();
+    expect(deps.reflect).not.toHaveBeenCalled();
+    expect(deps.suggestMood).not.toHaveBeenCalled();
+  });
+
+  it("fala densa mesmo citando teste segue para reflexão", async () => {
+    const deps = makeDeps({
+      reflect: vi.fn(async () => "tem algo importante nessa alegria de começar."),
+    });
+    const text =
+      "Estou muito feliz de testar a Aurora porque finalmente sinto que estou iniciando uma trilha empreendedora e aprendendo muito conversando com as pessoas que estão ajudando.";
+
+    expect(shouldUseSimpleRegistration(text)).toBe(false);
+    const result = await runReflectPipeline({ text, locale: "pt-BR" }, deps);
+
+    expect(result.kind).toBe("reflection");
+    expect(deps.reflect).toHaveBeenCalledOnce();
+  });
+
+  it("falha de humor não derruba reflexão", async () => {
+    const deps = makeDeps({
+      reflect: vi.fn(async () => "tem uma alegria de começo aparecendo aqui."),
+      suggestMood: vi.fn(async () => {
+        throw new Error("overloaded");
+      }),
+    });
+
+    const result = await runReflectPipeline(
+      { text: "estou feliz de começar essa nova fase", locale: "pt-BR" },
+      deps,
+    );
+
+    expect(result.kind).toBe("reflection");
+    if (result.kind === "reflection") {
+      expect(result.reflection).toContain("alegria");
+      expect(result.mood).toBeNull();
     }
   });
 

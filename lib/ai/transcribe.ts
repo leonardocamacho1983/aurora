@@ -11,6 +11,13 @@ export interface TranscriptResult {
 
 /** Transcreve bytes de áudio (em memória; nunca persiste o áudio). */
 export async function transcribeAudio(audio: Uint8Array): Promise<TranscriptResult> {
+  if (process.env.NODE_ENV !== "production" && !process.env.OPENAI_API_KEY) {
+    return {
+      text: "Registro local de teste da Aurora para validar gravação, resultado e timeline.",
+      language: "pt",
+    };
+  }
+
   const result = await transcribe({
     model: openai.transcription(TRANSCRIBE_MODEL),
     audio,

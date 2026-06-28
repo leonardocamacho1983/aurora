@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./StateComponents.module.css";
 
 type FeedbackKind = "reflection_micro" | "pmf";
@@ -122,7 +123,17 @@ export function PmfPrompt({
   const [pmfVisible, setPmfVisible] = useState(false);
   const [pmfAnswer, setPmfAnswer] = useState<PmfAnswer | null>(null);
   const [error, setError] = useState("");
+  const [useMobilePortal, setUseMobilePortal] = useState(false);
   const shownRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 899px)");
+    const syncPortalMode = () => setUseMobilePortal(query.matches);
+
+    syncPortalMode();
+    query.addEventListener("change", syncPortalMode);
+    return () => query.removeEventListener("change", syncPortalMode);
+  }, []);
 
   useEffect(() => {
     shownRef.current = new Set();
@@ -253,6 +264,97 @@ export function PmfPrompt({
   if (suspended) return null;
   if (!entryId || !eligibility || (!showMicro && !showPmf && !error)) return null;
 
+  const pmfDialog = showPmf ? (
+    <div className={styles.pmfModalOverlay}>
+      <div
+        aria-labelledby="pmf-dialog-title"
+        aria-modal="true"
+        className={styles.pmfModal}
+        role="dialog"
+      >
+        {!pmfAnswer ? (
+          <div className={styles.pmfModalStep}>
+            <div className={styles.pmfHeader}>
+              <div className={styles.pmfMetaLine}>
+                <p className={styles.pmfKicker}>Pergunta rápida</p>
+                <p className={styles.pmfStep}>1 de 2</p>
+              </div>
+              <p className={styles.pmfModalQuestion} id="pmf-dialog-title">
+                Como você se sentiria se não pudesse mais usar a Aurora?
+              </p>
+              <p className={styles.pmfPrivacy}>A resposta não entra na sua reflexão.</p>
+            </div>
+
+            <div className={styles.pmfOptions}>
+              {PMF_OPTIONS.map((option) => (
+                <button
+                  aria-pressed={pmfAnswer === option.value}
+                  disabled={isLoading}
+                  key={option.value}
+                  onClick={() => setPmfAnswer(option.value)}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.pmfActions}>
+              <button disabled={isLoading} onClick={() => completePmf("skipped")} type="button">
+                Agora não
+              </button>
+              <button disabled={isLoading} onClick={() => completePmf("snoozed")} type="button">
+                Perguntar depois
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.pmfModalStep}>
+            <div className={styles.pmfAnswerSummary}>
+              <span>Você respondeu: {selectedPmfLabel}</span>
+              <button disabled={isLoading} onClick={() => setPmfAnswer(null)} type="button">
+                Alterar
+              </button>
+            </div>
+
+            <div className={styles.pmfHeader}>
+              <div className={styles.pmfMetaLine}>
+                <p className={styles.pmfKicker}>Pergunta rápida</p>
+                <p className={styles.pmfStep}>2 de 2</p>
+              </div>
+              <p className={styles.pmfModalQuestion} id="pmf-dialog-title">
+                {FOLLOW_UP_QUESTION}
+              </p>
+              <p className={styles.pmfPrivacy}>Escolha uma opção. Pode pular.</p>
+            </div>
+
+            <div className={styles.pmfOptions}>
+              {FOLLOW_UPS[pmfAnswer].options.map((option) => (
+                <button
+                  disabled={isLoading}
+                  key={option.value}
+                  onClick={() => completePmf("answered", pmfAnswer, option.value)}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              className={styles.pmfTextAction}
+              disabled={isLoading}
+              onClick={() => completePmf("answered", pmfAnswer)}
+              type="button"
+            >
+              Pular detalhe
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <section className={styles.pmfPrompt} aria-label="Feedback sobre a experiência">
       {showMicro ? (
@@ -279,96 +381,7 @@ export function PmfPrompt({
         </div>
       ) : null}
 
-      {showPmf ? (
-        <div className={styles.pmfModalOverlay}>
-          <div
-            aria-labelledby="pmf-dialog-title"
-            aria-modal="true"
-            className={styles.pmfModal}
-            role="dialog"
-          >
-            {!pmfAnswer ? (
-              <div className={styles.pmfModalStep}>
-                <div className={styles.pmfHeader}>
-                  <div className={styles.pmfMetaLine}>
-                    <p className={styles.pmfKicker}>Pergunta rápida</p>
-                    <p className={styles.pmfStep}>1 de 2</p>
-                  </div>
-                  <p className={styles.pmfModalQuestion} id="pmf-dialog-title">
-                    Como você se sentiria se não pudesse mais usar a Aurora?
-                  </p>
-                  <p className={styles.pmfPrivacy}>A resposta não entra na sua reflexão.</p>
-                </div>
-
-                <div className={styles.pmfOptions}>
-                  {PMF_OPTIONS.map((option) => (
-                    <button
-                      aria-pressed={pmfAnswer === option.value}
-                      disabled={isLoading}
-                      key={option.value}
-                      onClick={() => setPmfAnswer(option.value)}
-                      type="button"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className={styles.pmfActions}>
-                  <button disabled={isLoading} onClick={() => completePmf("skipped")} type="button">
-                    Agora não
-                  </button>
-                  <button disabled={isLoading} onClick={() => completePmf("snoozed")} type="button">
-                    Perguntar depois
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.pmfModalStep}>
-                <div className={styles.pmfAnswerSummary}>
-                  <span>Você respondeu: {selectedPmfLabel}</span>
-                  <button disabled={isLoading} onClick={() => setPmfAnswer(null)} type="button">
-                    Alterar
-                  </button>
-                </div>
-
-                <div className={styles.pmfHeader}>
-                  <div className={styles.pmfMetaLine}>
-                    <p className={styles.pmfKicker}>Pergunta rápida</p>
-                    <p className={styles.pmfStep}>2 de 2</p>
-                  </div>
-                  <p className={styles.pmfModalQuestion} id="pmf-dialog-title">
-                    {FOLLOW_UP_QUESTION}
-                  </p>
-                  <p className={styles.pmfPrivacy}>Escolha uma opção. Pode pular.</p>
-                </div>
-
-                <div className={styles.pmfOptions}>
-                  {FOLLOW_UPS[pmfAnswer].options.map((option) => (
-                    <button
-                      disabled={isLoading}
-                      key={option.value}
-                      onClick={() => completePmf("answered", pmfAnswer, option.value)}
-                      type="button"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  className={styles.pmfTextAction}
-                  disabled={isLoading}
-                  onClick={() => completePmf("answered", pmfAnswer)}
-                  type="button"
-                >
-                  Pular detalhe
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {useMobilePortal && pmfDialog ? createPortal(pmfDialog, document.body) : pmfDialog}
 
       {error ? <p className={styles.pmfError}>{error}</p> : null}
     </section>

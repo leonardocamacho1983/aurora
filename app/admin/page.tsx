@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents, waitlistProfile } from "@/lib/db/schema";
@@ -16,7 +17,19 @@ export const metadata: Metadata = {
   },
 };
 
-type SearchParams = Promise<{ token?: string }>;
+type SearchParams = Promise<{ token?: string; tab?: string }>;
+type AdminTab = "launch" | "access" | "product";
+
+const ALPHA_COHORT_START = "2026-06-19T00:00:00.000Z";
+const ALPHA_COHORT_LABEL = "desde 19/06/2026";
+const PMF_MONITOR_START = "2026-06-28T07:36:00.000Z";
+const PMF_MONITOR_GRACE_MINUTES = 10;
+
+const adminTabs: Array<{ id: AdminTab; label: string; description: string }> = [
+  { id: "launch", label: "Launch", description: "waitlist, email e rede" },
+  { id: "access", label: "Access", description: "convites e entrada" },
+  { id: "product", label: "Product", description: "Alpha, retorno e PMF leve" },
+];
 
 type CountRow = {
   total: number;
@@ -81,8 +94,6 @@ type BreakdownRow = {
 };
 
 type TopReferrerRow = {
-  email: string;
-  name: string | null;
   referralCode: string;
   totalInvites: number;
   confirmedInvites: number;
@@ -90,6 +101,10 @@ type TopReferrerRow = {
   milestoneNotified: number;
   roomViews: number;
   shareActions: number;
+  linkViews: number;
+  linkVisitors: number;
+  formSuccesses: number;
+  signupEvents: number;
 };
 
 type NetworkRow = {
@@ -142,19 +157,127 @@ type EmailHygieneEventRow = {
 };
 
 type FlaggedRow = {
-  email: string;
   reason: string;
   createdAt: Date | string;
 };
 
 type EngagedRow = {
-  email: string;
-  name: string | null;
   referralCode: string;
   confirmedInvites: number;
   shareActions: number;
   roomViews: number;
   ritualComplete: boolean;
+};
+
+type AccessSummaryRow = {
+  invites: number;
+  sent: number;
+  clicked: number;
+  accountCreated: number;
+  loginCompleted: number;
+  onboardingStarted: number;
+  onboardingCompleted: number;
+  firstReflectionCompleted: number;
+  excludedByEmail: number;
+};
+
+type AccessEventRow = {
+  eventName: string;
+  source: string | null;
+  total: number;
+  people: number;
+};
+
+type ProductSummaryRow = {
+  users: number;
+  activeUsers: number;
+  activatedUsers: number;
+  returningUsers: number;
+  intenseNoReturnUsers: number;
+  entries: number;
+  reflectedEntries: number;
+  transcribedEntries: number;
+  continuedEntries: number;
+  threads: number;
+  productEvents: number;
+  transcriptionFailures: number;
+  reflectionFailures: number;
+  lowRiskEntries: number;
+  highRiskEntries: number;
+};
+
+type AlphaUserRow = {
+  anonUser: string;
+  entries: number;
+  entryDays: number;
+  activeDays: number;
+  productEvents: number;
+  reflectedEntries: number;
+  continuations: number;
+  transcriptionFailures: number;
+  reflectionFailures: number;
+  firstSeenAt: Date | string | null;
+  lastSeenAt: Date | string | null;
+  bucket: string;
+};
+
+type ProductFailureAlertRow = {
+  errorClass: string;
+  retryable: string;
+  requests: number;
+  people: number;
+  latestAt: Date | string | null;
+};
+
+type ExclusionAuditRow = {
+  reason: string;
+  users: number;
+  accessInvites: number;
+  waitlistRows: number;
+};
+
+type AlphaQualitativeSummaryRow = {
+  confirmedWaitlistReal: number;
+  unlockedReal: number;
+  profileStarted: number;
+  profileComplete: number;
+  hasValueAnswer: number;
+  hasMomentAnswer: number;
+};
+
+type PmfDeclaredSummaryRow = {
+  promptsShown: number;
+  peoplePrompted: number;
+  answered: number;
+  peopleAnswered: number;
+  skipped: number;
+  snoozed: number;
+  veryDisappointed: number;
+  somewhatDisappointed: number;
+  notDisappointed: number;
+  notSureYet: number;
+  microPositive: number;
+  microNegative: number;
+};
+
+type PmfDeliverySummaryRow = {
+  expectedEntries: number;
+  missingMicroShown: number;
+  missingPeople: number;
+  latestMissingAt: Date | string | null;
+};
+
+type PmfDeliveryIssueRow = {
+  anonUser: string;
+  entryRef: string;
+  entryCreatedAt: Date | string;
+  entryMode: string;
+  reflectedEntries: number;
+  activeDays: number;
+  continuedEntries: number;
+  hasReflectionReceived: boolean;
+  minutesSinceEntry: number;
+  lastProductEventAt: Date | string | null;
 };
 
 function rows<T>(result: unknown): T[] {
@@ -167,6 +290,20 @@ function rows<T>(result: unknown): T[] {
 
 function asNumber(value: unknown) {
   return Number(value ?? 0);
+}
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function parseAdminTab(value: string | undefined): AdminTab {
+  return value === "access" || value === "product" ? value : "launch";
+}
+
+function adminHref(token: string, tab: AdminTab) {
+  const params = new URLSearchParams({ token });
+  if (tab !== "launch") params.set("tab", tab);
+  return `/admin?${params.toString()}`;
 }
 
 function percent(value: number, total: number) {
@@ -182,13 +319,6 @@ function percentOrNA(value: number, total: number, fallback = "sem base") {
 function ratio(value: number, total: number, precision = 2) {
   if (!total) return "0";
   return (value / total).toFixed(precision).replace(".", ",");
-}
-
-function maskEmail(email: string) {
-  const [name, domain] = email.split("@");
-  if (!domain) return email;
-  const visible = name.slice(0, 2);
-  return `${visible}${"•".repeat(Math.min(5, Math.max(2, name.length - 2)))}@${domain}`;
 }
 
 function formatDate(date: Date | string | null | undefined) {
@@ -216,6 +346,73 @@ function formatDay(value: string) {
     month: "2-digit",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+const help = {
+  dataHealth: "Resumo dos checks técnicos: dados de teste, referrals quebrados e falhas recentes de email.",
+  stalePending: "Pessoas em waitlist com email ainda não confirmado e cadastro criado há mais de 24 horas.",
+  emailsSent: "Soma dos eventos de envio de email registrados nos últimos 30 dias.",
+  totalList: "Total de registros na tabela waitlist, incluindo pessoas pendentes, confirmadas, diretas e convidadas.",
+  confirmedEmails: "Pessoas da waitlist com confirmed_at preenchido depois de clicar no email de confirmação.",
+  confirmedInvited: "Pessoas com referred_by_code preenchido e email confirmado. Esse é o número oficial de convidados confirmados.",
+  ritualsComplete: "Perfis em waitlist_profile com momento, ritmo, presença e valor preenchidos.",
+  confirmSent: "Eventos confirm_email_sent nos últimos 30 dias.",
+  statusSent: "Eventos status_email_sent nos últimos 30 dias, usados para reenviar link de sala/status.",
+  friendSent: "Eventos friend_joined_email_sent nos últimos 30 dias, quando uma pessoa convidada confirma.",
+  milestoneSent: "Eventos milestone_email_sent nos últimos 30 dias.",
+  lifecycleSent: "Emails automáticos de cadência da waitlist enviados nos últimos 30 dias.",
+  delivered: "Eventos email_delivered recebidos do webhook do Resend nos últimos 30 dias.",
+  bounces: "Eventos email_bounced recebidos do webhook do Resend nos últimos 30 dias.",
+  hardBlocked: "Pessoas com bounce, complaint ou supressão de provedor; ficam fora de novos envios.",
+  paused7d: "Pessoas não confirmadas após 7 dias que foram pausadas pela higiene de email.",
+  archived30d: "Pessoas não confirmadas após 30 dias que foram arquivadas operacionalmente.",
+  reactivated: "Eventos em que uma pessoa pausada/arquivada voltou ao formulário e foi reativada.",
+  activeInviters: "Pessoas cujo referral_code aparece em pelo menos um cadastro novo como referred_by_code.",
+  invitedTotal: "Cadastros na tabela waitlist criados com referred_by_code válido.",
+  confirmedPerInviter: "Convidados confirmados dividido por convidantes ativos.",
+  inviteConfirmRate: "Convidados confirmados dividido por todos os cadastros gerados pela rede.",
+  shareActions: "Cliques de copiar, compartilhar ou WhatsApp. Mede intenção de compartilhar, não cadastro.",
+  campaignSignals: "Eventos de pageview, CTA, sucesso no client e cadastro com utm_campaign=launch_waitlist.",
+  campaignCtas: "Eventos launch_cta_clicked marcados com a campanha launch_waitlist.",
+  campaignSignups: "Eventos signup_created marcados com a campanha launch_waitlist.",
+  campaignConversion: "Cadastros com UTM divididos pelo total de sinais da campanha.",
+  pageviews: "Eventos landing_viewed e launch_page_viewed nos últimos 30 dias.",
+  visitorSignupRate: "Cadastros criados nos últimos 30 dias divididos por visitantes identificados por distinctId.",
+  visitorCtaRate: "Cliques em CTA nos últimos 30 dias divididos por visitantes identificados por distinctId.",
+  clientSuccess: "Eventos waitlist_submit_success no navegador; inclui novos cadastros e reenvios/fluxos já existentes.",
+  topPages: "Pageviews por path, somando landing_viewed e launch_page_viewed.",
+  trafficSources: "Eventos de tráfego agrupados por source_type, UTM ou source.",
+  topCtas: "Eventos launch_cta_clicked agrupados por label ou source.",
+  signupSources: "Eventos signup_created agrupados por UTM/source_type/source.",
+  accessInvites: "Convites Alpha criados desde 19/06/2026, excluindo emails internos ou de teste.",
+  accessFirstReflection: "Convites que chegaram ao primeiro valor observável: primeira reflexão concluída.",
+  pmfLight: "PMF leve do Alpha: usuários ativados que voltaram em outro dia ou continuaram um fio. É leitura prática, não PMF estatístico.",
+  pmfDeclared: "PMF declarada: resposta opcional à pergunta de perda. Complementa retorno real; não substitui comportamento observado.",
+  pmfDelivery: "Check passivo: entrada elegível com reflexão válida deve registrar microfeedback mostrado depois da janela de tolerância. Não altera a experiência do usuário.",
+  activatedUsers: "Usuários reais com ao menos uma entrada refletida desde 19/06/2026.",
+  returningUsers: "Usuários ativados com atividade em dois ou mais dias, ou continuidade explícita de fio.",
+  intenseNoReturn: "Usuários com 3+ reflexões no primeiro dia e nenhum segundo dia de atividade observável.",
+  productEvents: "Eventos de produto capturados em product_events desde 19/06/2026, sem conteúdo bruto.",
+  safeQualitative: "Distribuições seguras de mood, risco e modo; não renderiza diário, transcrição, reflexão, áudio, nome ou email.",
+} as const;
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className={styles.infoTooltip} tabIndex={0} aria-label={text}>
+      <span aria-hidden="true">?</span>
+      <span className={styles.tooltipBubble}>{text}</span>
+    </span>
+  );
+}
+
+function LabelWithTooltip({ children, definition }: { children: ReactNode; definition?: string }) {
+  if (!definition) return <>{children}</>;
+  return (
+    <span className={styles.labelWithTooltip}>
+      <span>{children}</span>
+      <InfoTooltip text={definition} />
+    </span>
+  );
 }
 
 function emailHygieneLabel(eventName: string) {
@@ -270,16 +467,20 @@ function MetricCard({
   label,
   note,
   tone = "neutral",
+  definition,
 }: {
   value: string;
   label: string;
   note: string;
   tone?: "neutral" | "warn" | "good";
+  definition?: string;
 }) {
   return (
-    <article className={`${styles.card} ${styles[tone]}`}>
+    <article className={cx(styles.card, styles[tone])}>
       <div className={styles.metricValue}>{value}</div>
-      <div className={styles.metricLabel}>{label}</div>
+      <div className={styles.metricLabel}>
+        <LabelWithTooltip definition={definition}>{label}</LabelWithTooltip>
+      </div>
       <div className={styles.metricNote}>{note}</div>
     </article>
   );
@@ -290,16 +491,18 @@ function SignalRow({
   value,
   note,
   tone = "neutral",
+  definition,
 }: {
   label: string;
   value: string;
   note?: string;
   tone?: "good" | "warn" | "neutral";
+  definition?: string;
 }) {
   return (
-    <div className={`${styles.signalRow} ${styles[tone]}`}>
+    <div className={cx(styles.signalRow, styles[tone])}>
       <span>
-        {label}
+        <LabelWithTooltip definition={definition}>{label}</LabelWithTooltip>
         {note ? <small>{note}</small> : null}
       </span>
       <strong>{value}</strong>
@@ -307,12 +510,24 @@ function SignalRow({
   );
 }
 
-function BreakdownList({ title, rows, empty = "Ainda sem dados suficientes." }: { title: string; rows: BreakdownRow[]; empty?: string }) {
+function BreakdownList({
+  title,
+  rows,
+  empty = "Ainda sem dados suficientes.",
+  definition,
+}: {
+  title: string;
+  rows: BreakdownRow[];
+  empty?: string;
+  definition?: string;
+}) {
   const total = rows.reduce((sum, row) => sum + asNumber(row.total), 0);
 
   return (
     <article className={styles.signalCard}>
-      <h3 className={styles.cardTitle}>{title}</h3>
+      <h3 className={styles.cardTitle}>
+        <LabelWithTooltip definition={definition}>{title}</LabelWithTooltip>
+      </h3>
       {rows.length ? (
         rows.map((row) => {
           const rowTotal = asNumber(row.total);
@@ -330,6 +545,172 @@ function BreakdownList({ title, rows, empty = "Ainda sem dados suficientes." }: 
         <p className={styles.emptyState}>{empty}</p>
       )}
     </article>
+  );
+}
+
+function TabNav({ token, activeTab }: { token: string; activeTab: AdminTab }) {
+  return (
+    <nav className={styles.tabs} aria-label="Seções do cockpit">
+      {adminTabs.map((tab) => (
+        <Link
+          className={cx(styles.tab, activeTab === tab.id && styles.activeTab)}
+          href={adminHref(token, tab.id)}
+          key={tab.id}
+        >
+          <strong>{tab.label}</strong>
+          <span>{tab.description}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function alphaBucketLabel(bucket: string) {
+  const labels: Record<string, string> = {
+    retorno_real: "retorno real",
+    intenso_sem_retorno: "intenso sem retorno",
+    ativado_leve: "ativado leve",
+    sinal_inicial: "sinal inicial",
+  };
+  return labels[bucket] ?? bucket;
+}
+
+function AlphaUserTable({ rows: userRows, empty }: { rows: AlphaUserRow[]; empty: string }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th title="Entradas salvas desde 19/06/2026.">Entradas</th>
+            <th title="Dias com entrada de diário em America/Sao_Paulo.">Dias diário</th>
+            <th title="Dias com entrada ou evento de produto em America/Sao_Paulo.">Dias ativos</th>
+            <th title="Entradas com reflexão preenchida.">Reflexões</th>
+            <th title="Eventos de product_events no período.">Eventos</th>
+            <th title="Transcrição/reflexão com falha capturada como evento operacional.">Falhas</th>
+            <th>Último sinal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {userRows.length ? (
+            userRows.map((user) => (
+              <tr key={user.anonUser}>
+                <td>
+                  <strong>{user.anonUser}</strong>
+                  <br />
+                  <span className={styles.muted}>{alphaBucketLabel(user.bucket)}</span>
+                </td>
+                <td>{user.entries}</td>
+                <td>{user.entryDays}</td>
+                <td>{user.activeDays}</td>
+                <td>{user.reflectedEntries}</td>
+                <td>{user.productEvents}</td>
+                <td>{user.transcriptionFailures + user.reflectionFailures}</td>
+                <td>{formatDate(user.lastSeenAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={8}>{empty}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function retryableLabel(value: string) {
+  if (value === "true") return "sim";
+  if (value === "false") return "não";
+  return "sem sinal";
+}
+
+function ProductFailureAlertTable({ rows: alertRows }: { rows: ProductFailureAlertRow[] }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Classe</th>
+            <th>Requests</th>
+            <th>Pessoas</th>
+            <th>Retry</th>
+            <th>Último sinal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {alertRows.length ? (
+            alertRows.map((row) => (
+              <tr key={`${row.errorClass}-${row.retryable}`}>
+                <td>
+                  <strong>{row.errorClass}</strong>
+                  <br />
+                  <span className={styles.muted}>últimas 24h</span>
+                </td>
+                <td>{row.requests}</td>
+                <td>{row.people}</td>
+                <td>{retryableLabel(row.retryable)}</td>
+                <td>{formatDate(row.latestAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5}>Sem falhas técnicas nas últimas 24h.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PmfDeliveryIssueTable({ rows: issueRows }: { rows: PmfDeliveryIssueRow[] }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Registro</th>
+            <th>Idade</th>
+            <th>Critério</th>
+            <th>Reflexão</th>
+            <th>Último sinal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {issueRows.length ? (
+            issueRows.map((row) => (
+              <tr key={`${row.anonUser}-${row.entryRef}`}>
+                <td>
+                  <strong>{row.anonUser}</strong>
+                  <br />
+                  <span className={styles.muted}>ID pseudônimo</span>
+                </td>
+                <td>
+                  <strong>{row.entryRef}</strong>
+                  <br />
+                  <span className={styles.muted}>{formatDate(row.entryCreatedAt)}</span>
+                </td>
+                <td>{row.minutesSinceEntry} min</td>
+                <td>
+                  {row.reflectedEntries} refl. · {row.activeDays} dias
+                  <br />
+                  <span className={styles.muted}>{row.continuedEntries} continuações</span>
+                </td>
+                <td>{row.hasReflectionReceived ? "evento recebido" : "sem evento client"}</td>
+                <td>{formatDate(row.lastProductEventAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6}>Nenhuma entrada elegível sem microfeedback registrado.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -384,27 +765,74 @@ async function getDashboardData() {
 
   const topReferrers = rows<TopReferrerRow>(
     await db.execute(sql`
+      with referral_counts as (
+        select
+          referred_by_code,
+          count(*)::int as total_invites,
+          count(*) filter (where confirmed_at is not null)::int as confirmed_invites,
+          max(confirmed_at) as last_confirmed_at
+        from waitlist
+        where referred_by_code is not null
+        group by referred_by_code
+      ),
+      event_counts as (
+        select
+          waitlist_id,
+          count(*) filter (where event_name = 'referral_room_viewed')::int as room_views,
+          count(*) filter (where event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared'))::int as share_actions
+        from waitlist_events
+        where waitlist_id is not null
+        group by waitlist_id
+      ),
+      code_events as (
+        select
+          code,
+          count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as link_views,
+          count(distinct metadata->>'distinctId') filter (
+            where event_name in ('landing_viewed', 'launch_page_viewed')
+              and nullif(metadata->>'distinctId', '') is not null
+          )::int as link_visitors,
+          count(*) filter (where event_name = 'waitlist_submit_success')::int as form_successes,
+          count(*) filter (where event_name = 'signup_created')::int as signup_events
+        from (
+          select
+            coalesce(
+              nullif(metadata->>'referredByCode', ''),
+              nullif(metadata->>'referred_by_code', ''),
+              nullif(metadata->>'referral_code', '')
+            ) as code,
+            event_name,
+            metadata
+          from waitlist_events
+          where metadata is not null
+        ) events_by_code
+        where code is not null
+        group by code
+      )
       select
-        w.email,
-        wp.name,
         w.referral_code as "referralCode",
-        count(distinct r.id)::int as "totalInvites",
-        count(distinct r.id) filter (where r.confirmed_at is not null)::int as "confirmedInvites",
-        max(r.confirmed_at) as "lastConfirmedAt",
+        coalesce(rc.total_invites, 0)::int as "totalInvites",
+        coalesce(rc.confirmed_invites, 0)::int as "confirmedInvites",
+        rc.last_confirmed_at as "lastConfirmedAt",
         w.milestone_notified as "milestoneNotified",
-        count(distinct room_events.id)::int as "roomViews",
-        count(distinct share_events.id)::int as "shareActions"
+        coalesce(ec.room_views, 0)::int as "roomViews",
+        coalesce(ec.share_actions, 0)::int as "shareActions",
+        coalesce(ce.link_views, 0)::int as "linkViews",
+        coalesce(ce.link_visitors, 0)::int as "linkVisitors",
+        coalesce(ce.form_successes, 0)::int as "formSuccesses",
+        coalesce(ce.signup_events, 0)::int as "signupEvents"
       from waitlist w
-      left join waitlist_profile wp on wp.waitlist_id = w.id
-      left join waitlist r on r.referred_by_code = w.referral_code
-      left join waitlist_events room_events
-        on room_events.waitlist_id = w.id and room_events.event_name = 'referral_room_viewed'
-      left join waitlist_events share_events
-        on share_events.waitlist_id = w.id
-        and share_events.event_name in ('invite_whatsapp_clicked', 'invite_copied', 'invite_shared')
-      group by w.id, wp.name
-      having count(distinct r.id) > 0 or count(distinct share_events.id) > 0
-      order by count(distinct r.id) filter (where r.confirmed_at is not null) desc, count(distinct r.id) desc, count(distinct share_events.id) desc
+      left join referral_counts rc on rc.referred_by_code = w.referral_code
+      left join event_counts ec on ec.waitlist_id = w.id
+      left join code_events ce on ce.code = w.referral_code
+      where coalesce(rc.total_invites, 0) > 0
+         or coalesce(ec.share_actions, 0) > 0
+         or coalesce(ce.link_views, 0) > 0
+      order by
+        coalesce(rc.confirmed_invites, 0) desc,
+        coalesce(rc.total_invites, 0) desc,
+        coalesce(ce.link_visitors, 0) desc,
+        coalesce(ec.share_actions, 0) desc
       limit 10
     `),
   );
@@ -633,8 +1061,6 @@ async function getDashboardData() {
         group by waitlist_id
       )
       select
-        w.email,
-        wp.name,
         w.referral_code as "referralCode",
         coalesce(rc.confirmed_invites, 0)::int as "confirmedInvites",
         coalesce(ec.share_actions, 0)::int as "shareActions",
@@ -664,16 +1090,13 @@ async function getDashboardData() {
 
   const recentProfiles = await db
     .select({
-      email: waitlist.email,
-      name: waitlistProfile.name,
-      moment: waitlistProfile.moment,
-      rhythm: waitlistProfile.rhythm,
-      presence: waitlistProfile.presence,
-      value: waitlistProfile.value,
+      hasMoment: sql<boolean>`nullif(trim(${waitlistProfile.moment}), '') is not null`,
+      hasRhythm: sql<boolean>`nullif(trim(${waitlistProfile.rhythm}), '') is not null`,
+      hasPresence: sql<boolean>`nullif(trim(${waitlistProfile.presence}), '') is not null`,
+      hasValue: sql<boolean>`nullif(trim(${waitlistProfile.value}), '') is not null`,
       updatedAt: waitlistProfile.updatedAt,
     })
     .from(waitlistProfile)
-    .innerJoin(waitlist, eq(waitlist.id, waitlistProfile.waitlistId))
     .orderBy(desc(waitlistProfile.updatedAt))
     .limit(8);
 
@@ -729,7 +1152,7 @@ async function getDashboardData() {
         (
           select count(*)::int
           from waitlist_events
-          where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
+          where event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success')
             and metadata is not null
             and nullif(metadata->>'distinctId', '') is null
         ) as "eventsWithoutDistinctId"
@@ -739,7 +1162,6 @@ async function getDashboardData() {
   const flaggedRows = rows<FlaggedRow>(
     await db.execute(sql`
       select
-        email,
         case
           when lower(email) like '%test%' or lower(email) like '%launchtest%' or lower(email) like '%example.%' then 'teste'
           when lower(email) like '%leonardocamacho%' then 'interno'
@@ -759,8 +1181,8 @@ async function getDashboardData() {
   const [traffic] = rows<TrafficSummaryRow>(
     await db.execute(sql`
       select
-        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
-        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
         count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess"
       from waitlist_events
@@ -774,7 +1196,7 @@ async function getDashboardData() {
         coalesce(nullif(metadata->>'path', ''), nullif(metadata->>'page', ''), 'sem página') as label,
         count(*)::int as total
       from waitlist_events
-      where event_name = 'launch_page_viewed'
+      where event_name in ('landing_viewed', 'launch_page_viewed')
         and created_at >= now() - interval '30 days'
       group by 1
       order by count(*) desc
@@ -788,7 +1210,7 @@ async function getDashboardData() {
         coalesce(nullif(metadata->>'source_type', ''), nullif(metadata->>'utm_source', ''), nullif(source, ''), 'direct') as label,
         count(*)::int as total
       from waitlist_events
-      where event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+      where event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
         and created_at >= now() - interval '30 days'
       group by 1
       order by count(*) desc
@@ -831,12 +1253,12 @@ async function getDashboardData() {
         from waitlist_events
         where created_at >= now() - interval '30 days'
           and metadata->>'utm_campaign' = 'launch_waitlist'
-          and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+          and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       ),
       page_distinct as (
         select distinct metadata->>'distinctId' as distinct_id
         from campaign_events
-        where event_name = 'launch_page_viewed'
+        where event_name in ('landing_viewed', 'launch_page_viewed')
           and nullif(metadata->>'distinctId', '') is not null
       )
       select
@@ -846,8 +1268,8 @@ async function getDashboardData() {
           waitlist_id::text,
           nullif(metadata->>'sessionId', '')
         ))::int as "campaignPeople",
-        count(*) filter (where event_name = 'launch_page_viewed')::int as "pageviews",
-        count(distinct metadata->>'distinctId') filter (where event_name = 'launch_page_viewed')::int as "visitors",
+        count(*) filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "pageviews",
+        count(distinct metadata->>'distinctId') filter (where event_name in ('landing_viewed', 'launch_page_viewed'))::int as "visitors",
         count(*) filter (where event_name = 'launch_cta_clicked')::int as "ctaClicks",
         count(*) filter (where event_name = 'waitlist_submit_success')::int as "clientSignupSuccess",
         count(*) filter (where event_name = 'signup_created')::int as "signups",
@@ -870,7 +1292,7 @@ async function getDashboardData() {
       from waitlist_events
       where created_at >= now() - interval '30 days'
         and metadata->>'utm_campaign' = 'launch_waitlist'
-        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+        and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       group by 1
       order by count(*) desc
       limit 8
@@ -885,7 +1307,7 @@ async function getDashboardData() {
       from waitlist_events
       where created_at >= now() - interval '30 days'
         and metadata->>'utm_campaign' = 'launch_waitlist'
-        and event_name in ('launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
+        and event_name in ('landing_viewed', 'launch_page_viewed', 'launch_cta_clicked', 'waitlist_submit_success', 'signup_created')
       group by 1
       order by count(*) desc
       limit 8
@@ -904,6 +1326,786 @@ async function getDashboardData() {
       group by 1
       order by count(*) desc
       limit 8
+    `),
+  );
+
+  const [accessSummary] = rows<AccessSummaryRow>(
+    await db.execute(sql`
+      with scoped as (
+        select *
+        from access_invites
+        where created_at >= ${ALPHA_COHORT_START}
+           or sent_at >= ${ALPHA_COHORT_START}
+      ),
+      real_invites as (
+        select *
+        from scoped
+        where lower(coalesce(email, '')) not like '%test%'
+          and lower(coalesce(email, '')) not like '%launchtest%'
+          and lower(coalesce(email, '')) not like '%example.%'
+          and lower(coalesce(email, '')) not like '%leonardocamacho%'
+      )
+      select
+        (select count(*)::int from real_invites) as "invites",
+        (select count(*)::int from real_invites where sent_at is not null) as "sent",
+        (select count(*)::int from real_invites where clicked_at is not null) as "clicked",
+        (select count(*)::int from real_invites where account_created_at is not null) as "accountCreated",
+        (select count(*)::int from real_invites where login_completed_at is not null) as "loginCompleted",
+        (select count(*)::int from real_invites where onboarding_started_at is not null) as "onboardingStarted",
+        (select count(*)::int from real_invites where onboarding_completed_at is not null) as "onboardingCompleted",
+        (select count(*)::int from real_invites where first_reflection_completed_at is not null) as "firstReflectionCompleted",
+        (
+          select count(*)::int
+          from scoped
+          where lower(coalesce(email, '')) like '%test%'
+             or lower(coalesce(email, '')) like '%launchtest%'
+             or lower(coalesce(email, '')) like '%example.%'
+             or lower(coalesce(email, '')) like '%leonardocamacho%'
+        ) as "excludedByEmail"
+    `),
+  );
+
+  const accessEvents = rows<AccessEventRow>(
+    await db.execute(sql`
+      select
+        ae.event_name as "eventName",
+        ae.source,
+        count(*)::int as "total",
+        count(distinct coalesce(ae.user_id::text, ae.invite_id::text))::int as "people"
+      from access_events ae
+      left join access_invites ai on ai.id = ae.invite_id
+      left join users u on u.id = ae.user_id
+      where ae.created_at >= ${ALPHA_COHORT_START}
+        and (
+          coalesce(ai.email, u.email) is null
+          or (
+            lower(coalesce(ai.email, u.email, '')) not like '%test%'
+            and lower(coalesce(ai.email, u.email, '')) not like '%launchtest%'
+            and lower(coalesce(ai.email, u.email, '')) not like '%example.%'
+            and lower(coalesce(ai.email, u.email, '')) not like '%leonardocamacho%'
+          )
+        )
+      group by ae.event_name, ae.source
+      order by count(*) desc, ae.event_name asc
+      limit 14
+    `),
+  );
+
+  const [productSummary] = rows<ProductSummaryRow>(
+    await db.execute(sql`
+      with excluded_users as (
+        select id
+        from users
+        where lower(coalesce(email, '')) like '%test%'
+           or lower(coalesce(email, '')) like '%launchtest%'
+           or lower(coalesce(email, '')) like '%example.%'
+           or lower(coalesce(email, '')) like '%leonardocamacho%'
+      ),
+      cohort_users as (
+        select u.id
+        from users u
+        where not exists (select 1 from excluded_users x where x.id = u.id)
+          and (
+            u.created_at >= ${ALPHA_COHORT_START}
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(coalesce(u.email, ''))
+                and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+            )
+            or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+            or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+          )
+      ),
+      entry_stats as (
+        select
+          e.user_id,
+          count(*)::int as entries,
+          count(*) filter (where e.reflection is not null and nullif(trim(e.reflection), '') is not null)::int as reflected_entries,
+          count(*) filter (where e.transcript is not null and nullif(trim(e.transcript), '') is not null)::int as transcribed_entries,
+          count(*) filter (where e.entry_mode = 'continue' or e.continued_from_entry_id is not null)::int as continued_entries,
+          count(distinct e.thread_id) filter (where e.thread_id is not null)::int as threads,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as entry_days
+        from entries e
+        inner join cohort_users cu on cu.id = e.user_id
+        where e.created_at >= ${ALPHA_COHORT_START}
+        group by e.user_id
+      ),
+      event_stats as (
+        select
+          pe.user_id,
+          count(*)::int as product_events,
+          count(distinct coalesce(pe.metadata->>'request_id', pe.id::text)) filter (
+            where pe.event_name = 'product_transcription_failed'
+          )::int as transcription_failures,
+          count(distinct coalesce(pe.metadata->>'request_id', pe.id::text)) filter (
+            where pe.event_name in ('product_reflection_failed', 'product_reflection_fallback_saved')
+          )::int as reflection_failures
+        from product_events pe
+        inner join cohort_users cu on cu.id = pe.user_id
+        where pe.created_at >= ${ALPHA_COHORT_START}
+        group by pe.user_id
+      ),
+      activity_stats as (
+        select
+          user_id,
+          count(distinct local_day)::int as active_days
+        from (
+          select e.user_id, date_trunc('day', e.created_at at time zone 'America/Sao_Paulo') as local_day
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+          union
+          select pe.user_id, date_trunc('day', pe.created_at at time zone 'America/Sao_Paulo') as local_day
+          from product_events pe
+          inner join cohort_users cu on cu.id = pe.user_id
+          where pe.created_at >= ${ALPHA_COHORT_START}
+        ) activity
+        group by user_id
+      ),
+      per_user as (
+        select
+          cu.id,
+          coalesce(es.entries, 0) as entries,
+          coalesce(es.reflected_entries, 0) as reflected_entries,
+          coalesce(es.transcribed_entries, 0) as transcribed_entries,
+          coalesce(es.continued_entries, 0) as continued_entries,
+          coalesce(es.threads, 0) as threads,
+          coalesce(es.entry_days, 0) as entry_days,
+          coalesce(evs.product_events, 0) as product_events,
+          coalesce(evs.transcription_failures, 0) as transcription_failures,
+          coalesce(evs.reflection_failures, 0) as reflection_failures,
+          coalesce(ac.active_days, 0) as active_days
+        from cohort_users cu
+        left join entry_stats es on es.user_id = cu.id
+        left join event_stats evs on evs.user_id = cu.id
+        left join activity_stats ac on ac.user_id = cu.id
+      )
+      select
+        count(*)::int as "users",
+        count(*) filter (where entries > 0 or product_events > 0)::int as "activeUsers",
+        count(*) filter (where reflected_entries > 0)::int as "activatedUsers",
+        count(*) filter (
+          where reflected_entries > 0
+            and (active_days >= 2 or continued_entries > 0)
+        )::int as "returningUsers",
+        count(*) filter (
+          where reflected_entries >= 3
+            and active_days = 1
+        )::int as "intenseNoReturnUsers",
+        coalesce(sum(entries), 0)::int as "entries",
+        coalesce(sum(reflected_entries), 0)::int as "reflectedEntries",
+        coalesce(sum(transcribed_entries), 0)::int as "transcribedEntries",
+        coalesce(sum(continued_entries), 0)::int as "continuedEntries",
+        coalesce(sum(threads), 0)::int as "threads",
+        coalesce(sum(product_events), 0)::int as "productEvents",
+        coalesce(sum(transcription_failures), 0)::int as "transcriptionFailures",
+        coalesce(sum(reflection_failures), 0)::int as "reflectionFailures",
+        (
+          select count(*)::int
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+            and e.risk_level = 'low'
+        ) as "lowRiskEntries",
+        (
+          select count(*)::int
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+            and e.risk_level = 'high'
+        ) as "highRiskEntries"
+      from per_user
+    `),
+  );
+
+  const alphaUsers = rows<AlphaUserRow>(
+    await db.execute(sql`
+      with excluded_users as (
+        select id
+        from users
+        where lower(coalesce(email, '')) like '%test%'
+           or lower(coalesce(email, '')) like '%launchtest%'
+           or lower(coalesce(email, '')) like '%example.%'
+           or lower(coalesce(email, '')) like '%leonardocamacho%'
+      ),
+      cohort_users as (
+        select u.id
+        from users u
+        where not exists (select 1 from excluded_users x where x.id = u.id)
+          and (
+            u.created_at >= ${ALPHA_COHORT_START}
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(coalesce(u.email, ''))
+                and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+            )
+            or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+            or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+          )
+      ),
+      entry_stats as (
+        select
+          e.user_id,
+          count(*)::int as entries,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as entry_days,
+          count(*) filter (where e.reflection is not null and nullif(trim(e.reflection), '') is not null)::int as reflected_entries,
+          count(*) filter (where e.entry_mode = 'continue' or e.continued_from_entry_id is not null)::int as continuations,
+          min(e.created_at) as first_entry_at,
+          max(e.created_at) as last_entry_at
+        from entries e
+        inner join cohort_users cu on cu.id = e.user_id
+        where e.created_at >= ${ALPHA_COHORT_START}
+        group by e.user_id
+      ),
+      event_stats as (
+        select
+          pe.user_id,
+          count(*)::int as product_events,
+          count(distinct coalesce(pe.metadata->>'request_id', pe.id::text)) filter (
+            where pe.event_name = 'product_transcription_failed'
+          )::int as transcription_failures,
+          count(distinct coalesce(pe.metadata->>'request_id', pe.id::text)) filter (
+            where pe.event_name in ('product_reflection_failed', 'product_reflection_fallback_saved')
+          )::int as reflection_failures,
+          min(pe.created_at) as first_event_at,
+          max(pe.created_at) as last_event_at
+        from product_events pe
+        inner join cohort_users cu on cu.id = pe.user_id
+        where pe.created_at >= ${ALPHA_COHORT_START}
+        group by pe.user_id
+      ),
+      activity_stats as (
+        select
+          user_id,
+          count(distinct local_day)::int as active_days
+        from (
+          select e.user_id, date_trunc('day', e.created_at at time zone 'America/Sao_Paulo') as local_day
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+          union
+          select pe.user_id, date_trunc('day', pe.created_at at time zone 'America/Sao_Paulo') as local_day
+          from product_events pe
+          inner join cohort_users cu on cu.id = pe.user_id
+          where pe.created_at >= ${ALPHA_COHORT_START}
+        ) activity
+        group by user_id
+      ),
+      per_user as (
+        select
+          left(md5(cu.id::text), 10) as anon_user,
+          coalesce(es.entries, 0) as entries,
+          coalesce(es.entry_days, 0) as entry_days,
+          coalesce(ac.active_days, 0) as active_days,
+          coalesce(evs.product_events, 0) as product_events,
+          coalesce(es.reflected_entries, 0) as reflected_entries,
+          coalesce(es.continuations, 0) as continuations,
+          coalesce(evs.transcription_failures, 0) as transcription_failures,
+          coalesce(evs.reflection_failures, 0) as reflection_failures,
+          least(
+            coalesce(es.first_entry_at, evs.first_event_at),
+            coalesce(evs.first_event_at, es.first_entry_at)
+          ) as first_seen_at,
+          greatest(
+            coalesce(es.last_entry_at, evs.last_event_at),
+            coalesce(evs.last_event_at, es.last_entry_at)
+          ) as last_seen_at
+        from cohort_users cu
+        left join entry_stats es on es.user_id = cu.id
+        left join event_stats evs on evs.user_id = cu.id
+        left join activity_stats ac on ac.user_id = cu.id
+      )
+      select
+        anon_user as "anonUser",
+        entries,
+        entry_days as "entryDays",
+        active_days as "activeDays",
+        product_events as "productEvents",
+        reflected_entries as "reflectedEntries",
+        continuations,
+        transcription_failures as "transcriptionFailures",
+        reflection_failures as "reflectionFailures",
+        first_seen_at as "firstSeenAt",
+        last_seen_at as "lastSeenAt",
+        case
+          when reflected_entries > 0 and (active_days >= 2 or continuations > 0) then 'retorno_real'
+          when reflected_entries >= 3 and active_days = 1 then 'intenso_sem_retorno'
+          when reflected_entries > 0 then 'ativado_leve'
+          else 'sinal_inicial'
+        end as bucket
+      from per_user
+      where entries > 0 or product_events > 0
+      order by
+        case
+          when reflected_entries > 0 and (active_days >= 2 or continuations > 0) then 0
+          when reflected_entries >= 3 and active_days = 1 then 1
+          when reflected_entries > 0 then 2
+          else 3
+        end,
+        reflected_entries desc,
+        product_events desc,
+        anon_user asc
+    `),
+  );
+
+  const productEventBreakdown = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        event_name as label,
+        count(*)::int as total
+      from product_events pe
+      inner join users u on u.id = pe.user_id
+      where pe.created_at >= ${ALPHA_COHORT_START}
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by event_name
+      order by count(*) desc, event_name asc
+      limit 10
+    `),
+  );
+
+  const productFailureBreakdown = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(pe.metadata->>'error_class', ''), 'sem classe') as label,
+        count(distinct coalesce(pe.metadata->>'request_id', pe.id::text))::int as total
+      from product_events pe
+      inner join users u on u.id = pe.user_id
+      where pe.created_at >= ${ALPHA_COHORT_START}
+        and pe.event_name in (
+          'product_transcription_failed',
+          'product_reflection_failed',
+          'product_reflection_fallback_saved'
+        )
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+      limit 10
+    `),
+  );
+
+  const productFailureAlerts = rows<ProductFailureAlertRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(pe.metadata->>'error_class', ''), 'sem classe') as "errorClass",
+        coalesce(nullif(pe.metadata->>'retryable', ''), 'desconhecido') as retryable,
+        count(distinct coalesce(pe.metadata->>'request_id', pe.id::text))::int as requests,
+        count(distinct pe.user_id)::int as people,
+        max(pe.created_at) as "latestAt"
+      from product_events pe
+      inner join users u on u.id = pe.user_id
+      where pe.created_at >= now() - interval '24 hours'
+        and pe.event_name in (
+          'product_transcription_failed',
+          'product_reflection_failed',
+          'product_reflection_fallback_saved'
+        )
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1, 2
+      order by requests desc, "latestAt" desc
+      limit 8
+    `),
+  );
+
+  const [pmfDeclaredSummary] = rows<PmfDeclaredSummaryRow>(
+    await db.execute(sql`
+      with real_feedback as (
+        select pf.*
+        from product_feedback pf
+        inner join users u on u.id = pf.user_id
+        where pf.created_at >= ${ALPHA_COHORT_START}
+          and lower(coalesce(u.email, '')) not like '%test%'
+          and lower(coalesce(u.email, '')) not like '%launchtest%'
+          and lower(coalesce(u.email, '')) not like '%example.%'
+          and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      )
+      select
+        count(*) filter (where kind = 'pmf' and action = 'shown')::int as "promptsShown",
+        count(distinct user_id) filter (where kind = 'pmf' and action = 'shown')::int as "peoplePrompted",
+        count(*) filter (where kind = 'pmf' and answered_at is not null)::int as "answered",
+        count(distinct user_id) filter (where kind = 'pmf' and answered_at is not null)::int as "peopleAnswered",
+        count(*) filter (where kind = 'pmf' and skipped_at is not null)::int as "skipped",
+        count(*) filter (where kind = 'pmf' and snoozed_until is not null)::int as "snoozed",
+        count(*) filter (where kind = 'pmf' and answer = 'very_disappointed')::int as "veryDisappointed",
+        count(*) filter (where kind = 'pmf' and answer = 'somewhat_disappointed')::int as "somewhatDisappointed",
+        count(*) filter (where kind = 'pmf' and answer = 'not_disappointed')::int as "notDisappointed",
+        count(*) filter (where kind = 'pmf' and answer = 'not_sure_yet')::int as "notSureYet",
+        count(*) filter (where kind = 'reflection_micro' and answer = 'positive')::int as "microPositive",
+        count(*) filter (where kind = 'reflection_micro' and answer = 'negative')::int as "microNegative"
+      from real_feedback
+    `),
+  );
+
+  const [pmfDeliverySummary] = rows<PmfDeliverySummaryRow>(
+    await db.execute(sql`
+      with real_users as (
+        select u.id, u.onboarding_context
+        from users u
+        where lower(coalesce(u.email, '')) not like '%test%'
+          and lower(coalesce(u.email, '')) not like '%launchtest%'
+          and lower(coalesce(u.email, '')) not like '%example.%'
+          and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      ),
+      user_stats as (
+        select
+          ru.id as user_id,
+          coalesce((ru.onboarding_context->>'pmf_test_enabled')::boolean, false) as pmf_test_enabled,
+          count(e.id) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as active_days,
+          count(e.id) filter (
+            where coalesce(e.entry_mode, 'new') = 'continue'
+               or e.continued_from_entry_id is not null
+          )::int as continued_entries,
+          count(pf.id) filter (
+            where pf.kind = 'pmf'
+              and pf.answered_at is not null
+          )::int as pmf_answered,
+          count(pf.id) filter (
+            where pf.kind = 'pmf'
+              and pf.snoozed_until is not null
+              and pf.snoozed_until > now()
+          )::int as pmf_snoozed
+        from real_users ru
+        left join entries e on e.user_id = ru.id
+        left join product_feedback pf on pf.user_id = ru.id
+        group by ru.id, ru.onboarding_context
+      ),
+      expected_entries as (
+        select
+          e.id as entry_id,
+          e.user_id,
+          e.created_at,
+          exists (
+            select 1
+            from product_feedback pf
+            where pf.user_id = e.user_id
+              and pf.entry_id = e.id
+              and pf.kind = 'reflection_micro'
+              and pf.action = 'shown'
+          ) as has_micro_shown
+        from entries e
+        inner join user_stats us on us.user_id = e.user_id
+        where e.created_at >= ${PMF_MONITOR_START}
+          and e.created_at <= now() - (${PMF_MONITOR_GRACE_MINUTES} * interval '1 minute')
+          and e.reflection is not null
+          and nullif(trim(e.reflection), '') is not null
+          and coalesce(e.risk_level, '') <> 'high'
+          and (
+            us.reflected_entries >= 2
+            or us.active_days >= 2
+            or us.continued_entries >= 1
+            or (us.pmf_test_enabled and us.reflected_entries >= 1)
+          )
+          and us.pmf_answered = 0
+          and us.pmf_snoozed = 0
+      )
+      select
+        count(*)::int as "expectedEntries",
+        count(*) filter (where not has_micro_shown)::int as "missingMicroShown",
+        count(distinct user_id) filter (where not has_micro_shown)::int as "missingPeople",
+        max(created_at) filter (where not has_micro_shown) as "latestMissingAt"
+      from expected_entries
+    `),
+  );
+
+  const pmfDeliveryIssues = rows<PmfDeliveryIssueRow>(
+    await db.execute(sql`
+      with real_users as (
+        select u.id, u.onboarding_context
+        from users u
+        where lower(coalesce(u.email, '')) not like '%test%'
+          and lower(coalesce(u.email, '')) not like '%launchtest%'
+          and lower(coalesce(u.email, '')) not like '%example.%'
+          and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      ),
+      user_stats as (
+        select
+          ru.id as user_id,
+          coalesce((ru.onboarding_context->>'pmf_test_enabled')::boolean, false) as pmf_test_enabled,
+          count(e.id) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as active_days,
+          count(e.id) filter (
+            where coalesce(e.entry_mode, 'new') = 'continue'
+               or e.continued_from_entry_id is not null
+          )::int as continued_entries,
+          count(pf.id) filter (
+            where pf.kind = 'pmf'
+              and pf.answered_at is not null
+          )::int as pmf_answered,
+          count(pf.id) filter (
+            where pf.kind = 'pmf'
+              and pf.snoozed_until is not null
+              and pf.snoozed_until > now()
+          )::int as pmf_snoozed
+        from real_users ru
+        left join entries e on e.user_id = ru.id
+        left join product_feedback pf on pf.user_id = ru.id
+        group by ru.id, ru.onboarding_context
+      ),
+      expected_entries as (
+        select
+          e.id as entry_id,
+          e.user_id,
+          e.created_at,
+          coalesce(e.entry_mode, 'new') as entry_mode,
+          us.reflected_entries,
+          us.active_days,
+          us.continued_entries,
+          exists (
+            select 1
+            from product_events pe
+            where pe.user_id = e.user_id
+              and pe.event_name = 'product_reflection_received'
+              and pe.created_at between e.created_at - interval '90 seconds' and e.created_at + interval '90 seconds'
+          ) as has_reflection_received,
+          exists (
+            select 1
+            from product_feedback pf
+            where pf.user_id = e.user_id
+              and pf.entry_id = e.id
+              and pf.kind = 'reflection_micro'
+              and pf.action = 'shown'
+          ) as has_micro_shown,
+          (
+            select max(pe.created_at)
+            from product_events pe
+            where pe.user_id = e.user_id
+              and pe.created_at >= e.created_at
+          ) as last_product_event_at
+        from entries e
+        inner join user_stats us on us.user_id = e.user_id
+        where e.created_at >= ${PMF_MONITOR_START}
+          and e.created_at <= now() - (${PMF_MONITOR_GRACE_MINUTES} * interval '1 minute')
+          and e.reflection is not null
+          and nullif(trim(e.reflection), '') is not null
+          and coalesce(e.risk_level, '') <> 'high'
+          and (
+            us.reflected_entries >= 2
+            or us.active_days >= 2
+            or us.continued_entries >= 1
+            or (us.pmf_test_enabled and us.reflected_entries >= 1)
+          )
+          and us.pmf_answered = 0
+          and us.pmf_snoozed = 0
+      )
+      select
+        left(md5(user_id::text), 10) as "anonUser",
+        left(entry_id::text, 8) as "entryRef",
+        created_at as "entryCreatedAt",
+        entry_mode as "entryMode",
+        reflected_entries as "reflectedEntries",
+        active_days as "activeDays",
+        continued_entries as "continuedEntries",
+        has_reflection_received as "hasReflectionReceived",
+        floor(extract(epoch from (now() - created_at)) / 60)::int as "minutesSinceEntry",
+        last_product_event_at as "lastProductEventAt"
+      from expected_entries
+      where not has_micro_shown
+      order by created_at desc
+      limit 8
+    `),
+  );
+
+  const pmfAnswerDistribution = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        case answer
+          when 'very_disappointed' then 'faria muita falta'
+          when 'somewhat_disappointed' then 'faria alguma falta'
+          when 'not_disappointed' then 'não faria tanta falta'
+          when 'not_sure_yet' then 'ainda usei pouco'
+          else coalesce(answer, 'sem resposta')
+        end as label,
+        count(*)::int as total
+      from product_feedback pf
+      inner join users u on u.id = pf.user_id
+      where pf.created_at >= ${ALPHA_COHORT_START}
+        and pf.kind = 'pmf'
+        and pf.answered_at is not null
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+    `),
+  );
+
+  const pmfReasonDistribution = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        case reason
+          when 'more_clarity' then 'mais clareza'
+          when 'continue_this_thread' then 'retomar este fio'
+          when 'name_feeling' then 'nomear melhor o que sente'
+          when 'organized_thoughts' then 'organizar pensamentos soltos'
+          when 'clear_start' then 'saber melhor o que dizer'
+          when 'closer_reflection' then 'devolutiva mais próxima'
+          when 'right_moment' then 'momento certo'
+          when 'lighter_experience' then 'experiência mais simples'
+          when 'example_when_to_use' then 'ver quando usar'
+          when 'clarity_after_speaking' then 'clareza depois de falar'
+          when 'threads_continuity' then 'retomar fios'
+          when 'patterns' then 'perceber padrões'
+          when 'next_steps' then 'organizar próximos passos'
+          when 'private_space' then 'espaço privado'
+          when 'more_precise_reflections' then 'reflexões mais precisas'
+          when 'better_memory' then 'memória melhor'
+          when 'useful_reminders' then 'lembretes mais úteis'
+          when 'privacy_control' then 'controle/privacidade'
+          when 'more_natural_voice' then 'voz mais natural'
+          when 'no_value_yet' then 'ainda não vi valor'
+          when 'voice_did_not_fit' then 'voz não encaixou'
+          when 'reflection_did_not_help' then 'reflexão não ajudou'
+          when 'did_not_return' then 'não voltou a usar'
+          when 'prefer_other_method' then 'prefere outro jeito'
+          when 'forgot' then 'esqueceu'
+          when 'no_right_moment' then 'faltou momento certo'
+          when 'did_not_know_what_to_say' then 'não sabia o que falar'
+          when 'privacy_doubt' then 'dúvida sobre privacidade'
+          when 'first_experience_did_not_fit' then 'primeira experiência não encaixou'
+          when 'other_closed' then 'outra coisa'
+          else coalesce(reason, 'sem detalhe')
+        end as label,
+        count(*)::int as total
+      from product_feedback pf
+      inner join users u on u.id = pf.user_id
+      where pf.created_at >= ${ALPHA_COHORT_START}
+        and pf.kind = 'pmf'
+        and pf.answered_at is not null
+        and pf.reason is not null
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+      limit 10
+    `),
+  );
+
+  const moodDistribution = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(mood, ''), 'sem humor') as label,
+        count(*)::int as total
+      from entries e
+      inner join users u on u.id = e.user_id
+      where e.created_at >= ${ALPHA_COHORT_START}
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+    `),
+  );
+
+  const riskDistribution = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(risk_level, ''), 'sem risco') as label,
+        count(*)::int as total
+      from entries e
+      inner join users u on u.id = e.user_id
+      where e.created_at >= ${ALPHA_COHORT_START}
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+    `),
+  );
+
+  const entryModeDistribution = rows<BreakdownRow>(
+    await db.execute(sql`
+      select
+        coalesce(nullif(entry_mode, ''), 'new') as label,
+        count(*)::int as total
+      from entries e
+      inner join users u on u.id = e.user_id
+      where e.created_at >= ${ALPHA_COHORT_START}
+        and lower(coalesce(u.email, '')) not like '%test%'
+        and lower(coalesce(u.email, '')) not like '%launchtest%'
+        and lower(coalesce(u.email, '')) not like '%example.%'
+        and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+      group by 1
+      order by count(*) desc, label asc
+    `),
+  );
+
+  const [alphaQualitativeSummary] = rows<AlphaQualitativeSummaryRow>(
+    await db.execute(sql`
+      with real_waitlist as (
+        select w.id, w.confirmed_at, w.unlocked_at
+        from waitlist w
+        where w.created_at >= ${ALPHA_COHORT_START}
+          and w.confirmed_at is not null
+          and lower(coalesce(w.email, '')) not like '%test%'
+          and lower(coalesce(w.email, '')) not like '%launchtest%'
+          and lower(coalesce(w.email, '')) not like '%example.%'
+          and lower(coalesce(w.email, '')) not like '%leonardocamacho%'
+      )
+      select
+        count(*)::int as "confirmedWaitlistReal",
+        count(*) filter (where rw.unlocked_at is not null)::int as "unlockedReal",
+        count(*) filter (where wp.waitlist_id is not null)::int as "profileStarted",
+        count(*) filter (
+          where nullif(trim(wp.moment), '') is not null
+            and nullif(trim(wp.rhythm), '') is not null
+            and nullif(trim(wp.presence), '') is not null
+            and nullif(trim(wp.value), '') is not null
+        )::int as "profileComplete",
+        count(*) filter (where nullif(trim(wp.value), '') is not null)::int as "hasValueAnswer",
+        count(*) filter (where nullif(trim(wp.moment), '') is not null)::int as "hasMomentAnswer"
+      from real_waitlist rw
+      left join waitlist_profile wp on wp.waitlist_id = rw.id
+    `),
+  );
+
+  const exclusionAudit = rows<ExclusionAuditRow>(
+    await db.execute(sql`
+      with reasons as (
+        select 'interno: leonardocamacho' as reason, '%leonardocamacho%' as pattern
+        union all select 'teste: launchtest', '%launchtest%'
+        union all select 'teste: test', '%test%'
+        union all select 'teste: example.*', '%example.%'
+      )
+      select
+        reasons.reason,
+        (
+          select count(*)::int
+          from users u
+          where lower(coalesce(u.email, '')) like reasons.pattern
+        ) as "users",
+        (
+          select count(*)::int
+          from access_invites ai
+          where ai.created_at >= ${ALPHA_COHORT_START}
+            and lower(coalesce(ai.email, '')) like reasons.pattern
+        ) as "accessInvites",
+        (
+          select count(*)::int
+          from waitlist w
+          where w.created_at >= ${ALPHA_COHORT_START}
+            and lower(coalesce(w.email, '')) like reasons.pattern
+        ) as "waitlistRows"
+      from reasons
     `),
   );
 
@@ -1000,12 +2202,81 @@ async function getDashboardData() {
     launchCampaignSources,
     launchCampaignContent,
     launchCampaignCtas,
+    access: {
+      invites: asNumber(accessSummary?.invites),
+      sent: asNumber(accessSummary?.sent),
+      clicked: asNumber(accessSummary?.clicked),
+      accountCreated: asNumber(accessSummary?.accountCreated),
+      loginCompleted: asNumber(accessSummary?.loginCompleted),
+      onboardingStarted: asNumber(accessSummary?.onboardingStarted),
+      onboardingCompleted: asNumber(accessSummary?.onboardingCompleted),
+      firstReflectionCompleted: asNumber(accessSummary?.firstReflectionCompleted),
+      excludedByEmail: asNumber(accessSummary?.excludedByEmail),
+    },
+    accessEvents,
+    product: {
+      users: asNumber(productSummary?.users),
+      activeUsers: asNumber(productSummary?.activeUsers),
+      activatedUsers: asNumber(productSummary?.activatedUsers),
+      returningUsers: asNumber(productSummary?.returningUsers),
+      intenseNoReturnUsers: asNumber(productSummary?.intenseNoReturnUsers),
+      entries: asNumber(productSummary?.entries),
+      reflectedEntries: asNumber(productSummary?.reflectedEntries),
+      transcribedEntries: asNumber(productSummary?.transcribedEntries),
+      continuedEntries: asNumber(productSummary?.continuedEntries),
+      threads: asNumber(productSummary?.threads),
+      productEvents: asNumber(productSummary?.productEvents),
+      transcriptionFailures: asNumber(productSummary?.transcriptionFailures),
+      reflectionFailures: asNumber(productSummary?.reflectionFailures),
+      lowRiskEntries: asNumber(productSummary?.lowRiskEntries),
+      highRiskEntries: asNumber(productSummary?.highRiskEntries),
+    },
+    alphaUsers,
+    productEventBreakdown,
+    productFailureBreakdown,
+    productFailureAlerts,
+    pmfDeclared: {
+      promptsShown: asNumber(pmfDeclaredSummary?.promptsShown),
+      peoplePrompted: asNumber(pmfDeclaredSummary?.peoplePrompted),
+      answered: asNumber(pmfDeclaredSummary?.answered),
+      peopleAnswered: asNumber(pmfDeclaredSummary?.peopleAnswered),
+      skipped: asNumber(pmfDeclaredSummary?.skipped),
+      snoozed: asNumber(pmfDeclaredSummary?.snoozed),
+      veryDisappointed: asNumber(pmfDeclaredSummary?.veryDisappointed),
+      somewhatDisappointed: asNumber(pmfDeclaredSummary?.somewhatDisappointed),
+      notDisappointed: asNumber(pmfDeclaredSummary?.notDisappointed),
+      notSureYet: asNumber(pmfDeclaredSummary?.notSureYet),
+      microPositive: asNumber(pmfDeclaredSummary?.microPositive),
+      microNegative: asNumber(pmfDeclaredSummary?.microNegative),
+    },
+    pmfDelivery: {
+      expectedEntries: asNumber(pmfDeliverySummary?.expectedEntries),
+      missingMicroShown: asNumber(pmfDeliverySummary?.missingMicroShown),
+      missingPeople: asNumber(pmfDeliverySummary?.missingPeople),
+      latestMissingAt: pmfDeliverySummary?.latestMissingAt ?? null,
+    },
+    pmfDeliveryIssues,
+    pmfAnswerDistribution,
+    pmfReasonDistribution,
+    moodDistribution,
+    riskDistribution,
+    entryModeDistribution,
+    alphaQualitative: {
+      confirmedWaitlistReal: asNumber(alphaQualitativeSummary?.confirmedWaitlistReal),
+      unlockedReal: asNumber(alphaQualitativeSummary?.unlockedReal),
+      profileStarted: asNumber(alphaQualitativeSummary?.profileStarted),
+      profileComplete: asNumber(alphaQualitativeSummary?.profileComplete),
+      hasValueAnswer: asNumber(alphaQualitativeSummary?.hasValueAnswer),
+      hasMomentAnswer: asNumber(alphaQualitativeSummary?.hasMomentAnswer),
+    },
+    exclusionAudit,
   };
 }
 
 export default async function AdminPage({ searchParams }: { searchParams: SearchParams }) {
-  const { token } = await searchParams;
+  const { token, tab } = await searchParams;
   const adminToken = process.env.WAITLIST_ADMIN_TOKEN?.trim();
+  const activeTab = parseAdminTab(tab);
 
   if (!adminToken || token !== adminToken) {
     return <PrivateScreen configured={Boolean(adminToken)} />;
@@ -1048,10 +2319,19 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         : "Atenção técnica";
   const exportHref = `/api/waitlist/export?token=${encodeURIComponent(adminToken)}`;
   const maintenanceDryRunHref = `/api/waitlist/maintenance?token=${encodeURIComponent(adminToken)}&dryRun=1`;
+  const refreshHref = adminHref(adminToken, activeTab);
   const highestDailyValue = Math.max(
     1,
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
   );
+  const pmfLightRate = percent(data.product.returningUsers, data.product.activatedUsers);
+  const pmfLightTone = data.product.returningUsers > 0 ? "neutral" : "warn";
+  const pmfDeclaredResponseRate = percent(data.pmfDeclared.answered, data.pmfDeclared.promptsShown);
+  const pmfVeryDisappointedRate = percent(data.pmfDeclared.veryDisappointed, data.pmfDeclared.answered);
+  const pmfDeliveryTone = data.pmfDelivery.missingMicroShown ? "warn" : "good";
+  const returningUsers = data.alphaUsers.filter((user) => user.bucket === "retorno_real");
+  const intenseNoReturnUsers = data.alphaUsers.filter((user) => user.bucket === "intenso_sem_retorno");
+  const activatedLightUsers = data.alphaUsers.filter((user) => user.bucket === "ativado_leve");
 
   return (
     <main className={styles.page}>
@@ -1068,10 +2348,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             </p>
           </div>
           <div className={styles.actions}>
-            <Link className={styles.button} href={exportHref}>
-              Exportar CSV
-            </Link>
-            <Link className={styles.secondary} href={`/admin?token=${encodeURIComponent(adminToken)}`}>
+            {activeTab === "launch" ? (
+              <Link className={styles.button} href={exportHref}>
+                Exportar CSV
+              </Link>
+            ) : null}
+            <Link className={styles.secondary} href={refreshHref}>
               Atualizar
             </Link>
             <Link className={styles.secondary} href="/">
@@ -1080,24 +2362,31 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         </section>
 
+        <TabNav token={adminToken} activeTab={activeTab} />
+
+        {activeTab === "launch" ? (
+          <>
         <section className={styles.alertStrip}>
           <SignalRow
             label="Saúde dos dados"
             value={healthMessage}
             note={`${data.health.internalEmails} emails internos separados da sujeira real`}
             tone={dataHealthGood ? "good" : "warn"}
+            definition={help.dataHealth}
           />
           <SignalRow
             label="Pendentes acima de 24h"
             value={`${data.health.stalePending} pessoas`}
             note="Quem entrou e ainda não confirmou email"
             tone={data.health.stalePending === 0 ? "good" : "warn"}
+            definition={help.stalePending}
           />
           <SignalRow
             label="Emails enviados"
             value={`${emailSent}`}
             note={`${data.email.delivered} delivered, ${data.email.bounced} bounces, ${data.email.complained} complaints`}
             tone={emailFailures === 0 && data.email.bounced === 0 && data.email.complained === 0 ? "good" : "warn"}
+            definition={help.emailsSent}
           />
         </section>
 
@@ -1107,10 +2396,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>O essencial: lista, confirmação, convite e Ritual de Chegada.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} />
-            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${percent(data.summary.confirmed, data.summary.total)} da lista confirmou`} />
-            <MetricCard value={compactNumber(data.network.invitedConfirmed)} label="Convidados confirmados" note={`${data.network.invitedTotal} convidados gerados pela rede`} />
-            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual`} />
+            <MetricCard value={compactNumber(data.summary.total)} label="Pessoas na lista" note={`${data.summary.signups7} novas nos últimos 7 dias`} definition={help.totalList} />
+            <MetricCard value={compactNumber(data.summary.confirmed)} label="Emails confirmados" note={`${percent(data.summary.confirmed, data.summary.total)} da lista confirmou`} definition={help.confirmedEmails} />
+            <MetricCard value={compactNumber(data.network.invitedConfirmed)} label="Convidados confirmados" note={`${data.network.invitedTotal} convidados gerados pela rede`} definition={help.confirmedInvited} />
+            <MetricCard value={compactNumber(data.profile.complete)} label="Rituais completos" note={`${data.profile.started} pessoas começaram o Ritual`} definition={help.ritualsComplete} />
           </div>
         </section>
 
@@ -1125,42 +2414,49 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               label="Confirmações enviadas"
               note={`${data.email.confirmFailed} falhas ao enviar confirmação`}
               tone={data.email.confirmFailed ? "warn" : "neutral"}
+              definition={help.confirmSent}
             />
             <MetricCard
               value={compactNumber(data.email.statusSent)}
               label="Links de status enviados"
               note={`${data.email.statusFailed} falhas ao enviar sala/status`}
               tone={data.email.statusFailed ? "warn" : "neutral"}
+              definition={help.statusSent}
             />
             <MetricCard
               value={compactNumber(data.email.friendSent)}
               label="Avisos de convidado"
               note={`${data.email.friendFailed} falhas ao avisar convidante`}
               tone={data.email.friendFailed ? "warn" : "neutral"}
+              definition={help.friendSent}
             />
             <MetricCard
               value={compactNumber(data.email.milestoneSent)}
               label="Marcos enviados"
               note={`${data.email.milestoneFailed} falhas em emails de marco`}
               tone={data.email.milestoneFailed ? "warn" : "neutral"}
+              definition={help.milestoneSent}
             />
             <MetricCard
               value={compactNumber(data.email.lifecycleSent)}
               label="Cadência enviada"
               note={`${data.email.lifecycleFailed} falhas em emails de lifecycle`}
               tone={data.email.lifecycleFailed ? "warn" : "neutral"}
+              definition={help.lifecycleSent}
             />
             <MetricCard
               value={compactNumber(data.email.delivered)}
               label="Delivered"
               note={`${data.email.opened} aberturas e ${data.email.clicked} cliques registrados`}
               tone="neutral"
+              definition={help.delivered}
             />
             <MetricCard
               value={compactNumber(data.email.bounced)}
               label="Bounces"
               note={`${data.email.complained} complaints nos últimos 30 dias`}
               tone={data.email.bounced || data.email.complained ? "warn" : "good"}
+              definition={help.bounces}
             />
           </div>
           <div className={styles.noteCard}>
@@ -1186,24 +2482,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               label="Bloqueios duros"
               note={emailHardSignalNote}
               tone={data.emailHealth.hardBlocked ? "warn" : "good"}
+              definition={help.hardBlocked}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.pausedUnconfirmed)}
               label="Pausados 7+ dias"
               note="Não confirmaram e saíram da cadência ativa"
               tone={data.emailHealth.pausedUnconfirmed ? "warn" : "good"}
+              definition={help.paused7d}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.archivedUnconfirmed)}
               label="Arquivados 30+ dias"
               note="Preservados no histórico, fora da operação"
               tone={data.emailHealth.archivedUnconfirmed ? "warn" : "good"}
+              definition={help.archived30d}
             />
             <MetricCard
               value={compactNumber(data.emailHealth.reactivated)}
               label="Reativados"
               note="Pessoas que voltaram ao formulário por vontade própria"
               tone="neutral"
+              definition={help.reactivated}
             />
           </div>
           <div className={styles.split}>
@@ -1270,10 +2570,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>Convidante é quem compartilha. Convidados são as pessoas que entram pelo código. Confirmados são convidados que validaram email.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.network.activeInviters)} label="Convidantes ativos" note="Pessoas que geraram ao menos um convidado" />
-            <MetricCard value={compactNumber(data.network.invitedTotal)} label="Convidados gerados" note={`${data.network.invitedConfirmed} confirmaram email`} />
-            <MetricCard value={ratio(data.network.invitedConfirmed, data.network.activeInviters)} label="Confirmados por convidante" note="Média entre convidantes ativos" />
-            <MetricCard value={percent(data.network.invitedConfirmed, data.network.invitedTotal)} label="Confirmação dos convidados" note="Convidados confirmados sobre convidados gerados" />
+            <MetricCard value={compactNumber(data.network.activeInviters)} label="Convidantes ativos" note="Pessoas que geraram ao menos um convidado" definition={help.activeInviters} />
+            <MetricCard value={compactNumber(data.network.invitedTotal)} label="Convidados gerados" note={`${data.network.invitedConfirmed} confirmaram email`} definition={help.invitedTotal} />
+            <MetricCard value={ratio(data.network.invitedConfirmed, data.network.activeInviters)} label="Confirmados por convidante" note="Média entre convidantes ativos" definition={help.confirmedPerInviter} />
+            <MetricCard value={percent(data.network.invitedConfirmed, data.network.invitedTotal)} label="Confirmação dos convidados" note="Convidados confirmados sobre convidados gerados" definition={help.inviteConfirmRate} />
+            <MetricCard value={compactNumber(shareEvents.total)} label="Compartilhamentos" note={`${shareEvents.unique} pessoas acionaram compartilhar`} definition={help.shareActions} />
           </div>
           <div className={styles.gridThree}>
             <div className={styles.signalCard}>
@@ -1287,23 +2588,29 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <thead>
                   <tr>
                     <th>Convidante</th>
-                    <th>Convidados</th>
-                    <th>Convidados confirmados</th>
-                    <th>Taxa</th>
-                    <th>Último</th>
-                    <th>Marco</th>
+                    <th title="Linhas da waitlist cujo referred_by_code é o código dessa pessoa.">Convidados</th>
+                    <th title="Convidados com confirmed_at preenchido.">Confirmados</th>
+                    <th title="Visitantes únicos e envios bem-sucedidos no navegador com o código dessa pessoa. Não é a contagem oficial de cadastros.">Sinais do link</th>
+                    <th title="Cliques para copiar, compartilhar ou abrir WhatsApp feitos pela convidante.">Compart.</th>
+                    <th title="Confirmados divididos por convidados gerados.">Taxa</th>
+                    <th title="Data da última confirmação de convidado.">Último</th>
+                    <th title="Maior marco de convite já notificado para essa pessoa.">Marco</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.topReferrers.map((person) => (
+                  {data.topReferrers.map((person, index) => (
                     <tr key={person.referralCode}>
                       <td>
-                        <strong>{person.name || "Sem nome"}</strong>
+                        <strong>Convidante {index + 1}</strong>
                         <br />
-                        <span className={styles.muted}>{maskEmail(person.email)}</span>
+                        <span className={styles.muted}>código {person.referralCode.slice(0, 8)}</span>
                       </td>
                       <td>{person.totalInvites}</td>
                       <td>{person.confirmedInvites}</td>
+                      <td title={`${person.linkViews} pageviews, ${person.formSuccesses} sucessos no client, ${person.signupEvents} cadastros server-side`}>
+                        {person.linkVisitors}/{person.formSuccesses}
+                      </td>
+                      <td>{person.shareActions}</td>
                       <td>{percent(person.confirmedInvites, person.totalInvites)}</td>
                       <td>{formatDate(person.lastConfirmedAt)}</td>
                       <td>{person.milestoneNotified ? `${person.milestoneNotified}+` : "-"}</td>
@@ -1325,19 +2632,19 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               <thead>
                 <tr>
                   <th>Pessoa</th>
-                  <th>Convidados confirmados</th>
-                  <th>Compartilhamentos</th>
-                  <th>Sala</th>
-                  <th>Ritual</th>
+                  <th title="Convidados com referred_by_code da pessoa e confirmed_at preenchido.">Convidados confirmados</th>
+                  <th title="Eventos de copiar, compartilhar ou WhatsApp.">Compartilhamentos</th>
+                  <th title="Eventos referral_room_viewed ligados ao status/convite da pessoa.">Sala</th>
+                  <th title="Completo quando moment, rhythm, presence e value estão preenchidos no waitlist_profile.">Ritual</th>
                 </tr>
               </thead>
               <tbody>
-                {data.engagedPeople.map((person) => (
+                {data.engagedPeople.map((person, index) => (
                   <tr key={person.referralCode}>
                     <td>
-                      <strong>{person.name || "Sem nome"}</strong>
+                      <strong>Pessoa {index + 1}</strong>
                       <br />
-                      <span className={styles.muted}>{maskEmail(person.email)}</span>
+                      <span className={styles.muted}>código {person.referralCode.slice(0, 8)}</span>
                     </td>
                     <td>{person.confirmedInvites}</td>
                     <td>{person.shareActions}</td>
@@ -1364,6 +2671,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   ? `${compactNumber(data.launchCampaign.pageviews)} pageviews com UTM`
                   : `${compactNumber(data.launchCampaign.campaignPeople)} pessoas/sessões identificáveis`
               }
+              definition={help.campaignSignals}
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.ctaClicks)}
@@ -1373,22 +2681,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   ? `${percent(data.launchCampaign.ctaClicks, data.launchCampaign.campaignSignals)} dos sinais da campanha`
                   : "Nenhum clique de CTA com esta UTM"
               }
+              definition={help.campaignCtas}
             />
             <MetricCard
               value={compactNumber(data.launchCampaign.signups)}
               label="Cadastros com UTM"
               note={`${compactNumber(data.launchCampaign.clientSignupSuccess)} sucessos capturados no client`}
+              definition={help.campaignSignups}
             />
             <MetricCard
               value={percent(data.launchCampaign.signups, data.launchCampaign.campaignSignals)}
               label="Cadastro por sinal"
               note={`${compactNumber(data.launchCampaign.signups)} cadastros / ${compactNumber(data.launchCampaign.campaignSignals)} sinais UTM`}
+              definition={help.campaignConversion}
             />
           </div>
           <div className={styles.gridThree}>
-            <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} />
-            <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} />
-            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} empty="Sem clique de CTA capturado com esta UTM." />
+            <BreakdownList title="Canais do lançamento" rows={data.launchCampaignSources} definition="Eventos da campanha agrupados por utm_source, source_type ou source." />
+            <BreakdownList title="Peças do lançamento" rows={data.launchCampaignContent} definition="Eventos da campanha agrupados por utm_content." />
+            <BreakdownList title="CTAs da campanha" rows={data.launchCampaignCtas} empty="Sem clique de CTA capturado com esta UTM." definition="Cliques em CTA com utm_campaign=launch_waitlist agrupados por label/source." />
           </div>
         </section>
 
@@ -1398,16 +2709,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <p>Leitura first-party geral dos últimos 30 dias.</p>
           </div>
           <div className={styles.grid}>
-            <MetricCard value={compactNumber(data.traffic.pageviews)} label="Pageviews" note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`} />
-            <MetricCard value={percentOrNA(data.summary.signups30, data.traffic.visitors, "sem base")} label="Visitante para cadastro" note={`${compactNumber(data.summary.signups30)} cadastros no período`} />
-            <MetricCard value={percentOrNA(data.traffic.ctaClicks, data.traffic.visitors, "sem base")} label="Visitante para CTA" note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`} />
-            <MetricCard value={compactNumber(data.traffic.clientSignupSuccess)} label="Sucessos no client" note="Confirmações de envio capturadas no navegador" />
+            <MetricCard value={compactNumber(data.traffic.pageviews)} label="Pageviews" note={`${compactNumber(data.traffic.visitors)} visitantes identificados por navegador`} definition={help.pageviews} />
+            <MetricCard value={percentOrNA(data.summary.signups30, data.traffic.visitors, "sem base")} label="Visitante para cadastro" note={`${compactNumber(data.summary.signups30)} cadastros no período`} definition={help.visitorSignupRate} />
+            <MetricCard value={percentOrNA(data.traffic.ctaClicks, data.traffic.visitors, "sem base")} label="Visitante para CTA" note={`${compactNumber(data.traffic.ctaClicks)} cliques rastreados`} definition={help.visitorCtaRate} />
+            <MetricCard value={compactNumber(data.traffic.clientSignupSuccess)} label="Sucessos no client" note="Confirmações de envio capturadas no navegador" definition={help.clientSuccess} />
           </div>
           <div className={styles.quadSplit}>
-            <BreakdownList title="Páginas mais vistas" rows={data.topPages} />
-            <BreakdownList title="Fontes de tráfego" rows={data.trafficSources} />
-            <BreakdownList title="CTAs mais acionados" rows={data.topCtas} />
-            <BreakdownList title="Origem dos cadastros" rows={data.signupSources} />
+            <BreakdownList title="Páginas mais vistas" rows={data.topPages} definition={help.topPages} />
+            <BreakdownList title="Fontes de tráfego" rows={data.trafficSources} definition={help.trafficSources} />
+            <BreakdownList title="CTAs mais acionados" rows={data.topCtas} definition={help.topCtas} />
+            <BreakdownList title="Origem dos cadastros" rows={data.signupSources} definition={help.signupSources} />
           </div>
         </section>
 
@@ -1490,9 +2801,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 </thead>
                 <tbody>
                   {data.flaggedRows.length ? (
-                    data.flaggedRows.map((row) => (
-                      <tr key={`${row.email}-${dateKey(row.createdAt)}`}>
-                        <td>{maskEmail(row.email)}</td>
+                    data.flaggedRows.map((row, index) => (
+                      <tr key={`${row.reason}-${dateKey(row.createdAt)}-${index}`}>
+                        <td>Registro {index + 1}</td>
                         <td>{row.reason}</td>
                         <td>{formatDate(row.createdAt)}</td>
                       </tr>
@@ -1515,17 +2826,29 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
           <div className={styles.answerCard}>
             <div className={styles.answerList}>
-              {data.recentProfiles.map((profileRow) => (
-                <article className={styles.answer} key={`${profileRow.email}-${dateKey(profileRow.updatedAt)}`}>
-                  <strong>{profileRow.name || maskEmail(profileRow.email)}</strong>
-                  <p>{profileRow.moment || "Sem momento registrado ainda"}</p>
-                  <p>
-                    <span className={styles.muted}>Ritmo:</span> {profileRow.rhythm || "não respondeu"} ·{" "}
-                    <span className={styles.muted}>Presença:</span> {profileRow.presence || "não respondeu"} ·{" "}
-                    <span className={styles.muted}>Valor:</span> {profileRow.value || "não respondeu"}
-                  </p>
-                </article>
-              ))}
+              {data.recentProfiles.map((profileRow, index) => {
+                const completedFields = [
+                  profileRow.hasMoment,
+                  profileRow.hasRhythm,
+                  profileRow.hasPresence,
+                  profileRow.hasValue,
+                ].filter(Boolean).length;
+
+                return (
+                  <article className={styles.answer} key={`${dateKey(profileRow.updatedAt)}-${index}`}>
+                    <strong>Perfil recente {index + 1}</strong>
+                    <p>
+                      {completedFields}/4 campos preenchidos · atualizado {formatDate(profileRow.updatedAt)}
+                    </p>
+                    <p>
+                      <span className={styles.muted}>Momento:</span> {profileRow.hasMoment ? "preenchido" : "vazio"} ·{" "}
+                      <span className={styles.muted}>Ritmo:</span> {profileRow.hasRhythm ? "preenchido" : "vazio"} ·{" "}
+                      <span className={styles.muted}>Presença:</span> {profileRow.hasPresence ? "preenchido" : "vazio"} ·{" "}
+                      <span className={styles.muted}>Valor:</span> {profileRow.hasValue ? "preenchido" : "vazio"}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -1546,6 +2869,380 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             ))}
           </div>
         </section>
+          </>
+        ) : null}
+
+        {activeTab === "access" ? (
+          <>
+            <section className={styles.alertStrip}>
+              <SignalRow
+                label="Coorte Alpha"
+                value={ALPHA_COHORT_LABEL}
+                note={`${data.access.excludedByEmail} convite removido da leitura por email interno/teste`}
+                tone={data.access.excludedByEmail ? "warn" : "good"}
+                definition={help.accessInvites}
+              />
+              <SignalRow
+                label="Conta criada"
+                value={`${data.access.accountCreated}/${data.access.invites}`}
+                note={`${percent(data.access.accountCreated, data.access.invites)} dos convites reais`}
+                tone={data.access.accountCreated ? "good" : "warn"}
+              />
+              <SignalRow
+                label="Primeira reflexão"
+                value={`${data.access.firstReflectionCompleted}/${data.access.invites}`}
+                note="Entrada no valor principal do Alpha"
+                tone={data.access.firstReflectionCompleted ? "good" : "warn"}
+                definition={help.accessFirstReflection}
+              />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Acesso Alpha</h2>
+                <p>Leitura do convite até o primeiro valor, sem renderizar email ou nome.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.access.invites)}
+                  label="Convites reais"
+                  note={`${data.access.sent} enviados desde 19/06`}
+                  definition={help.accessInvites}
+                />
+                <MetricCard
+                  value={compactNumber(data.access.clicked)}
+                  label="Links abertos"
+                  note={`${percent(data.access.clicked, data.access.sent)} dos enviados`}
+                  tone={data.access.clicked ? "good" : "neutral"}
+                />
+                <MetricCard
+                  value={compactNumber(data.access.onboardingCompleted)}
+                  label="Onboarding completo"
+                  note={`${data.access.onboardingStarted} começaram onboarding`}
+                  tone={data.access.onboardingCompleted ? "good" : "neutral"}
+                />
+                <MetricCard
+                  value={compactNumber(data.access.firstReflectionCompleted)}
+                  label="Primeiro valor"
+                  note={`${percent(data.access.firstReflectionCompleted, data.access.accountCreated)} das contas criadas`}
+                  tone={data.access.firstReflectionCompleted ? "good" : "warn"}
+                  definition={help.accessFirstReflection}
+                />
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Eventos de acesso</h2>
+                <p>Diagnóstico por evento e origem. A tabela usa pessoa/convite como cardinalidade, nunca contato bruto.</p>
+              </div>
+              <div className={styles.tableCard}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Evento</th>
+                      <th>Origem</th>
+                      <th>Volume</th>
+                      <th>Pessoas/convites</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.accessEvents.length ? (
+                      data.accessEvents.map((event) => (
+                        <tr key={`${event.eventName}-${event.source ?? "source"}`}>
+                          <td>{event.eventName}</td>
+                          <td>{event.source ?? "sem origem"}</td>
+                          <td>{event.total}</td>
+                          <td>{event.people}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4}>Nenhum evento de acesso na coorte.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        ) : null}
+
+        {activeTab === "product" ? (
+          <>
+            <section className={styles.alertStrip}>
+              <SignalRow
+                label="Coorte Alpha"
+                value={ALPHA_COHORT_LABEL}
+                note="Usuários internos/teste excluídos por regra de email auditável"
+                tone="neutral"
+              />
+              <SignalRow
+                label="PMF leve"
+                value={pmfLightRate}
+                note={`${data.product.returningUsers}/${data.product.activatedUsers} ativados voltaram de verdade`}
+                tone={pmfLightTone}
+                definition={help.pmfLight}
+              />
+              <SignalRow
+                label="Intenso sem retorno"
+                value={`${data.product.intenseNoReturnUsers} usuários`}
+                note="Alta primeira sessão sem segundo dia observável"
+                tone={data.product.intenseNoReturnUsers ? "warn" : "good"}
+                definition={help.intenseNoReturn}
+              />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>PMF leve do Alpha</h2>
+                <p>Critério prático para amostra pequena: ativação, retorno real e intensidade que ainda não voltou.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.product.activatedUsers)}
+                  label="Ativados"
+                  note={`${data.product.reflectedEntries} reflexões concluídas`}
+                  tone={data.product.activatedUsers ? "good" : "warn"}
+                  definition={help.activatedUsers}
+                />
+                <MetricCard
+                  value={compactNumber(data.product.returningUsers)}
+                  label="Retorno real"
+                  note="Atividade em 2+ dias ou continuidade explícita"
+                  tone={data.product.returningUsers ? "good" : "warn"}
+                  definition={help.returningUsers}
+                />
+                <MetricCard
+                  value={pmfLightRate}
+                  label="PMF leve"
+                  note="Retorno real dividido por usuários ativados"
+                  tone={pmfLightTone}
+                  definition={help.pmfLight}
+                />
+                <MetricCard
+                  value={compactNumber(data.product.intenseNoReturnUsers)}
+                  label="Intensos sem retorno"
+                  note="3+ reflexões em um único dia ativo"
+                  tone={data.product.intenseNoReturnUsers ? "warn" : "good"}
+                  definition={help.intenseNoReturn}
+                />
+              </div>
+              <div className={styles.noteCard}>
+                Critérios usados: ativado = pelo menos uma entrada com reflexão; retorno real = usuário ativado com atividade em dois ou mais dias locais ou continuação explícita de fio; intenso sem retorno = três ou mais reflexões no primeiro dia e nenhum segundo dia observável. Com amostra pequena, isso é leitura de Alpha, não prova estatística de PMF.
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>PMF declarada</h2>
+                <p>Pergunta opcional depois de valor recebido. Complementa a PMF leve comportamental.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.pmfDeclared.promptsShown)}
+                  label="PMF mostrada"
+                  note={`${data.pmfDeclared.peoplePrompted} pessoas únicas`}
+                  definition={help.pmfDeclared}
+                />
+                <MetricCard
+                  value={compactNumber(data.pmfDeclared.answered)}
+                  label="Respondidas"
+                  note={`${pmfDeclaredResponseRate} dos prompts mostrados`}
+                  tone={data.pmfDeclared.answered ? "good" : "neutral"}
+                  definition={help.pmfDeclared}
+                />
+                <MetricCard
+                  value={pmfVeryDisappointedRate}
+                  label="Faria muita falta"
+                  note={`${data.pmfDeclared.veryDisappointed}/${data.pmfDeclared.answered} respostas PMF`}
+                  tone={data.pmfDeclared.veryDisappointed ? "good" : "neutral"}
+                  definition={help.pmfDeclared}
+                />
+                <MetricCard
+                  value={`${data.pmfDeclared.microPositive}/${data.pmfDeclared.microNegative}`}
+                  label="Microfeedback"
+                  note="Fez sentido / Não tanto"
+                  definition="Feedback pós-reflexão. Não é nota e não avalia a pessoa."
+                />
+              </div>
+              <div className={styles.subsectionHeader}>
+                <h3>Saúde da entrega PMF</h3>
+                <p>
+                  Check passivo: entrada elegível com reflexão válida deve registrar microfeedback mostrado após {PMF_MONITOR_GRACE_MINUTES} minutos.
+                </p>
+              </div>
+              <div className={styles.gridThree}>
+                <MetricCard
+                  value={compactNumber(data.pmfDelivery.expectedEntries)}
+                  label="Entradas esperadas"
+                  note="Elegíveis desde a estabilização do PMF"
+                  definition={help.pmfDelivery}
+                />
+                <MetricCard
+                  value={compactNumber(data.pmfDelivery.missingMicroShown)}
+                  label="Sem microfeedback"
+                  note={`${data.pmfDelivery.missingPeople} pessoas afetadas`}
+                  tone={pmfDeliveryTone}
+                  definition={help.pmfDelivery}
+                />
+                <MetricCard
+                  value={data.pmfDelivery.latestMissingAt ? formatDate(data.pmfDelivery.latestMissingAt) : "nenhum"}
+                  label="Último suspeito"
+                  note="Sem alerta automático; leitura manual"
+                  tone={pmfDeliveryTone}
+                  definition={help.pmfDelivery}
+                />
+              </div>
+              <PmfDeliveryIssueTable rows={data.pmfDeliveryIssues} />
+              <div className={styles.split}>
+                <BreakdownList title="Respostas PMF" rows={data.pmfAnswerDistribution} definition={help.pmfDeclared} />
+                <BreakdownList title="Razões declaradas" rows={data.pmfReasonDistribution} definition={help.pmfDeclared} />
+              </div>
+              <div className={styles.noteCard}>
+                PMF declarada usa apenas respostas fechadas. O usuário interno de teste fica fora deste agregado pela regra de exclusão da coorte.
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Alpha qualitativo agregado</h2>
+                <p>Leitura do Ritual de Chegada por presença de campos preenchidos; não renderiza resposta aberta.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.alphaQualitative.confirmedWaitlistReal)}
+                  label="Confirmados reais"
+                  note={`${data.alphaQualitative.unlockedReal} já tinham acesso liberado`}
+                />
+                <MetricCard
+                  value={compactNumber(data.alphaQualitative.profileStarted)}
+                  label="Ritual iniciado"
+                  note={`${percent(data.alphaQualitative.profileStarted, data.alphaQualitative.confirmedWaitlistReal)} dos confirmados reais`}
+                />
+                <MetricCard
+                  value={compactNumber(data.alphaQualitative.profileComplete)}
+                  label="Ritual completo"
+                  note={`${data.alphaQualitative.hasMomentAnswer} deixaram momento inicial`}
+                  definition={help.ritualsComplete}
+                />
+                <MetricCard
+                  value={compactNumber(data.alphaQualitative.hasValueAnswer)}
+                  label="Resposta de valor"
+                  note="Sinal qualitativo sobre promessa e linguagem"
+                  definition={help.safeQualitative}
+                />
+              </div>
+              <div className={styles.noteCard}>
+                Este bloco conta apenas presença de respostas no Ritual. O texto livre do perfil, nomes e emails ficam fora da aba Product.
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Uso do produto</h2>
+                <p>Agregados seguros de diário, transcrição e reflexão. Conteúdo bruto não aparece no admin.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.product.activeUsers)}
+                  label="Usuários ativos"
+                  note={`${data.product.users} usuários reais na coorte`}
+                  definition={help.productEvents}
+                />
+                <MetricCard
+                  value={compactNumber(data.product.entries)}
+                  label="Entradas"
+                  note={`${data.product.transcribedEntries} com transcrição registrada`}
+                  definition={help.safeQualitative}
+                />
+                <MetricCard
+                  value={compactNumber(data.product.reflectedEntries)}
+                  label="Reflexões"
+                  note={`${percent(data.product.reflectedEntries, data.product.entries)} das entradas`}
+                  tone={data.product.reflectedEntries ? "good" : "warn"}
+                />
+                <MetricCard
+                  value={compactNumber(data.product.productEvents)}
+                  label="Eventos de produto"
+                  note={`${data.product.transcriptionFailures + data.product.reflectionFailures} falhas capturadas`}
+                  tone={data.product.transcriptionFailures + data.product.reflectionFailures ? "warn" : "neutral"}
+                  definition={help.productEvents}
+                />
+              </div>
+              <div className={styles.subsectionHeader}>
+                <h3>Alertas técnicos recentes</h3>
+                <p>Falhas das últimas 24h, deduplicadas por request. Sem email, áudio, transcrição ou reflexão.</p>
+              </div>
+              <ProductFailureAlertTable rows={data.productFailureAlerts} />
+              <div className={styles.gridThree}>
+                <BreakdownList title="Eventos de produto" rows={data.productEventBreakdown} definition={help.productEvents} />
+                <BreakdownList title="Falhas por classe" rows={data.productFailureBreakdown} empty="Sem falhas classificadas." definition="Falhas técnicas agrupadas por error_class, sem conteúdo de diário, áudio, transcrição ou reflexão." />
+                <BreakdownList title="Humor agregado" rows={data.moodDistribution} definition={help.safeQualitative} />
+                <BreakdownList title="Risco agregado" rows={data.riskDistribution} definition={help.safeQualitative} />
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Usuários com retorno real</h2>
+                <p>IDs pseudônimos para follow-up operacional. Sem email, nome, diário, transcrição, reflexão ou áudio.</p>
+              </div>
+              <AlphaUserTable rows={returningUsers} empty="Nenhum retorno real ainda nesta coorte." />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Intensos sem retorno</h2>
+                <p>Pessoas que chegaram ao valor várias vezes no primeiro dia e ainda não voltaram.</p>
+              </div>
+              <AlphaUserTable rows={intenseNoReturnUsers} empty="Nenhum usuário intenso sem retorno nesta coorte." />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Ativados sem segundo dia</h2>
+                <p>Leitura intermediária: já houve reflexão, mas ainda falta retorno real.</p>
+              </div>
+              <AlphaUserTable rows={activatedLightUsers} empty="Nenhum ativado leve fora dos outros grupos." />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Auditoria da exclusão</h2>
+                <p>Regras explícitas para remover teste/interno da coorte sem apagar dados.</p>
+              </div>
+              <div className={styles.split}>
+                <BreakdownList title="Modo de entrada" rows={data.entryModeDistribution} definition="Distribuição segura de entry_mode; não expõe texto do diário." />
+                <div className={styles.tableCard}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Regra</th>
+                        <th>Users</th>
+                        <th>Access</th>
+                        <th>Waitlist</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.exclusionAudit.map((row) => (
+                        <tr key={row.reason}>
+                          <td>{row.reason}</td>
+                          <td>{row.users}</td>
+                          <td>{row.accessInvites}</td>
+                          <td>{row.waitlistRows}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className={styles.noteCard}>
+                O admin de produto usa apenas IDs pseudônimos e agregados. Não há renderização de email, nome, transcrição, reflexão, áudio, resposta aberta ou URL de áudio.
+              </div>
+            </section>
+          </>
+        ) : null}
       </div>
     </main>
   );

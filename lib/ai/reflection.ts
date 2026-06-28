@@ -1,9 +1,11 @@
 import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import type { RagSnippet } from "./embeddings";
 
 // Reflexão (§5) — Claude Sonnet 4.6.
 export const REFLECTION_MODEL = "claude-sonnet-4-6";
+export const REFLECTION_FALLBACK_MODEL = "gpt-4o-mini";
 
 // System prompt da reflexão (handoff §5, verbatim).
 export const REFLECTION_SYSTEM_PROMPT = `Você é a Aurora, uma presença calma que ajuda a pessoa a refletir sobre o que ela acabou de falar no diário. Você NÃO é terapeuta, não diagnostica, não dá conselho nem ordem. Você acolhe.
@@ -37,17 +39,32 @@ export async function generateReflection(
   text: string,
   context: RagSnippet[],
 ): Promise<string> {
+  const prompt = buildPrompt(text, context);
   const { text: reflection } = await generateText({
     model: anthropic(REFLECTION_MODEL),
-    messages: [
-      {
-        role: "system",
-        content: REFLECTION_SYSTEM_PROMPT,
-        providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
-      },
-      { role: "user", content: buildPrompt(text, context) },
-    ],
+    system: REFLECTION_SYSTEM_PROMPT,
+    prompt,
+    providerOptions: {
+      anthropic: { cacheControl: { type: "ephemeral" } },
+    },
   });
   return reflection.trim();
 }
 
+export async function generateReflectionWithFallback(
+  text: string,
+  context: RagSnippet[],
+): Promise<string> {
+  try {
+    return await generateReflection(text, context);
+  } catch (error) {
+    console.warn("reflection primary provider fallback:", error);
+  }
+
+  const { text: reflection } = await generateText({
+    model: openai(REFLECTION_FALLBACK_MODEL),
+    system: REFLECTION_SYSTEM_PROMPT,
+    prompt: buildPrompt(text, context),
+  });
+  return reflection.trim();
+}
