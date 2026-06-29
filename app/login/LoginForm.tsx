@@ -12,10 +12,10 @@ function SubmitButton({ mode }: { mode: Mode }) {
   const { pending } = useFormStatus();
   const idle =
     mode === "signin"
-      ? "Entrar na minha Aurora"
+      ? "Entrar na Aurora"
       : mode === "signup"
-        ? "Criar minha Aurora"
-        : "Enviar link de recuperacao";
+        ? "Criar conta"
+        : "Enviar link";
   const busy = mode === "signin" ? "Entrando..." : mode === "signup" ? "Criando..." : "Enviando...";
   return (
     <button type="submit" className={styles.submit} disabled={pending}>
@@ -97,7 +97,6 @@ export function LoginForm({ error, message }: { error?: string; message?: string
                 {showPw ? "Ocultar" : "Mostrar"}
               </button>
             </div>
-            {mode === "signup" && <span className={styles.hint}>Use pelo menos 6 caracteres.</span>}
           </div>
         )}
 
@@ -112,16 +111,16 @@ export function LoginForm({ error, message }: { error?: string; message?: string
 
       <p className={styles.toggle}>
         {mode === "signin"
-          ? "Primeira vez no app?"
+          ? "Primeira vez?"
           : mode === "signup"
-            ? "Ja criou sua conta?"
-            : "Lembrou a senha?"}{" "}
+            ? "Ja tem conta?"
+            : "Lembrou?"}{" "}
         <button
           type="button"
           className={styles.toggleBtn}
           onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
         >
-          {mode === "signin" ? "Criar acesso" : "Entrar"}
+          {mode === "signin" ? "Criar conta" : "Entrar"}
         </button>
       </p>
     </>

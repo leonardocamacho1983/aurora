@@ -29,20 +29,11 @@ export default async function LoginPage({
           <span className={`font-serif ${styles.brandName}`}>Aurora</span>
         </div>
 
-        <div className={styles.story}>
-          <span className={styles.kicker}>Diário por voz com IA</span>
-          <h1 className="font-serif">Entre com calma.</h1>
-          <p>
-            Use o mesmo email da lista para guardar seus registros, voltar ao seu diário e
-            acompanhar o que a Aurora percebe com você.
-          </p>
-        </div>
-
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <span className={styles.kicker}>Sua Aurora</span>
-            <h2 className="font-serif">Acesse seu espaço.</h2>
-            <p>Crie uma conta ou entre para continuar de onde parou.</p>
+            <span className={styles.kicker}>Diário por voz com IA</span>
+            <h1 className="font-serif">Entre na Aurora.</h1>
+            <p>Retome seu diário e continue de onde parou.</p>
           </div>
           <LoginForm error={error} message={message} />
         </div>
