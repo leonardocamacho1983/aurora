@@ -2,15 +2,20 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { signIn, signUp } from "./actions";
+import { requestPasswordReset, signIn, signUp } from "./actions";
 import styles from "./Login.module.css";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "reset";
 
 function SubmitButton({ mode }: { mode: Mode }) {
   const { pending } = useFormStatus();
-  const idle = mode === "signin" ? "Entrar na minha Aurora" : "Criar minha Aurora";
-  const busy = mode === "signin" ? "Entrando..." : "Criando...";
+  const idle =
+    mode === "signin"
+      ? "Entrar na minha Aurora"
+      : mode === "signup"
+        ? "Criar minha Aurora"
+        : "Enviar link de recuperacao";
+  const busy = mode === "signin" ? "Entrando..." : mode === "signup" ? "Criando..." : "Enviando...";
   return (
     <button type="submit" className={styles.submit} disabled={pending}>
       {pending ? busy : idle}
@@ -29,13 +34,21 @@ export function LoginForm({ error, message }: { error?: string; message?: string
           Enviamos um link de confirmacao. Abra seu email para ativar o acesso.
         </p>
       )}
+      {message === "reset-email-sent" && (
+        <p className={styles.notice}>
+          Se esse email tiver acesso, enviamos um link para voce criar uma nova senha.
+        </p>
+      )}
       {error && (
         <p className={styles.error} role="alert">
           {error}
         </p>
       )}
 
-      <form action={mode === "signin" ? signIn : signUp} className={styles.form}>
+      <form
+        action={mode === "signin" ? signIn : mode === "signup" ? signUp : requestPasswordReset}
+        className={styles.form}
+      >
         <label className={styles.field}>
           <span className={styles.label}>Email</span>
           <input
@@ -48,35 +61,55 @@ export function LoginForm({ error, message }: { error?: string; message?: string
           />
         </label>
 
-        <label className={styles.field}>
-          <span className={styles.label}>Senha</span>
-          <div className={styles.pwWrap}>
-            <input
-              className={styles.input}
-              type={showPw ? "text" : "password"}
-              name="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              placeholder="••••••••"
-              minLength={6}
-              required
-            />
-            <button
-              type="button"
-              className={styles.pwToggle}
-              onClick={() => setShowPw((s) => !s)}
-              aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
-            >
-              {showPw ? "Ocultar" : "Mostrar"}
-            </button>
-          </div>
-          {mode === "signup" && <span className={styles.hint}>Use pelo menos 6 caracteres.</span>}
-        </label>
+        {mode !== "reset" && (
+          <label className={styles.field}>
+            <span className={styles.label}>Senha</span>
+            <div className={styles.pwWrap}>
+              <input
+                className={styles.input}
+                type={showPw ? "text" : "password"}
+                name="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder="••••••••"
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                className={styles.pwToggle}
+                onClick={() => setShowPw((s) => !s)}
+                aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPw ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
+            {mode === "signup" && <span className={styles.hint}>Use pelo menos 6 caracteres.</span>}
+          </label>
+        )}
+
+        {mode === "reset" && (
+          <span className={styles.hint}>
+            Abra o link no mesmo aparelho em que pediu a recuperacao.
+          </span>
+        )}
 
         <SubmitButton mode={mode} />
       </form>
 
+      {mode === "signin" && (
+        <p className={styles.resetLine}>
+          <button type="button" className={styles.toggleBtn} onClick={() => setMode("reset")}>
+            Esqueci minha senha
+          </button>
+        </p>
+      )}
+
       <p className={styles.toggle}>
-        {mode === "signin" ? "Primeira vez no app?" : "Ja criou sua conta?"}{" "}
+        {mode === "signin"
+          ? "Primeira vez no app?"
+          : mode === "signup"
+            ? "Ja criou sua conta?"
+            : "Lembrou a senha?"}{" "}
         <button
           type="button"
           className={styles.toggleBtn}
