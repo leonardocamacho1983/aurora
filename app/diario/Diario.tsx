@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
+import { PmfPrompt } from "@/components/product/PmfPrompt";
 import {
   CrisisResources,
   type CrisisResourcesData,
@@ -728,6 +729,12 @@ export function Diario({
                     {isReflectionExpanded ? "Recolher devolutiva" : "Ler devolutiva inteira"}
                   </button>
                 )}
+
+                <PmfPrompt
+                  entryId={activeEntryId}
+                  entryMode={nextEntryMode}
+                  suspended={isReflectionExpanded}
+                />
 
                 <div className={styles.metaRow}>
                   {mood ? (
