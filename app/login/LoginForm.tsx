@@ -62,10 +62,20 @@ export function LoginForm({ error, message }: { error?: string; message?: string
         </label>
 
         {mode !== "reset" && (
-          <label className={styles.field}>
-            <span className={styles.label}>Senha</span>
+          <div className={styles.field}>
+            <span className={styles.labelRow}>
+              <label className={styles.label} htmlFor="login-password">
+                Senha
+              </label>
+              {mode === "signin" && (
+                <button type="button" className={styles.fieldLink} onClick={() => setMode("reset")}>
+                  Esqueci minha senha
+                </button>
+              )}
+            </span>
             <div className={styles.pwWrap}>
               <input
+                id="login-password"
                 className={styles.input}
                 type={showPw ? "text" : "password"}
                 name="password"
@@ -84,7 +94,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
               </button>
             </div>
             {mode === "signup" && <span className={styles.hint}>Use pelo menos 6 caracteres.</span>}
-          </label>
+          </div>
         )}
 
         {mode === "reset" && (
@@ -95,14 +105,6 @@ export function LoginForm({ error, message }: { error?: string; message?: string
 
         <SubmitButton mode={mode} />
       </form>
-
-      {mode === "signin" && (
-        <p className={styles.resetLine}>
-          <button type="button" className={styles.toggleBtn} onClick={() => setMode("reset")}>
-            Esqueci minha senha
-          </button>
-        </p>
-      )}
 
       <p className={styles.toggle}>
         {mode === "signin"
