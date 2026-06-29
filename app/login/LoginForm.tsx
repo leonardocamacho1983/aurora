@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { requestPasswordReset, signIn, signUp } from "./actions";
+import { keepFocusedFieldVisible, useVisualViewportHeight } from "./keyboardFocus";
 import styles from "./Login.module.css";
 
 type Mode = "signin" | "signup" | "reset";
@@ -26,6 +27,7 @@ function SubmitButton({ mode }: { mode: Mode }) {
 export function LoginForm({ error, message }: { error?: string; message?: string }) {
   const [mode, setMode] = useState<Mode>("signin");
   const [showPw, setShowPw] = useState(false);
+  useVisualViewportHeight();
 
   return (
     <>
@@ -57,6 +59,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
             name="email"
             autoComplete="email"
             placeholder="seu@email.com"
+            onFocus={(event) => keepFocusedFieldVisible(event.currentTarget)}
             required
           />
         </label>
@@ -82,6 +85,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 placeholder="••••••••"
                 minLength={6}
+                onFocus={(event) => keepFocusedFieldVisible(event.currentTarget)}
                 required
               />
               <button

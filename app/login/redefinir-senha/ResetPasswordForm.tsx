@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { keepFocusedFieldVisible, useVisualViewportHeight } from "../keyboardFocus";
 import styles from "../Login.module.css";
 
 type Status = "checking" | "ready" | "invalid" | "done";
@@ -26,6 +27,7 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [showPw, setShowPw] = useState(false);
   const [pending, setPending] = useState(false);
+  useVisualViewportHeight();
 
   useEffect(() => {
     let active = true;
@@ -153,6 +155,7 @@ export function ResetPasswordForm() {
               autoComplete="new-password"
               placeholder="••••••••"
               minLength={6}
+              onFocus={(event) => keepFocusedFieldVisible(event.currentTarget)}
               required
             />
             <button
@@ -175,6 +178,7 @@ export function ResetPasswordForm() {
             autoComplete="new-password"
             placeholder="••••••••"
             minLength={6}
+            onFocus={(event) => keepFocusedFieldVisible(event.currentTarget)}
             required
           />
         </label>

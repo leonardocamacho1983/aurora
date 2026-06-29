@@ -205,6 +205,7 @@
   font-size: 1rem;
   outline: none;
   transition: border-color 180ms ease, box-shadow 180ms ease;
+  scroll-margin-block: 22vh 42vh;
 }
 
 .input:focus-visible {
@@ -329,6 +330,120 @@
 
   .card {
     justify-self: end;
+  }
+}
+
+@media (max-width: 899px) {
+  .stage {
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: var(--aurora-visual-viewport-height, 100dvh);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: var(--aurora-visual-viewport-height, 100dvh);
+    transition:
+      gap 180ms ease,
+      padding 180ms ease;
+  }
+
+  .brandLine,
+  .brandOrb,
+  .brandName,
+  .story,
+  .card,
+  .cardHeader,
+  .form,
+  .input,
+  .submit,
+  .toggle {
+    transition:
+      transform 180ms ease,
+      gap 180ms ease,
+      margin 180ms ease,
+      padding 180ms ease,
+      min-height 180ms ease,
+      font-size 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+
+  .stage:focus-within .shell {
+    align-content: start;
+    gap: clamp(8px, 1.8vh, 14px);
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-bottom: max(42vh, calc(24px + env(safe-area-inset-bottom)));
+  }
+
+  .stage:focus-within .brandLine {
+    transform: scale(0.9);
+    transform-origin: left center;
+  }
+
+  .stage:focus-within .story {
+    gap: 8px;
+    padding-top: 0;
+  }
+
+  .stage:focus-within .story .kicker {
+    display: none;
+  }
+
+  .stage:focus-within .story h1 {
+    max-width: none;
+    font-size: clamp(1.65rem, 7.2vw, 2.05rem);
+    line-height: 1.04;
+  }
+
+  .stage:focus-within .story p {
+    display: none;
+  }
+
+  .stage:focus-within .card {
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .stage:focus-within .cardHeader {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .stage:focus-within .cardHeader .kicker,
+  .stage:focus-within .cardHeader p {
+    display: none;
+  }
+
+  .stage:focus-within .cardHeader h2 {
+    font-size: clamp(1.35rem, 5.5vw, 1.55rem);
+  }
+
+  .stage:focus-within .form {
+    gap: 12px;
+  }
+
+  .stage:focus-within .field {
+    gap: 6px;
+  }
+
+  .stage:focus-within .input {
+    min-height: 48px;
+  }
+
+  .stage:focus-within .submit {
+    min-height: 50px;
+  }
+
+  .stage:focus-within .toggle {
+    margin-top: 8px;
   }
 }
 
