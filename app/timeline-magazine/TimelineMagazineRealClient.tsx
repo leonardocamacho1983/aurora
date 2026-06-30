@@ -66,6 +66,18 @@ function MoodPill({ piece }: { piece: MagazinePiece }) {
   );
 }
 
+function EntryAction({ piece }: { piece: MagazinePiece }) {
+  return (
+    <Link
+      className={styles.flipBtn}
+      href={piece.href}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {piece.thread ? "Abrir fio" : "Continuar como fio"} <span aria-hidden="true">→</span>
+    </Link>
+  );
+}
+
 function FlipPiece({ piece, feature = false }: { piece: MagazinePiece; feature?: boolean }) {
   const [flipped, setFlipped] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -121,6 +133,7 @@ function FlipPiece({ piece, feature = false }: { piece: MagazinePiece; feature?:
               {piece.thread ? <ThreadChip thread={piece.thread} /> : null}
               <MoodPill piece={piece} />
             </div>
+            <EntryAction piece={piece} />
             <button
               className={styles.flipBtn}
               type="button"
@@ -137,6 +150,7 @@ function FlipPiece({ piece, feature = false }: { piece: MagazinePiece; feature?:
             <span className={styles.label}>✦ a leitura da Aurora</span>
             <h3 className={styles.head}>{piece.reading.head}</h3>
             <p className={feature ? styles.body : styles.readingText}>{piece.reading.body}</p>
+            <EntryAction piece={piece} />
             <button
               className={styles.flipBtn}
               type="button"
