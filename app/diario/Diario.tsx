@@ -8,6 +8,7 @@ import {
   CrisisResources,
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
+import { trackAurora } from "@/lib/analytics/client";
 import { renderProse } from "@/lib/render-prose";
 import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
@@ -15,13 +16,47 @@ import styles from "./Diario.module.css";
 type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
 
 type ReflectResponse =
-  | { status: "ok"; risk: string; reflection: string; mood: string | null; entryId: string; intent?: string }
-  | { status: "crisis"; risk: "high"; type: string; resources: CrisisResourcesData; entryId: string; intent?: string }
-  | { error: string };
+  | {
+      status: "ok";
+      risk: string;
+      reflection: string;
+      mood: string | null;
+      entryId: string;
+      requestId?: string;
+      fallbackSaved?: boolean;
+      intent?: string;
+    }
+  | {
+      status: "crisis";
+      risk: "high";
+      type: string;
+      resources: CrisisResourcesData;
+      entryId: string;
+      requestId?: string;
+      intent?: string;
+    }
+  | {
+      error: string;
+      errorCode?: string;
+      errorClass?: string;
+      retryable?: boolean;
+      requestId?: string;
+      userMessage?: string;
+      entryId?: string;
+    };
 
 type TranscribeResponse =
-  | { transcript: string; language?: string | null; entryId?: string; segmentId?: string }
-  | { error: string; entryId?: string; segmentId?: string };
+  | { transcript: string; language?: string | null; entryId?: string; segmentId?: string; requestId?: string }
+  | {
+      error: string;
+      errorCode?: string;
+      errorClass?: string;
+      retryable?: boolean;
+      requestId?: string;
+      userMessage?: string;
+      entryId?: string;
+      segmentId?: string;
+    };
 
 type EntryMode = "new" | "continue" | "reformulate";
 
@@ -35,15 +70,44 @@ type RetryPayload = {
   entryId?: string;
   entryMode: EntryMode;
   durationBucket: string;
+  attempt: number;
 };
 
 const DEFAULT_PROMPT = "O que está vivo agora?";
 const STOP_RECORDING_TIMEOUT_MS = 8000;
 const TRANSCRIBE_TIMEOUT_MS = 45000;
 const REFLECT_TIMEOUT_MS = 45000;
+const MAX_TRANSCRIPTION_ATTEMPTS = 3;
 
-function trackProduct(_eventName: string, _properties: Record<string, unknown>) {
-  // Product analytics are intentionally decoupled from this visual restore.
+function trackProduct(
+  eventName: string,
+  properties: Record<string, string | number | boolean | null | undefined>,
+  distinctId?: string,
+) {
+  trackAurora(
+    eventName,
+    {
+      source_type: "product",
+      ...properties,
+    },
+    distinctId ? { distinctId } : undefined,
+  );
+}
+
+function createClientRequestId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `client_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+function retryDelayForAttempt(attempt: number) {
+  if (attempt <= 2) return 1500;
+  return 4000;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 const REFLECTING_HELPERS = [
@@ -356,6 +420,8 @@ export function Diario({
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [nextEntryMode, setNextEntryMode] = useState<EntryMode>("new");
   const [canRetry, setCanRetry] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryNotice, setRetryNotice] = useState<string | null>(null);
 
   useEffect(() => {
     trackProduct("product_diary_viewed", {
@@ -373,14 +439,18 @@ export function Diario({
     setCrisis(null);
     setErrorMsg(null);
     setCanRetry(false);
+    setIsRetrying(false);
+    setRetryNotice(null);
     retryPayloadRef.current = null;
     setActiveEntryId(null);
     setNextEntryMode("new");
   }
 
-  function fail(message: string) {
+  function fail(message: string, options: { canRetry?: boolean } = {}) {
     setErrorMsg(message);
-    setCanRetry(Boolean(retryPayloadRef.current));
+    setCanRetry(Boolean(retryPayloadRef.current) && options.canRetry !== false);
+    setIsRetrying(false);
+    setRetryNotice(null);
     setPhase("error");
   }
 
@@ -468,10 +538,13 @@ export function Diario({
 
   async function transcribeAndReflect(
     blob: Blob,
-    options?: { entryId?: string; entryMode?: EntryMode; durationBucket?: string },
+    options?: { entryId?: string; entryMode?: EntryMode; durationBucket?: string; attempt?: number },
   ) {
     enterReflecting();
     setCanRetry(false);
+    setRetryNotice(null);
+    const requestId = createClientRequestId();
+    const attempt = options?.attempt ?? 1;
     try {
       const form = new FormData();
       const audioType = blob.type || "audio/webm";
@@ -481,6 +554,8 @@ export function Diario({
       form.append("deviceFamily", deviceFamily());
       form.append("entryMode", options?.entryMode ?? nextEntryMode);
       form.append("durationBucket", options?.durationBucket ?? lastDurationBucketRef.current);
+      form.append("clientRequestId", requestId);
+      form.append("attempt", String(attempt));
       if (options?.entryId) form.append("entryId", options.entryId);
       const tRes = await fetchWithTimeout(
         "/api/transcribe",
@@ -489,44 +564,80 @@ export function Diario({
       );
       const tData = (await tRes.json()) as TranscribeResponse;
       if (!tRes.ok || !("transcript" in tData) || !tData.transcript) {
-        retryPayloadRef.current = {
-          blob,
-          entryId: tData.entryId ?? options?.entryId,
-          entryMode: options?.entryMode ?? nextEntryMode,
-          durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
-        };
+        const retryable = "retryable" in tData ? tData.retryable !== false : tRes.status >= 500 || tRes.status === 429;
+        const canAttemptAgain = retryable && attempt < MAX_TRANSCRIPTION_ATTEMPTS;
+        retryPayloadRef.current = canAttemptAgain
+          ? {
+              blob,
+              entryId: tData.entryId ?? options?.entryId,
+              entryMode: options?.entryMode ?? nextEntryMode,
+              durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+              attempt,
+            }
+          : null;
         trackProduct("product_transcription_failed", {
           source: "diary_client",
           status: String(tRes.status),
-          error_code: "transcription_response_invalid",
+          error_code: "errorCode" in tData ? tData.errorCode ?? "transcription_response_invalid" : "transcription_response_invalid",
+          error_class: "errorClass" in tData ? tData.errorClass ?? null : null,
+          retryable,
+          request_id: "requestId" in tData ? tData.requestId ?? requestId : requestId,
+          attempt,
           device_family: deviceFamily(),
+          audio_mime_type: audioType.split(";")[0],
           recorder_mime_type: audioType.split(";")[0],
           entry_mode: options?.entryMode ?? nextEntryMode,
+          duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
         });
-        fail("Não consegui transcrever o áudio. Tente de novo.");
+        fail(
+          !canAttemptAgain && retryable
+            ? "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta."
+            : "userMessage" in tData && tData.userMessage
+              ? tData.userMessage
+              : "A conexão oscilou ao enviar o áudio. Você não precisa regravar; toque para tentar transcrever de novo.",
+          { canRetry: canAttemptAgain },
+        );
         return;
       }
       await reflectOn(
         tData.transcript,
         tData.language ?? null,
-        tData.entryId,
+        tData.entryId ?? options?.entryId,
         tData.segmentId,
         options?.entryMode ?? nextEntryMode,
+        tData.requestId ?? requestId,
+        attempt,
       );
     } catch (error) {
-      retryPayloadRef.current = {
-        blob,
-        entryId: options?.entryId,
-        entryMode: options?.entryMode ?? nextEntryMode,
-        durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
-      };
+      const canAttemptAgain = attempt < MAX_TRANSCRIPTION_ATTEMPTS;
+      retryPayloadRef.current = canAttemptAgain
+        ? {
+            blob,
+            entryId: options?.entryId,
+            entryMode: options?.entryMode ?? nextEntryMode,
+            durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+            attempt,
+          }
+        : null;
       trackProduct("product_transcription_failed", {
         source: "diary_client",
         error_code: isAbortError(error) ? "transcription_timeout" : "transcription_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        retryable: true,
+        request_id: requestId,
+        attempt,
         device_family: deviceFamily(),
         entry_mode: options?.entryMode ?? nextEntryMode,
+        duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
       });
-      fail(isAbortError(error) ? "A transcrição demorou demais. Tente de novo." : "Falha de conexão ao transcrever.");
+      fail(
+        !canAttemptAgain
+          ? "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta."
+          : isAbortError(error)
+            ? "A transcrição demorou demais. Você não precisa regravar; tente transcrever de novo."
+            : "Não consegui enviar o áudio agora. A gravação ficou aqui para tentar de novo.",
+        { canRetry: canAttemptAgain },
+      );
     }
   }
 
@@ -536,6 +647,8 @@ export function Diario({
     entryId?: string,
     segmentId?: string,
     entryMode: EntryMode = "new",
+    requestId = createClientRequestId(),
+    attempt = 1,
   ) {
     try {
       const rRes = await fetchWithTimeout(
@@ -543,7 +656,7 @@ export function Diario({
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode }),
+          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode, clientRequestId: requestId, attempt }),
         },
         REFLECT_TIMEOUT_MS,
       );
@@ -552,22 +665,44 @@ export function Diario({
         trackProduct("product_reflection_failed", {
           source: "diary_client",
           status: String(rRes.status),
-          error_code: "reflection_response_invalid",
+          error_code: "errorCode" in data ? data.errorCode ?? "reflection_response_invalid" : "reflection_response_invalid",
+          error_class: "errorClass" in data ? data.errorClass ?? null : null,
+          retryable: "retryable" in data ? data.retryable ?? null : null,
+          request_id: "requestId" in data ? data.requestId ?? requestId : requestId,
+          attempt,
           entry_mode: entryMode,
         });
-        fail("A Aurora não conseguiu responder agora. Tente de novo.");
+        fail(
+          "userMessage" in data && data.userMessage
+            ? data.userMessage
+            : "A Aurora não conseguiu responder agora. Tente de novo.",
+          { canRetry: false },
+        );
         return;
       }
       if (data.status === "crisis") {
         trackProduct("product_crisis_resources_shown", {
           source: "diary_client",
           risk_level: data.risk,
+          request_id: data.requestId ?? requestId,
+          attempt,
         });
         setCrisis(data.resources);
         setActiveEntryId(data.entryId);
         setPhase("crisis");
         return;
       }
+      trackProduct("product_reflection_received", {
+        source: "diary_client",
+        status: "ok",
+        entry_mode: entryMode,
+        risk_level: data.risk,
+        has_mood: Boolean(data.mood),
+        reflection_type: data.fallbackSaved ? "fallback_saved" : data.mood ? "with_mood" : "without_mood",
+        fallback_saved: Boolean(data.fallbackSaved),
+        request_id: data.requestId ?? requestId,
+        attempt,
+      });
       setReflection(data.reflection);
       setIsReflectionExpanded(false);
       setMood(data.mood);
@@ -578,6 +713,10 @@ export function Diario({
       trackProduct("product_reflection_failed", {
         source: "diary_client",
         error_code: isAbortError(error) ? "reflection_timeout" : "reflection_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        retryable: true,
+        request_id: requestId,
+        attempt,
         entry_mode: entryMode,
       });
       fail(isAbortError(error) ? "A Aurora demorou demais para responder. Tente de novo." : "Falha de conexão ao refletir.");
@@ -587,11 +726,22 @@ export function Diario({
   async function retryTranscription() {
     const retry = retryPayloadRef.current;
     if (!retry) return;
-    await transcribeAndReflect(retry.blob, {
-      entryId: retry.entryId,
-      entryMode: retry.entryMode,
-      durationBucket: retry.durationBucket,
-    });
+    const nextAttempt = retry.attempt + 1;
+    const waitMs = retryDelayForAttempt(nextAttempt);
+    setIsRetrying(true);
+    setCanRetry(false);
+    setRetryNotice("Vou tentar transcrever de novo em instantes.");
+    try {
+      await delay(waitMs);
+      await transcribeAndReflect(retry.blob, {
+        entryId: retry.entryId,
+        entryMode: retry.entryMode,
+        durationBucket: retry.durationBucket,
+        attempt: nextAttempt,
+      });
+    } finally {
+      setIsRetrying(false);
+    }
   }
 
   async function startWithMode(mode: EntryMode) {
@@ -674,13 +824,14 @@ export function Diario({
             <div role="alert" className={styles.errorPanel}>
               <span className={styles.errorIcon} aria-hidden="true">!</span>
               <p>{errorMsg}</p>
+              {retryNotice && <p>{retryNotice}</p>}
               <div className={styles.errorActions}>
                 {canRetry && (
-                  <button type="button" onClick={retryTranscription}>
-                    Tentar transcrever
+                  <button type="button" onClick={retryTranscription} disabled={isRetrying}>
+                    {isRetrying ? "Tentando..." : "Tentar transcrever de novo"}
                   </button>
                 )}
-                <button type="button" onClick={() => startWithMode(activeEntryId ? "continue" : "new")}>
+                <button type="button" onClick={() => startWithMode(activeEntryId ? "continue" : "new")} disabled={isRetrying}>
                   Gravar de novo
                 </button>
               </div>
