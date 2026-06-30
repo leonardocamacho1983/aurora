@@ -33,6 +33,50 @@ function MoodPill({ moment }: { moment: FioMoment }) {
   );
 }
 
+function RecordIndex({
+  moments,
+  selectedId,
+  onSelect,
+}: {
+  moments: FioMoment[];
+  selectedId: string | undefined;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <section className={styles.recordIndex} aria-labelledby="registros-fio-title">
+      <div className={styles.recordIndexHead}>
+        <span className={styles.label}>Registros neste fio</span>
+        <h2 id="registros-fio-title">
+          {moments.length} {moments.length === 1 ? "registro ligado" : "registros ligados"}
+        </h2>
+      </div>
+      <div className={styles.recordList}>
+        {moments.map((moment) => {
+          const selected = moment.id === selectedId;
+          return (
+            <button
+              className={styles.recordRow}
+              data-selected={selected ? "true" : undefined}
+              key={moment.id}
+              onClick={() => onSelect(moment.id)}
+              type="button"
+            >
+              <span className={styles.recordDot} style={{ background: moment.moodColor }} aria-hidden="true" />
+              <span className={styles.recordCopy}>
+                <strong>{moment.day} · {moment.time}</strong>
+                <span>{moment.title}</span>
+              </span>
+              <span className={styles.recordMeta}>
+                {selected ? "selecionado" : "ver"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function FioFlipPiece({
   moment,
   selected,
@@ -163,6 +207,8 @@ export default function FioMagazineRealClient({
           <h1 className={styles.fioTitle}>{title}</h1>
           <p>{summary}</p>
         </section>
+
+        <RecordIndex moments={moments} selectedId={selectedId} onSelect={setSelectedId} />
 
         <section className={styles.pergunta}>
           <span className={styles.label}>✦ Pergunta viva</span>
