@@ -183,24 +183,22 @@ export default function TimelineMagazineRealClient({
   groups,
   totalCount,
   generatedAtLabel,
-  firstName,
 }: {
   groups: MagazineDayGroup[];
   totalCount: number;
   generatedAtLabel: string;
-  firstName: string;
 }) {
   return (
     <main className={styles.stage}>
       <header className={styles.bar}>
-        <Link className={styles.brand} href="/timeline-magazine">
+        <Link className={styles.brand} href="/timeline">
           <i aria-hidden="true" />
           Aurora
         </Link>
         <nav aria-label="Seções da timeline">
           <Link href="/diario">Diário</Link>
-          <Link href="/timeline">Timeline atual</Link>
-          <Link href="/timeline-volume-preview">Mock</Link>
+          <Link href="/fios">Fios</Link>
+          <Link href="/account">Conta</Link>
         </nav>
         <time>{generatedAtLabel}</time>
       </header>
@@ -208,13 +206,12 @@ export default function TimelineMagazineRealClient({
       <div className={styles.mag}>
         <section className={styles.cover}>
           <div className={styles.coverMeta}>
-            <span>{totalCount} momentos do seu perfil</span>
+            <span>{totalCount} momentos guardados</span>
             <span>privado · só seu</span>
           </div>
           <h1 className={styles.wordmark}>Timeline</h1>
           <p>
-            {firstName}, esta é a versão editorial usando seus registros reais: o que você disse,
-            o que a Aurora percebeu e os fios que já existem no seu perfil.
+            Sua timeline reúne o que você disse, o que a Aurora percebeu e os fios que seguem vivos.
           </p>
         </section>
 
@@ -244,8 +241,8 @@ export default function TimelineMagazineRealClient({
         )}
 
         <footer className={styles.colophon}>
-          <Link className={styles.back} href="/timeline">← Voltar à Timeline atual</Link>
-          <span>protótipo com dados reais</span>
+          <Link className={styles.back} href="/diario">← Voltar ao diário</Link>
+          <span>privado · só seu</span>
         </footer>
       </div>
     </main>

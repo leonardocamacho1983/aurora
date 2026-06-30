@@ -229,7 +229,6 @@ export default async function TimelineMagazinePage() {
       groups={buildGroups(rows, threads)}
       totalCount={rows.length}
       generatedAtLabel={todayLabel()}
-      firstName={(user.user_metadata?.name as string | undefined)?.split(" ")[0] ?? user.email?.split("@")[0] ?? "você"}
     />
   );
 }
