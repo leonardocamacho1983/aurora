@@ -71,6 +71,13 @@ type RetryPayload = {
   entryMode: EntryMode;
   durationBucket: string;
   attempt: number;
+  requestId: string;
+};
+
+type TextFallbackContext = {
+  requestId: string;
+  entryMode: EntryMode;
+  entryId?: string;
 };
 
 const DEFAULT_PROMPT = "O que está vivo agora?";
@@ -422,6 +429,10 @@ export function Diario({
   const [canRetry, setCanRetry] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
+  const [textFallbackAvailable, setTextFallbackAvailable] = useState(false);
+  const [textFallbackValue, setTextFallbackValue] = useState("");
+  const [textFallbackContext, setTextFallbackContext] = useState<TextFallbackContext | null>(null);
+  const [isSubmittingTextFallback, setIsSubmittingTextFallback] = useState(false);
 
   useEffect(() => {
     trackProduct("product_diary_viewed", {
@@ -441,6 +452,10 @@ export function Diario({
     setCanRetry(false);
     setIsRetrying(false);
     setRetryNotice(null);
+    setTextFallbackAvailable(false);
+    setTextFallbackValue("");
+    setTextFallbackContext(null);
+    setIsSubmittingTextFallback(false);
     retryPayloadRef.current = null;
     setActiveEntryId(null);
     setNextEntryMode("new");
@@ -474,6 +489,10 @@ export function Diario({
 
   async function startRecording() {
     setErrorMsg(null);
+    setTextFallbackAvailable(false);
+    setTextFallbackValue("");
+    setTextFallbackContext(null);
+    setIsSubmittingTextFallback(false);
     if (!navigator.mediaDevices?.getUserMedia) {
       fail("Seu navegador não permite gravar áudio.");
       return;
@@ -538,12 +557,18 @@ export function Diario({
 
   async function transcribeAndReflect(
     blob: Blob,
-    options?: { entryId?: string; entryMode?: EntryMode; durationBucket?: string; attempt?: number },
+    options?: {
+      entryId?: string;
+      entryMode?: EntryMode;
+      durationBucket?: string;
+      attempt?: number;
+      requestId?: string;
+    },
   ) {
     enterReflecting();
     setCanRetry(false);
     setRetryNotice(null);
-    const requestId = createClientRequestId();
+    const requestId = options?.requestId ?? createClientRequestId();
     const attempt = options?.attempt ?? 1;
     try {
       const form = new FormData();
@@ -566,6 +591,7 @@ export function Diario({
       if (!tRes.ok || !("transcript" in tData) || !tData.transcript) {
         const retryable = "retryable" in tData ? tData.retryable !== false : tRes.status >= 500 || tRes.status === 429;
         const canAttemptAgain = retryable && attempt < MAX_TRANSCRIPTION_ATTEMPTS;
+        const responseRequestId = "requestId" in tData ? tData.requestId ?? requestId : requestId;
         retryPayloadRef.current = canAttemptAgain
           ? {
               blob,
@@ -573,16 +599,33 @@ export function Diario({
               entryMode: options?.entryMode ?? nextEntryMode,
               durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
               attempt,
+              requestId: responseRequestId,
             }
           : null;
+        trackProduct("product_transcription_api_failed", {
+          source: "diary_client",
+          status: String(tRes.status),
+          error_code: "errorCode" in tData ? tData.errorCode ?? "transcription_response_invalid" : "transcription_response_invalid",
+          error_class: "errorClass" in tData ? tData.errorClass ?? null : null,
+          retryable,
+          request_id: responseRequestId,
+          attempt,
+          failure_stage: "api_response",
+          device_family: deviceFamily(),
+          audio_mime_type: audioType.split(";")[0],
+          recorder_mime_type: audioType.split(";")[0],
+          entry_mode: options?.entryMode ?? nextEntryMode,
+          duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
+        });
         trackProduct("product_transcription_failed", {
           source: "diary_client",
           status: String(tRes.status),
           error_code: "errorCode" in tData ? tData.errorCode ?? "transcription_response_invalid" : "transcription_response_invalid",
           error_class: "errorClass" in tData ? tData.errorClass ?? null : null,
           retryable,
-          request_id: "requestId" in tData ? tData.requestId ?? requestId : requestId,
+          request_id: responseRequestId,
           attempt,
+          failure_stage: "api_response",
           device_family: deviceFamily(),
           audio_mime_type: audioType.split(";")[0],
           recorder_mime_type: audioType.split(";")[0],
@@ -597,18 +640,31 @@ export function Diario({
             entryMode: options?.entryMode ?? nextEntryMode,
             durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
             attempt: attempt + 1,
+            requestId: responseRequestId,
           });
           return;
         }
+        showTextFallback(responseRequestId, options?.entryMode ?? nextEntryMode, tData.entryId ?? options?.entryId);
         fail(
           retryable
-            ? "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta."
+            ? "Não consegui transcrever depois de algumas tentativas. Se quiser, escreva este registro agora."
             : "userMessage" in tData && tData.userMessage
               ? tData.userMessage
               : "A conexão oscilou ao enviar o áudio. Você não precisa regravar; toque para tentar transcrever de novo.",
           { canRetry: canAttemptAgain },
         );
         return;
+      }
+      if (attempt > 1) {
+        trackProduct("product_transcription_succeeded_after_retry", {
+          source: "diary_client",
+          status: "ok",
+          request_id: tData.requestId ?? requestId,
+          attempt,
+          device_family: deviceFamily(),
+          entry_mode: options?.entryMode ?? nextEntryMode,
+          duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
+        });
       }
       await reflectOn(
         tData.transcript,
@@ -628,8 +684,21 @@ export function Diario({
             entryMode: options?.entryMode ?? nextEntryMode,
             durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
             attempt,
+            requestId,
           }
         : null;
+      trackProduct("product_transcription_client_network_failed", {
+        source: "diary_client",
+        error_code: isAbortError(error) ? "transcription_timeout" : "transcription_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        retryable: true,
+        request_id: requestId,
+        attempt,
+        failure_stage: "client_network",
+        device_family: deviceFamily(),
+        entry_mode: options?.entryMode ?? nextEntryMode,
+        duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
+      });
       trackProduct("product_transcription_failed", {
         source: "diary_client",
         error_code: isAbortError(error) ? "transcription_timeout" : "transcription_network",
@@ -637,6 +706,7 @@ export function Diario({
         retryable: true,
         request_id: requestId,
         attempt,
+        failure_stage: "client_network",
         device_family: deviceFamily(),
         entry_mode: options?.entryMode ?? nextEntryMode,
         duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
@@ -649,11 +719,13 @@ export function Diario({
           entryMode: options?.entryMode ?? nextEntryMode,
           durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
           attempt: attempt + 1,
+          requestId,
         });
         return;
       }
+      showTextFallback(requestId, options?.entryMode ?? nextEntryMode, options?.entryId);
       fail(
-        "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta.",
+        "Não consegui transcrever depois de algumas tentativas. Se quiser, escreva este registro agora.",
         { canRetry: canAttemptAgain },
       );
     }
@@ -756,6 +828,7 @@ export function Diario({
         entryMode: retry.entryMode,
         durationBucket: retry.durationBucket,
         attempt: nextAttempt,
+        requestId: retry.requestId,
       });
     } finally {
       setIsRetrying(false);
@@ -765,6 +838,39 @@ export function Diario({
   async function startWithMode(mode: EntryMode) {
     setNextEntryMode(mode);
     await startRecording();
+  }
+
+  function showTextFallback(requestId: string, entryMode: EntryMode, entryId?: string) {
+    setTextFallbackAvailable(true);
+    setTextFallbackContext({ requestId, entryMode, entryId });
+    trackProduct("product_transcription_text_fallback_shown", {
+      source: "diary_client",
+      request_id: requestId,
+      entry_mode: entryMode,
+      fallback_type: "text",
+      device_family: deviceFamily(),
+    });
+  }
+
+  async function submitTextFallback() {
+    const text = textFallbackValue.trim();
+    if (!text || isSubmittingTextFallback) return;
+    const retry = retryPayloadRef.current;
+    const requestId = textFallbackContext?.requestId ?? retry?.requestId ?? createClientRequestId();
+    const entryMode = textFallbackContext?.entryMode ?? retry?.entryMode ?? (activeEntryId ? "continue" : "new");
+    const entryId = textFallbackContext?.entryId ?? retry?.entryId ?? activeEntryId ?? undefined;
+    setIsSubmittingTextFallback(true);
+    setCanRetry(false);
+    setRetryNotice(null);
+    trackProduct("product_transcription_text_fallback_submitted", {
+      source: "diary_client",
+      request_id: requestId,
+      entry_mode: entryMode,
+      fallback_type: "text",
+      device_family: deviceFamily(),
+    });
+    await reflectOn(text, null, entryId, undefined, entryMode, requestId, 1);
+    setIsSubmittingTextFallback(false);
   }
 
   const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
@@ -843,6 +949,26 @@ export function Diario({
               <span className={styles.errorIcon} aria-hidden="true">!</span>
               <p>{errorMsg}</p>
               {retryNotice && <p>{retryNotice}</p>}
+              {textFallbackAvailable && (
+                <div className={styles.textFallback}>
+                  <label htmlFor="diary-text-fallback">Escrever este registro</label>
+                  <textarea
+                    id="diary-text-fallback"
+                    value={textFallbackValue}
+                    onChange={(event) => setTextFallbackValue(event.target.value)}
+                    placeholder="Escreva o que você queria registrar."
+                    rows={4}
+                    disabled={isSubmittingTextFallback}
+                  />
+                  <button
+                    type="button"
+                    onClick={submitTextFallback}
+                    disabled={isSubmittingTextFallback || !textFallbackValue.trim()}
+                  >
+                    {isSubmittingTextFallback ? "Enviando..." : "Receber devolutiva por texto"}
+                  </button>
+                </div>
+              )}
               <div className={styles.errorActions}>
                 {canRetry && (
                   <button type="button" onClick={retryTranscription} disabled={isRetrying}>

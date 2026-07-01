@@ -249,7 +249,8 @@
   gap: 10px;
 }
 
-.errorActions button {
+.errorActions button,
+.textFallback button {
   min-height: 48px;
   border-radius: 16px;
   padding: 0 18px;
@@ -258,6 +259,46 @@
   color: rgba(255, 200, 166, 0.98);
   font: 700 0.96rem var(--font-sans);
   cursor: pointer;
+}
+
+.textFallback {
+  width: 100%;
+  display: grid;
+  gap: 9px;
+  text-align: left;
+}
+
+.textFallback label {
+  color: rgba(240, 236, 247, 0.76);
+  font: 700 0.8rem var(--font-sans);
+}
+
+.textFallback textarea {
+  width: 100%;
+  min-height: 108px;
+  resize: vertical;
+  border-radius: 16px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(5, 4, 14, 0.58);
+  color: var(--diary-fg);
+  font: 500 0.96rem/1.42 var(--font-sans);
+  outline: none;
+}
+
+.textFallback textarea:focus {
+  border-color: rgba(175, 158, 255, 0.44);
+  box-shadow: 0 0 0 3px rgba(175, 158, 255, 0.12);
+}
+
+.textFallback textarea::placeholder {
+  color: rgba(240, 236, 247, 0.38);
+}
+
+.textFallback button:disabled,
+.errorActions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .composition {

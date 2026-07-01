@@ -16,6 +16,8 @@ const ALLOWED_METADATA_KEYS = new Set([
   "error_class",
   "error_code",
   "fallback_saved",
+  "fallback_type",
+  "failure_stage",
   "has_mood",
   "language",
   "latency_bucket",
