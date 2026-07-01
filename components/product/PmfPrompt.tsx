@@ -213,7 +213,7 @@ export function PmfPrompt({
         entryMode,
       });
       setMicroAnswer(answer);
-      if (answer === "positive" && eligibility?.pmf.eligible) {
+      if (eligibility?.pmf.eligible) {
         setPmfVisible(true);
         await markShown("pmf");
       }

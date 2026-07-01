@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { analyticsEmailId, captureAuroraServer } from "@/lib/analytics/server";
 import { createClient } from "@/lib/supabase/server";
+import { getProductFeedbackEligibility } from "@/lib/product-feedback/eligibility";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +52,6 @@ const PMF_REASONS = new Set([
   "first_experience_did_not_fit",
   "other_closed",
 ]);
-
 type EntryRow = {
   id: string;
   riskLevel: string;
@@ -66,7 +66,10 @@ type StatsRow = {
 };
 
 type FeedbackStateRow = {
-  microAnswered: number;
+  microAnsweredForEntry: number;
+  microShownToday: number;
+  lastMicroShownAt: string | null;
+  reflectionsSinceLastMicro: number;
   pmfAnswered: number;
   pmfSnoozed: number;
 };
@@ -213,23 +216,49 @@ export async function GET(request: Request) {
 
   const [feedback] = rows<FeedbackStateRow>(
     await db.execute(sql`
+      with last_micro as (
+        select max(shown_at) as last_shown_at
+        from product_feedback
+        where user_id = ${user.id}::uuid
+          and kind = 'reflection_micro'
+          and shown_at is not null
+      )
       select
         count(*) filter (
-          where kind = 'reflection_micro'
-            and entry_id = ${entryId}::uuid
-            and answered_at is not null
-        )::int as "microAnswered",
+          where pf.kind = 'reflection_micro'
+            and pf.entry_id = ${entryId}::uuid
+            and pf.answered_at is not null
+        )::int as "microAnsweredForEntry",
         count(*) filter (
-          where kind = 'pmf'
-            and answered_at is not null
+          where pf.kind = 'reflection_micro'
+            and pf.shown_at is not null
+            and date_trunc('day', pf.shown_at at time zone 'America/Sao_Paulo')
+              = date_trunc('day', now() at time zone 'America/Sao_Paulo')
+        )::int as "microShownToday",
+        (select last_shown_at::text from last_micro) as "lastMicroShownAt",
+        (
+          select count(*)::int
+          from entries e
+          cross join last_micro lm
+          where e.user_id = ${user.id}::uuid
+            and e.reflection is not null
+            and nullif(trim(e.reflection), '') is not null
+            and (
+              lm.last_shown_at is null
+              or e.created_at > lm.last_shown_at
+            )
+        ) as "reflectionsSinceLastMicro",
+        count(*) filter (
+          where pf.kind = 'pmf'
+            and pf.answered_at is not null
         )::int as "pmfAnswered",
         count(*) filter (
-          where kind = 'pmf'
-            and snoozed_until is not null
-            and snoozed_until > now()
+          where pf.kind = 'pmf'
+            and pf.snoozed_until is not null
+            and pf.snoozed_until > now()
         )::int as "pmfSnoozed"
-      from product_feedback
-      where user_id = ${user.id}::uuid
+      from product_feedback pf
+      where pf.user_id = ${user.id}::uuid
     `),
   );
 
@@ -246,17 +275,31 @@ export async function GET(request: Request) {
   const reflectedEntries = asNumber(stats?.reflectedEntries);
   const activeDays = asNumber(stats?.activeDays);
   const continuedEntries = asNumber(stats?.continuedEntries);
-  const normalPmfEligible =
-    reflectedEntries >= 2 || activeDays >= 2 || continuedEntries >= 1;
-  const testPmfEligible = Boolean(flags?.pmfTestEnabled) && reflectedEntries >= 1;
-  const pmfEligible =
-    (normalPmfEligible || testPmfEligible) &&
-    asNumber(feedback?.pmfAnswered) === 0 &&
-    asNumber(feedback?.pmfSnoozed) === 0;
+  const lastMicroShownAt = feedback?.lastMicroShownAt
+    ? new Date(feedback.lastMicroShownAt)
+    : null;
+  const {
+    reflectionMicroEligible,
+    pmfEligible,
+    normalPmfEligible,
+    testPmfEligible,
+  } =
+    getProductFeedbackEligibility({
+      reflectedEntries,
+      activeDays,
+      continuedEntries,
+      pmfTestEnabled: Boolean(flags?.pmfTestEnabled),
+      microAnsweredForEntry: asNumber(feedback?.microAnsweredForEntry),
+      microShownToday: asNumber(feedback?.microShownToday),
+      lastMicroShownAt,
+      reflectionsSinceLastMicro: asNumber(feedback?.reflectionsSinceLastMicro),
+      pmfAnswered: asNumber(feedback?.pmfAnswered),
+      pmfSnoozed: asNumber(feedback?.pmfSnoozed),
+    });
 
   return NextResponse.json({
     reflectionMicro: {
-      eligible: asNumber(feedback?.microAnswered) === 0,
+      eligible: reflectionMicroEligible,
     },
     pmf: {
       eligible: pmfEligible,
