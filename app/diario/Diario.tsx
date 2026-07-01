@@ -589,8 +589,19 @@ export function Diario({
           entry_mode: options?.entryMode ?? nextEntryMode,
           duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
         });
+        if (canAttemptAgain) {
+          setRetryNotice("A conexão oscilou. Vou tentar transcrever de novo.");
+          await delay(retryDelayForAttempt(attempt + 1));
+          await transcribeAndReflect(blob, {
+            entryId: tData.entryId ?? options?.entryId,
+            entryMode: options?.entryMode ?? nextEntryMode,
+            durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+            attempt: attempt + 1,
+          });
+          return;
+        }
         fail(
-          !canAttemptAgain && retryable
+          retryable
             ? "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta."
             : "userMessage" in tData && tData.userMessage
               ? tData.userMessage
@@ -630,12 +641,19 @@ export function Diario({
         entry_mode: options?.entryMode ?? nextEntryMode,
         duration_bucket: options?.durationBucket ?? lastDurationBucketRef.current,
       });
+      if (canAttemptAgain) {
+        setRetryNotice("A conexão oscilou. Vou tentar transcrever de novo.");
+        await delay(retryDelayForAttempt(attempt + 1));
+        await transcribeAndReflect(blob, {
+          entryId: options?.entryId,
+          entryMode: options?.entryMode ?? nextEntryMode,
+          durationBucket: options?.durationBucket ?? lastDurationBucketRef.current,
+          attempt: attempt + 1,
+        });
+        return;
+      }
       fail(
-        !canAttemptAgain
-          ? "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta."
-          : isAbortError(error)
-            ? "A transcrição demorou demais. Você não precisa regravar; tente transcrever de novo."
-            : "Não consegui enviar o áudio agora. A gravação ficou aqui para tentar de novo.",
+        "Não consegui transcrever depois de algumas tentativas. Grave de novo em uma fala mais curta.",
         { canRetry: canAttemptAgain },
       );
     }
