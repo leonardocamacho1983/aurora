@@ -3,20 +3,25 @@ import { and, eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
-import { runReflectPipeline, createReflectDeps } from "@/lib/ai/reflect";
 import { classifyCrisis } from "@/lib/ai/crisis-classifier";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { embedText } from "@/lib/ai/embeddings";
-import { classifyEntryIntent } from "@/lib/diary/entry-intent";
+import { recordProductEvent } from "@/lib/analytics/product-events";
 
-export const runtime = "nodejs"; // postgres-js + IA precisam do runtime Node
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const MAX_TRANSCRIPT_LENGTH = 12_000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ENTRY_MODES = new Set(["new", "continue", "reformulate"]);
 
+function bodyString(value: unknown, maxLength = 180) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
 function cleanEntryMode(value: unknown) {
-  return typeof value === "string" && ENTRY_MODES.has(value) ? value : "new";
+  const mode = bodyString(value, 40);
+  return ENTRY_MODES.has(mode) ? mode : "new";
 }
 
 async function entryBelongsToUser(userId: string, entryId: string) {
@@ -29,7 +34,6 @@ async function entryBelongsToUser(userId: string, entryId: string) {
 }
 
 export async function POST(request: Request) {
-  // Auth: a sessão Supabase identifica o dono (RLS por user_id = auth.uid()).
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,13 +43,13 @@ export async function POST(request: Request) {
   }
 
   let body: {
-    transcript?: string;
-    language?: string;
-    locale?: string;
+    transcript?: unknown;
+    language?: unknown;
+    locale?: unknown;
+    clientRequestId?: unknown;
     entryId?: unknown;
     entryMode?: unknown;
-    clientRequestId?: string;
-    forceReflection?: boolean;
+    intent?: unknown;
   };
   try {
     body = await request.json();
@@ -53,15 +57,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const transcript = (body.transcript ?? "").trim();
+  const transcript = bodyString(body.transcript, MAX_TRANSCRIPT_LENGTH);
   if (!transcript) {
     return NextResponse.json({ error: "transcript is required" }, { status: 400 });
   }
-  const language = body.language ?? null;
-  const locale = body.locale ?? "pt-BR";
-  const requestId = body.clientRequestId;
+
+  const language = bodyString(body.language, 40) || null;
+  const locale = bodyString(body.locale, 40) || "pt-BR";
+  const requestId = bodyString(body.clientRequestId, 120) || undefined;
   const entryMode = cleanEntryMode(body.entryMode);
-  const previousEntryId = typeof body.entryId === "string" ? body.entryId.trim() : "";
+  const previousEntryId = bodyString(body.entryId, 80);
   if (previousEntryId && !UUID_RE.test(previousEntryId)) {
     return NextResponse.json({ error: "invalid entryId" }, { status: 400 });
   }
@@ -69,11 +74,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "entry not found" }, { status: 404 });
   }
   const continuedFromEntryId = entryMode === "new" ? null : previousEntryId || null;
+  const intent = bodyString(body.intent, 80) || "routine_log";
 
   try {
     const crisis = await classifyCrisis(transcript);
 
-    // ── Protocolo de crise (§8): roda antes de qualquer decisão de silêncio.
     if (crisis.risk === "high") {
       const [entry] = await db
         .insert(entries)
@@ -94,6 +99,19 @@ export async function POST(request: Request) {
         shownResources: true,
       });
 
+      await recordProductEvent({
+        userId: user.id,
+        eventName: "product_diary_silent_save_succeeded",
+        source: "entries_api",
+        metadata: {
+          status: "crisis",
+          risk_level: "high",
+          request_id: requestId,
+          entry_mode: entryMode,
+          intent,
+        },
+      });
+
       return NextResponse.json({
         status: "crisis",
         risk: "high",
@@ -104,73 +122,18 @@ export async function POST(request: Request) {
       });
     }
 
-    const entryIntent = classifyEntryIntent(transcript);
-    if (!body.forceReflection && entryIntent.intent === "routine_log") {
-      return NextResponse.json({
-        status: "routine",
-        intent: entryIntent.intent,
-        reason: entryIntent.reason,
-        requestId,
-      });
-    }
-
-    const deps = createReflectDeps(user.id);
-    const result = await runReflectPipeline(
-      { text: transcript, locale },
-      {
-        ...deps,
-        classify: async () => crisis,
-      },
-    );
-
-    // Mantém o contrato defensivo caso a implementação do pipeline mude.
-    if (result.kind === "crisis") {
-      const [entry] = await db
-        .insert(entries)
-        .values({
-          userId: user.id,
-          transcript,
-          language,
-          riskLevel: "high",
-          entryMode,
-          continuedFromEntryId,
-        })
-        .returning({ id: entries.id });
-
-      await db.insert(crisisEvents).values({
-        userId: user.id,
-        entryId: entry.id,
-        level: "high",
-        shownResources: true,
-      });
-
-      return NextResponse.json({
-        status: "crisis",
-        risk: "high",
-        type: result.type,
-        resources: result.resources,
-        entryId: entry.id,
-        requestId,
-      });
-    }
-
-    // ── Caminho normal: salva a entry + embedding e devolve a reflexão.
     const [entry] = await db
       .insert(entries)
       .values({
         userId: user.id,
         transcript,
         language,
-        reflection: result.reflection,
-        mood: result.mood,
-        riskLevel: result.risk,
+        riskLevel: crisis.risk,
         entryMode,
         continuedFromEntryId,
       })
       .returning({ id: entries.id });
 
-    // TODO(§5): mover a geração do embedding para o Inngest (assíncrono) e
-    // deduplicar com o embedding já calculado no RAG.
     try {
       const vector = await embedText(transcript);
       await db.insert(embeddings).values({
@@ -179,20 +142,29 @@ export async function POST(request: Request) {
         embedding: vector,
       });
     } catch {
-      // Falha ao indexar não deve derrubar a reflexão já entregue.
+      // Silent-save must still succeed when background indexing fails.
     }
+
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_diary_silent_save_succeeded",
+      source: "entries_api",
+      metadata: {
+        status: "ok",
+        risk_level: crisis.risk,
+        request_id: requestId,
+        entry_mode: entryMode,
+        intent,
+      },
+    });
 
     return NextResponse.json({
       status: "ok",
-      risk: result.risk,
-      reflection: result.reflection,
-      mood: result.mood,
       entryId: entry.id,
       requestId,
     });
   } catch (error) {
-    // Fail-loud: classificador/pipeline falhou → NÃO inventamos reflexão (§13).
-    console.error("/api/reflect pipeline error:", error);
+    console.error("/api/entries save-only error:", error);
     return NextResponse.json({ error: "pipeline_failed" }, { status: 500 });
   }
 }

@@ -260,6 +260,42 @@
   cursor: pointer;
 }
 
+.decisionPanel {
+  width: min(100%, 360px);
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  margin-top: -2px;
+  padding: 16px;
+  border-radius: 20px;
+  color: var(--diary-fg);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.transcriptPreview {
+  margin: 0;
+  max-height: 5.8em;
+  overflow: hidden;
+  color: rgba(240, 236, 247, 0.72);
+  font: 560 0.95rem/1.46 var(--font-sans);
+  text-align: left;
+}
+
+.decisionActions {
+  display: grid;
+  gap: 8px;
+}
+
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .composition {
   position: relative;
   z-index: 2;
@@ -499,7 +535,16 @@
   --orb-size: clamp(216px, 58vw, 292px);
 }
 
+.stage[data-phase="saveDecision"] .center,
+.stage[data-phase="savedLog"] .center {
+  --orb-size: clamp(150px, 42vw, 220px);
+  grid-template-rows: minmax(112px, 0.52fr) auto auto auto minmax(18px, 0.16fr);
+  gap: clamp(10px, 2vh, 18px);
+}
+
 .stage[data-phase="reflecting"] .copy h1,
+.stage[data-phase="saveDecision"] .copy h1,
+.stage[data-phase="savedLog"] .copy h1,
 .stage[data-phase="error"] .copy h1,
 .stage[data-phase="crisis"] .copy h1 {
   max-width: 12ch;
@@ -662,6 +707,17 @@
     border-radius: 20px;
   }
 
+  .decisionPanel {
+    grid-column: 2;
+    grid-row: 4;
+    align-self: start;
+    justify-self: start;
+    width: min(100%, 430px);
+    margin-top: 12px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
   .stage[data-phase="idle"] .center {
     --orb-size: clamp(310px, 27vw, 430px);
   }
@@ -669,6 +725,12 @@
   .stage[data-phase="recording"] .center,
   .stage[data-phase="reflecting"] .center {
     --orb-size: clamp(320px, 29vw, 450px);
+  }
+
+  .stage[data-phase="saveDecision"] .center,
+  .stage[data-phase="savedLog"] .center {
+    --orb-size: clamp(230px, 20vw, 330px);
+    grid-template-rows: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
   }
 
   .stage[data-phase="error"] .center {
@@ -790,6 +852,12 @@
     --orb-size: clamp(186px, 55vw, 214px);
   }
 
+  .stage[data-phase="saveDecision"] .center,
+  .stage[data-phase="savedLog"] .center {
+    --orb-size: 132px;
+    grid-template-rows: minmax(84px, 0.34fr) auto auto auto minmax(8px, 0.08fr);
+  }
+
   .stage[data-phase="error"] .center {
     --orb-size: 112px;
     grid-template-rows: minmax(92px, 0.44fr) auto auto auto minmax(8px, 0.08fr);
@@ -801,6 +869,8 @@
   }
 
   .stage[data-phase="reflecting"] .copy h1,
+  .stage[data-phase="saveDecision"] .copy h1,
+  .stage[data-phase="savedLog"] .copy h1,
   .stage[data-phase="error"] .copy h1,
   .stage[data-phase="crisis"] .copy h1 {
     font-size: clamp(1.58rem, 7.6vw, 2rem);
@@ -838,6 +908,11 @@
   }
 
   .errorPanel {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .decisionPanel {
     padding: 14px;
     gap: 10px;
   }

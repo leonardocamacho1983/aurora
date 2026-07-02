@@ -8,6 +8,7 @@ import {
   timestamp,
   vector,
   index,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -48,6 +49,11 @@ export const entries = pgTable(
     reflection: text("reflection"), // resposta da Aurora
     mood: text("mood"), // leve|calmo|pesado|sensível|ansioso (opcional)
     riskLevel: text("risk_level").default("none").notNull(), // none|low|high
+    entryMode: text("entry_mode").default("new").notNull(),
+    continuedFromEntryId: uuid("continued_from_entry_id").references(
+      (): AnyPgColumn => entries.id,
+      { onDelete: "set null" },
+    ),
     shared: boolean("shared").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

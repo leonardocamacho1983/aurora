@@ -9,11 +9,12 @@ import {
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
 import { trackAurora } from "@/lib/analytics/client";
+import { classifyEntryIntent } from "@/lib/diary/entry-intent";
 import { renderProse } from "@/lib/render-prose";
 import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
 
-type Phase = "idle" | "recording" | "reflecting" | "reflection" | "crisis" | "error";
+type Phase = "idle" | "recording" | "reflecting" | "saveDecision" | "savedLog" | "reflection" | "crisis" | "error";
 
 type ReflectResponse =
   | {
@@ -34,6 +35,12 @@ type ReflectResponse =
       entryId: string;
       requestId?: string;
       intent?: string;
+    }
+  | {
+      status: "routine";
+      intent: "routine_log";
+      reason?: string;
+      requestId?: string;
     }
   | {
       error: string;
@@ -58,6 +65,28 @@ type TranscribeResponse =
       segmentId?: string;
     };
 
+type SaveEntryResponse =
+  | {
+      status: "ok";
+      entryId: string;
+      requestId?: string;
+    }
+  | {
+      status: "crisis";
+      risk: "high";
+      type: string;
+      resources: CrisisResourcesData;
+      entryId: string;
+      requestId?: string;
+    }
+  | {
+      error: string;
+      errorCode?: string;
+      errorClass?: string;
+      requestId?: string;
+      userMessage?: string;
+    };
+
 type EntryMode = "new" | "continue" | "reformulate";
 
 type ActiveRecorder = {
@@ -73,10 +102,21 @@ type RetryPayload = {
   attempt: number;
 };
 
+type PendingRoutineEntry = {
+  transcript: string;
+  language: string | null;
+  entryId?: string;
+  segmentId?: string;
+  entryMode: EntryMode;
+  requestId: string;
+  attempt: number;
+};
+
 const DEFAULT_PROMPT = "O que está vivo agora?";
 const STOP_RECORDING_TIMEOUT_MS = 8000;
 const TRANSCRIBE_TIMEOUT_MS = 45000;
 const REFLECT_TIMEOUT_MS = 45000;
+const SAVE_ENTRY_TIMEOUT_MS = 45000;
 const MAX_TRANSCRIPTION_ATTEMPTS = 3;
 
 function trackProduct(
@@ -130,6 +170,8 @@ const ORB_STATE: Record<Phase, OrbState> = {
   idle: "idle",
   recording: "recording",
   reflecting: "reflecting",
+  saveDecision: "idle",
+  savedLog: "saved",
   reflection: "idle", // sol calmo atrás do card
   crisis: "disabled",
   error: "idle",
@@ -412,8 +454,11 @@ export function Diario({
   const [crisis, setCrisis] = useState<CrisisResourcesData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [reflectingHelper, setReflectingHelper] = useState(REFLECTING_HELPERS[0]);
+  const [pendingRoutineEntry, setPendingRoutineEntry] = useState<PendingRoutineEntry | null>(null);
+  const [isSavingRoutineEntry, setIsSavingRoutineEntry] = useState(false);
 
   const recorderRef = useRef<ActiveRecorder | null>(null);
+  const recordingEntryModeRef = useRef<EntryMode>("new");
   const recordingStartedAtRef = useRef<number | null>(null);
   const lastDurationBucketRef = useRef("lt_10s");
   const retryPayloadRef = useRef<RetryPayload | null>(null);
@@ -441,6 +486,8 @@ export function Diario({
     setCanRetry(false);
     setIsRetrying(false);
     setRetryNotice(null);
+    setPendingRoutineEntry(null);
+    setIsSavingRoutineEntry(false);
     retryPayloadRef.current = null;
     setActiveEntryId(null);
     setNextEntryMode("new");
@@ -466,13 +513,18 @@ export function Diario({
       return;
     }
     if (phase === "reflecting") return; // ocupado
+    if (phase === "saveDecision" || phase === "savedLog") return;
     if (phase === "reflection" && activeEntryId) {
       setNextEntryMode("continue");
+      await startRecording("continue");
+      return;
     }
     await startRecording(); // idle | error | reflection (gravar mais)
   }
 
-  async function startRecording() {
+  async function startRecording(entryModeOverride?: EntryMode) {
+    const entryMode = entryModeOverride ?? nextEntryMode;
+    recordingEntryModeRef.current = entryMode;
     setErrorMsg(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       fail("Seu navegador não permite gravar áudio.");
@@ -493,7 +545,7 @@ export function Diario({
         source: "diary",
         device_family: family,
         recorder_mime_type: recorder.mimeType.split(";")[0],
-        entry_mode: nextEntryMode,
+        entry_mode: entryMode,
       });
     } catch {
       trackProduct("product_diary_recording_stopped", {
@@ -512,6 +564,7 @@ export function Diario({
     const startedAt = recordingStartedAtRef.current;
     const durationMs = startedAt ? Date.now() - startedAt : 0;
     const durationBucket = bucketSeconds(durationMs);
+    const entryMode = recordingEntryModeRef.current;
     lastDurationBucketRef.current = durationBucket;
     trackProduct("product_diary_recording_stopped", {
       source: "diary",
@@ -519,7 +572,7 @@ export function Diario({
       duration_bucket: durationBucket,
       device_family: deviceFamily(),
       recorder_mime_type: recorder.mimeType.split(";")[0],
-      entry_mode: nextEntryMode,
+      entry_mode: entryMode,
     });
     enterReflecting();
     let blob: Blob;
@@ -530,8 +583,8 @@ export function Diario({
       return;
     }
     await transcribeAndReflect(blob, {
-      entryId: nextEntryMode === "new" ? undefined : activeEntryId ?? undefined,
-      entryMode: nextEntryMode,
+      entryId: entryMode === "new" ? undefined : activeEntryId ?? undefined,
+      entryMode,
       durationBucket,
     });
   }
@@ -599,12 +652,38 @@ export function Diario({
         );
         return;
       }
+      const entryMode = options?.entryMode ?? nextEntryMode;
+      const intent = classifyEntryIntent(tData.transcript);
+      if (intent.intent === "routine_log") {
+        const pending: PendingRoutineEntry = {
+          transcript: tData.transcript,
+          language: tData.language ?? null,
+          entryId: tData.entryId ?? options?.entryId,
+          segmentId: tData.segmentId,
+          entryMode,
+          requestId: tData.requestId ?? requestId,
+          attempt,
+        };
+        setPendingRoutineEntry(pending);
+        setActiveEntryId(pending.entryId ?? null);
+        setNextEntryMode(entryMode);
+        setPhase("saveDecision");
+        trackProduct("product_diary_save_prompt_shown", {
+          source: "diary_client",
+          intent: intent.intent,
+          entry_mode: entryMode,
+          request_id: pending.requestId,
+          attempt,
+        });
+        return;
+      }
+
       await reflectOn(
         tData.transcript,
         tData.language ?? null,
         tData.entryId ?? options?.entryId,
         tData.segmentId,
-        options?.entryMode ?? nextEntryMode,
+        entryMode,
         tData.requestId ?? requestId,
         attempt,
       );
@@ -649,6 +728,7 @@ export function Diario({
     entryMode: EntryMode = "new",
     requestId = createClientRequestId(),
     attempt = 1,
+    forceReflection = false,
   ) {
     try {
       const rRes = await fetchWithTimeout(
@@ -656,7 +736,17 @@ export function Diario({
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ transcript, language, locale: "pt-BR", entryId, segmentId, entryMode, clientRequestId: requestId, attempt }),
+          body: JSON.stringify({
+            transcript,
+            language,
+            locale: "pt-BR",
+            entryId,
+            segmentId,
+            entryMode,
+            clientRequestId: requestId,
+            attempt,
+            forceReflection,
+          }),
         },
         REFLECT_TIMEOUT_MS,
       );
@@ -690,6 +780,28 @@ export function Diario({
         setCrisis(data.resources);
         setActiveEntryId(data.entryId);
         setPhase("crisis");
+        return;
+      }
+      if (data.status === "routine") {
+        setPendingRoutineEntry({
+          transcript,
+          language,
+          entryId,
+          segmentId,
+          entryMode,
+          requestId: data.requestId ?? requestId,
+          attempt,
+        });
+        setActiveEntryId(entryId ?? null);
+        setNextEntryMode(entryMode);
+        setPhase("saveDecision");
+        trackProduct("product_diary_save_prompt_shown", {
+          source: "diary_client",
+          intent: data.intent,
+          entry_mode: entryMode,
+          request_id: data.requestId ?? requestId,
+          attempt,
+        });
         return;
       }
       trackProduct("product_reflection_received", {
@@ -746,7 +858,112 @@ export function Diario({
 
   async function startWithMode(mode: EntryMode) {
     setNextEntryMode(mode);
-    await startRecording();
+    await startRecording(mode);
+  }
+
+  async function saveRoutineEntry(options: { continueAfter?: boolean } = {}) {
+    const pending = pendingRoutineEntry;
+    if (!pending) return;
+    setIsSavingRoutineEntry(true);
+    trackProduct("product_diary_silent_save_requested", {
+      source: "diary_client",
+      intent: "routine_log",
+      entry_mode: pending.entryMode,
+      request_id: pending.requestId,
+    });
+    try {
+      const res = await fetchWithTimeout(
+        "/api/entries",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            transcript: pending.transcript,
+            language: pending.language,
+            locale: "pt-BR",
+            entryId: pending.entryId,
+            entryMode: pending.entryMode,
+            clientRequestId: pending.requestId,
+            intent: "routine_log",
+          }),
+        },
+        SAVE_ENTRY_TIMEOUT_MS,
+      );
+      const data = (await res.json()) as SaveEntryResponse;
+      if (!res.ok || "error" in data) {
+        trackProduct("product_diary_silent_save_failed", {
+          source: "diary_client",
+          status: String(res.status),
+          error_code: "errorCode" in data ? data.errorCode ?? "silent_save_response_invalid" : "silent_save_response_invalid",
+          error_class: "errorClass" in data ? data.errorClass ?? null : null,
+          request_id: "requestId" in data ? data.requestId ?? pending.requestId : pending.requestId,
+          entry_mode: pending.entryMode,
+          intent: "routine_log",
+        });
+        fail(
+          "userMessage" in data && data.userMessage
+            ? data.userMessage
+            : "Não consegui salvar esse registro agora. Você pode pedir uma leitura ou tentar de novo.",
+          { canRetry: false },
+        );
+        return;
+      }
+      setPendingRoutineEntry(null);
+      if (data.status === "crisis") {
+        trackProduct("product_crisis_resources_shown", {
+          source: "diary_client",
+          risk_level: data.risk,
+          request_id: data.requestId ?? pending.requestId,
+          attempt: pending.attempt,
+        });
+        setCrisis(data.resources);
+        setActiveEntryId(data.entryId);
+        setPhase("crisis");
+        return;
+      }
+      setActiveEntryId(data.entryId);
+      setNextEntryMode("continue");
+      if (options.continueAfter) {
+        await startWithMode("continue");
+        return;
+      }
+      setPhase("savedLog");
+    } catch (error) {
+      trackProduct("product_diary_silent_save_failed", {
+        source: "diary_client",
+        error_code: isAbortError(error) ? "silent_save_timeout" : "silent_save_network",
+        error_class: isAbortError(error) ? "provider_timeout" : "network_or_unknown",
+        request_id: pending.requestId,
+        entry_mode: pending.entryMode,
+        intent: "routine_log",
+      });
+      fail(isAbortError(error) ? "Salvar demorou demais. Tente de novo." : "Falha de conexão ao salvar.");
+    } finally {
+      setIsSavingRoutineEntry(false);
+    }
+  }
+
+  async function requestReflectionForRoutine() {
+    const pending = pendingRoutineEntry;
+    if (!pending || isSavingRoutineEntry) return;
+    trackProduct("product_diary_reflection_requested", {
+      source: "diary_client",
+      intent: "routine_log",
+      entry_mode: pending.entryMode,
+      request_id: pending.requestId,
+      attempt: pending.attempt,
+    });
+    enterReflecting();
+    await reflectOn(
+      pending.transcript,
+      pending.language,
+      pending.entryId,
+      pending.segmentId,
+      pending.entryMode,
+      pending.requestId,
+      pending.attempt,
+      true,
+    );
   }
 
   const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
@@ -770,6 +987,16 @@ export function Diario({
       title: "Aproveite para respirar.",
       body: "A Aurora está pensando no que você falou.",
       helper: reflectingHelper,
+    },
+    saveDecision: {
+      title: "Quer só guardar esse registro?",
+      body: "Se for rotina, a Aurora pode ficar em silêncio.",
+      helper: "Escolha o próximo passo.",
+    },
+    savedLog: {
+      title: "Registrado.",
+      body: "Foi salvo no seu diário.",
+      helper: "Você pode continuar ou voltar para a timeline.",
     },
     crisis: {
       title: "Apoio agora",
@@ -808,9 +1035,13 @@ export function Diario({
             <p>{stateCopy[phase].body}</p>
           </div>
 
-          {(phase === "idle" || phase === "recording" || phase === "reflecting" || phase === "error" || phase === "crisis") && (
+          {(phase === "idle" || phase === "recording" || phase === "reflecting" || phase === "saveDecision" || phase === "savedLog" || phase === "error" || phase === "crisis") && (
             <div className={styles.orbStage}>
-              <Orb state={ORB_STATE[phase]} onClick={onOrbClick} />
+              <Orb
+                state={ORB_STATE[phase]}
+                onClick={onOrbClick}
+                decorative={phase === "saveDecision" || phase === "savedLog"}
+              />
             </div>
           )}
 
@@ -833,6 +1064,54 @@ export function Diario({
                 )}
                 <button type="button" onClick={() => startWithMode(activeEntryId ? "continue" : "new")} disabled={isRetrying}>
                   Gravar de novo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === "saveDecision" && pendingRoutineEntry && (
+            <div className={styles.decisionPanel}>
+              <p className={styles.transcriptPreview}>{pendingRoutineEntry.transcript}</p>
+              <div className={styles.decisionActions}>
+                <button
+                  type="button"
+                  onClick={() => saveRoutineEntry()}
+                  className={styles.primaryAction}
+                  disabled={isSavingRoutineEntry}
+                >
+                  {isSavingRoutineEntry ? "Salvando..." : "Salvar no diário"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveRoutineEntry({ continueAfter: true })}
+                  className={styles.secondaryAction}
+                  disabled={isSavingRoutineEntry}
+                >
+                  Continuar o fio
+                </button>
+                <button
+                  type="button"
+                  onClick={requestReflectionForRoutine}
+                  className={styles.secondaryAction}
+                  disabled={isSavingRoutineEntry}
+                >
+                  Pedir leitura da Aurora
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === "savedLog" && (
+            <div className={styles.decisionPanel}>
+              <div className={styles.decisionActions}>
+                <Link href="/timeline" className={`${styles.primaryAction} ${styles.actionLink}`}>
+                  Ver na timeline
+                </Link>
+                <button type="button" onClick={() => startWithMode("continue")} className={styles.secondaryAction}>
+                  Continuar o fio
+                </button>
+                <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
+                  Novo momento
                 </button>
               </div>
             </div>
