@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
 import { runReflectPipeline, createReflectDeps } from "@/lib/ai/reflect";
-import { classifyCrisis } from "@/lib/ai/crisis-classifier";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { embedText } from "@/lib/ai/embeddings";
-import { classifyEntryIntent } from "@/lib/diary/entry-intent";
+import {
+  classifyDiaryRoute,
+  isConfidentPracticalLog,
+  isHighRisk,
+  toCrisisResult,
+} from "@/lib/ai/diary-router";
 
 export const runtime = "nodejs"; // postgres-js + IA precisam do runtime Node
 export const dynamic = "force-dynamic";
@@ -26,6 +30,33 @@ async function entryBelongsToUser(userId: string, entryId: string) {
     .where(and(eq(entries.id, entryId), eq(entries.userId, userId)))
     .limit(1);
   return rows.length > 0;
+}
+
+function wordCount(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+async function shouldUseRag({
+  userId,
+  text,
+  entryMode,
+}: {
+  userId: string;
+  text: string;
+  entryMode: string;
+}) {
+  if (entryMode === "continue" || entryMode === "reformulate") return true;
+  if (wordCount(text) >= 80) return true;
+
+  const [stats] = await db.execute<{ reflectedEntries: number }>(sql`
+    select count(*) filter (
+      where reflection is not null and nullif(trim(reflection), '') is not null
+    )::int as "reflectedEntries"
+    from entries
+    where user_id = ${userId}::uuid
+  `);
+
+  return Number(stats?.reflectedEntries ?? 0) >= 2;
 }
 
 export async function POST(request: Request) {
@@ -71,10 +102,10 @@ export async function POST(request: Request) {
   const continuedFromEntryId = entryMode === "new" ? null : previousEntryId || null;
 
   try {
-    const crisis = await classifyCrisis(transcript);
+    const route = await classifyDiaryRoute(transcript);
 
     // ── Protocolo de crise (§8): roda antes de qualquer decisão de silêncio.
-    if (crisis.risk === "high") {
+    if (isHighRisk(route)) {
       const [entry] = await db
         .insert(entries)
         .values({
@@ -97,30 +128,30 @@ export async function POST(request: Request) {
       return NextResponse.json({
         status: "crisis",
         risk: "high",
-        type: crisis.type,
+        type: route.crisisType,
         resources: getCrisisResources(locale),
         entryId: entry.id,
         requestId,
       });
     }
 
-    const entryIntent = await classifyEntryIntent(transcript);
-    if (!body.forceReflection && entryIntent.intent === "routine_log") {
+    if (!body.forceReflection && isConfidentPracticalLog(route)) {
       return NextResponse.json({
         status: "routine",
-        intent: entryIntent.intent,
-        reason: entryIntent.reason,
-        confidence: entryIntent.confidence,
+        intent: "routine_log",
+        reason: route.reason,
+        confidence: route.confidence,
         requestId,
       });
     }
 
     const deps = createReflectDeps(user.id);
+    const useRag = await shouldUseRag({ userId: user.id, text: transcript, entryMode });
     const result = await runReflectPipeline(
-      { text: transcript, locale },
+      { text: transcript, locale, useRag },
       {
         ...deps,
-        classify: async () => crisis,
+        classify: async () => toCrisisResult(route),
       },
     );
 

@@ -1,8 +1,8 @@
 import { classifyCrisis, type CrisisType } from "./crisis-classifier";
 import { getCrisisResources, type CrisisResources } from "./crisis-resources";
 import { retrieveSnippets, type RagSnippet } from "./embeddings";
-import { generateReflection } from "./reflection";
-import { suggestMood, type Mood } from "./mood";
+import { generateReflectionResult, type ReflectionResult } from "./reflection";
+import type { Mood } from "./mood";
 
 /**
  * Pipeline central de IA (§5). Ordem OBRIGATÓRIA, garantida estruturalmente:
@@ -18,6 +18,7 @@ import { suggestMood, type Mood } from "./mood";
 export interface ReflectInput {
   text: string;
   locale: string; // para os recursos de crise (§8)
+  useRag?: boolean;
 }
 
 export type ReflectResult =
@@ -37,8 +38,7 @@ export type ReflectResult =
 export interface ReflectDeps {
   classify: (text: string) => Promise<{ risk: "none" | "low" | "high"; type: CrisisType }>;
   retrieve: (text: string) => Promise<RagSnippet[]>;
-  reflect: (text: string, context: RagSnippet[]) => Promise<string>;
-  suggestMood: (text: string) => Promise<Mood | null>;
+  reflect: (text: string, context: RagSnippet[]) => Promise<ReflectionResult>;
 }
 
 /** Constrói as dependências reais para uma requisição (escopo do usuário). */
@@ -46,8 +46,7 @@ export function createReflectDeps(userId: string): ReflectDeps {
   return {
     classify: (text) => classifyCrisis(text),
     retrieve: (text) => retrieveSnippets(userId, text),
-    reflect: (text, context) => generateReflection(text, context),
-    suggestMood: (text) => suggestMood(text),
+    reflect: (text, context) => generateReflectionResult(text, context),
   };
 }
 
@@ -68,10 +67,14 @@ export async function runReflectPipeline(
     };
   }
 
-  // (3) Caminho normal: RAG → reflexão → humor/tags.
-  const context = await deps.retrieve(input.text);
-  const reflection = await deps.reflect(input.text, context);
-  const mood = await deps.suggestMood(input.text);
+  // (3) Caminho normal: RAG condicional → reflexão + humor em uma chamada.
+  const context = input.useRag === false ? [] : await deps.retrieve(input.text);
+  const result = await deps.reflect(input.text, context);
 
-  return { kind: "reflection", risk: crisis.risk, reflection, mood };
+  return {
+    kind: "reflection",
+    risk: crisis.risk,
+    reflection: result.reflection,
+    mood: result.mood,
+  };
 }

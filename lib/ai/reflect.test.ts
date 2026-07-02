@@ -6,8 +6,7 @@ function makeDeps(over: Partial<ReflectDeps> = {}): ReflectDeps {
   return {
     classify: vi.fn(async () => ({ risk: "none" as const, type: "none" as const })),
     retrieve: vi.fn(async () => []),
-    reflect: vi.fn(async () => "uma reflexão curta."),
-    suggestMood: vi.fn(async () => null),
+    reflect: vi.fn(async () => ({ reflection: "uma reflexão curta.", mood: null })),
     ...over,
   };
 }
@@ -30,7 +29,6 @@ describe("runReflectPipeline — §13 guardrail", () => {
     }
     expect(deps.retrieve).not.toHaveBeenCalled();
     expect(deps.reflect).not.toHaveBeenCalled();
-    expect(deps.suggestMood).not.toHaveBeenCalled();
   });
 
   it("classificador roda ANTES da reflexão (ordem)", async () => {
@@ -46,11 +44,7 @@ describe("runReflectPipeline — §13 guardrail", () => {
       }),
       reflect: vi.fn(async () => {
         calls.push("reflect");
-        return "ok";
-      }),
-      suggestMood: vi.fn(async () => {
-        calls.push("mood");
-        return null;
+        return { reflection: "ok", mood: null };
       }),
     };
 
@@ -75,8 +69,10 @@ describe("runReflectPipeline — §13 guardrail", () => {
 
   it("risco none: gera reflexão com humor sugerido", async () => {
     const deps = makeDeps({
-      reflect: vi.fn(async () => "você parece cansado(a) hoje. o que te pesou?"),
-      suggestMood: vi.fn(async () => "pesado" as const),
+      reflect: vi.fn(async () => ({
+        reflection: "você parece cansado(a) hoje. o que te pesou?",
+        mood: "pesado" as const,
+      })),
     });
 
     const result = await runReflectPipeline(
@@ -90,6 +86,19 @@ describe("runReflectPipeline — §13 guardrail", () => {
       expect(result.mood).toBe("pesado");
       expect(result.risk).toBe("none");
     }
+  });
+
+  it("pula RAG quando useRag=false", async () => {
+    const deps = makeDeps();
+
+    const result = await runReflectPipeline(
+      { text: "um registro curto", locale: "pt-BR", useRag: false },
+      deps,
+    );
+
+    expect(result.kind).toBe("reflection");
+    expect(deps.retrieve).not.toHaveBeenCalled();
+    expect(deps.reflect).toHaveBeenCalledWith("um registro curto", []);
   });
 
   it("risco low ainda reflete (não é crise)", async () => {
