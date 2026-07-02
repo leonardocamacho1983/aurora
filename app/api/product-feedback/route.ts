@@ -68,6 +68,7 @@ type StatsRow = {
 type FeedbackStateRow = {
   microAnsweredForEntry: number;
   microShownToday: number;
+  microShownWithoutAnswer: number;
   lastMicroShownAt: string | null;
   reflectionsSinceLastMicro: number;
   pmfAnswered: number;
@@ -235,6 +236,22 @@ export async function GET(request: Request) {
             and date_trunc('day', pf.shown_at at time zone 'America/Sao_Paulo')
               = date_trunc('day', now() at time zone 'America/Sao_Paulo')
         )::int as "microShownToday",
+        (
+          select count(*)::int
+          from product_feedback shown
+          where shown.user_id = ${user.id}::uuid
+            and shown.kind = 'reflection_micro'
+            and shown.action = 'shown'
+            and shown.shown_at is not null
+            and not exists (
+              select 1
+              from product_feedback answered
+              where answered.user_id = shown.user_id
+                and answered.kind = 'reflection_micro'
+                and answered.entry_id = shown.entry_id
+                and answered.answered_at is not null
+            )
+        ) as "microShownWithoutAnswer",
         (select last_shown_at::text from last_micro) as "lastMicroShownAt",
         (
           select count(*)::int
@@ -281,6 +298,7 @@ export async function GET(request: Request) {
   const {
     reflectionMicroEligible,
     pmfEligible,
+    directPmfEligible,
     normalPmfEligible,
     testPmfEligible,
   } =
@@ -291,6 +309,7 @@ export async function GET(request: Request) {
       pmfTestEnabled: Boolean(flags?.pmfTestEnabled),
       microAnsweredForEntry: asNumber(feedback?.microAnsweredForEntry),
       microShownToday: asNumber(feedback?.microShownToday),
+      microShownWithoutAnswer: asNumber(feedback?.microShownWithoutAnswer),
       lastMicroShownAt,
       reflectionsSinceLastMicro: asNumber(feedback?.reflectionsSinceLastMicro),
       pmfAnswered: asNumber(feedback?.pmfAnswered),
@@ -305,6 +324,7 @@ export async function GET(request: Request) {
       eligible: pmfEligible,
       variant: PMF_VARIANT,
       testMode: testPmfEligible && !normalPmfEligible,
+      direct: directPmfEligible,
     },
   });
 }

@@ -10,6 +10,7 @@ const base = {
   pmfTestEnabled: false,
   microAnsweredForEntry: 0,
   microShownToday: 0,
+  microShownWithoutAnswer: 0,
   lastMicroShownAt: null,
   reflectionsSinceLastMicro: 0,
   pmfAnswered: 0,
@@ -81,6 +82,23 @@ describe("product feedback eligibility", () => {
     ).toMatchObject({
       reflectionMicroEligible: true,
       pmfEligible: true,
+      directPmfEligible: false,
+    });
+  });
+
+  it("opens PMF directly after repeated unanswered microfeedback for PMF eligible users", () => {
+    expect(
+      getProductFeedbackEligibility({
+        ...base,
+        reflectedEntries: 2,
+        microShownToday: 1,
+        lastMicroShownAt: new Date("2026-07-01T09:00:00.000Z"),
+        microShownWithoutAnswer: 2,
+      }),
+    ).toMatchObject({
+      reflectionMicroEligible: false,
+      pmfEligible: true,
+      directPmfEligible: true,
     });
   });
 

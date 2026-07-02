@@ -14,7 +14,7 @@ type PmfAnswer =
 
 type Eligibility = {
   reflectionMicro: { eligible: boolean };
-  pmf: { eligible: boolean; variant: string; testMode?: boolean };
+  pmf: { eligible: boolean; variant: string; testMode?: boolean; direct?: boolean };
 };
 
 type PmfPromptProps = {
