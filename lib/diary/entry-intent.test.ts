@@ -8,6 +8,8 @@ describe("classifyEntryIntent", () => {
     expect(classifyEntryIntent("reunião com a equipe às 14h").intent).toBe("routine_log");
     expect(classifyEntryIntent("preciso comprar pão e tomar remédio").intent).toBe("routine_log");
     expect(classifyEntryIntent("preciso pagar o banco e buscar o exame").intent).toBe("routine_log");
+    expect(classifyEntryIntent("lembrei que preciso agendar os banhos do cachorro").intent).toBe("routine_log");
+    expect(classifyEntryIntent("preciso marcar o veterinário do pet").intent).toBe("routine_log");
   });
 
   it("routes brief neutral entries to the save decision", () => {
