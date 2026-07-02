@@ -1,9 +1,54 @@
+import { z } from "zod";
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateObject } from "ai";
+
 export type EntryIntent = "routine_log" | "reflection";
 
 export type EntryIntentResult = {
   intent: EntryIntent;
   reason: string;
+  confidence?: "low" | "medium" | "high";
 };
+
+export const ENTRY_INTENT_MODEL = "claude-haiku-4-5";
+
+const entryIntentSchema = z.object({
+  intent: z.enum(["practical_log", "reflection", "unclear"]),
+  confidence: z.enum(["low", "medium", "high"]),
+  reason: z.string().max(120),
+});
+
+type ModelEntryIntentResult = z.infer<typeof entryIntentSchema>;
+
+export const ENTRY_INTENT_SYSTEM_PROMPT = `Você classifica uma fala curta de diário da Aurora.
+
+Escolha:
+- "practical_log": tarefa, lembrete, agenda, compra, rotina, lista, compromisso, cuidado prático, registro factual do dia.
+- "reflection": emoção, sofrimento, dúvida, decisão, pedido de ajuda, elaboração pessoal, sentido, conflito, ansiedade, medo, tristeza, raiva.
+- "unclear": ambíguo ou sem confiança suficiente.
+
+Regras:
+- Se houver risco, sofrimento intenso ou pedido de ajuda emocional, use "reflection".
+- "preciso" sozinho não define reflexão. "preciso comprar/agendar/pagar/buscar/tomar/levar" tende a practical_log. "preciso decidir/entender/ajuda/resolver como me sinto" tende a reflection.
+- Seja conservador: se a classificação puder afetar valor ao usuário e estiver ambígua, use "unclear".
+- Não explique além de uma razão curta.`;
+
+export interface EntryIntentDeps {
+  generate: (text: string) => Promise<unknown>;
+}
+
+const defaultGenerate = async (text: string): Promise<unknown> => {
+  const { object } = await generateObject({
+    model: anthropic(ENTRY_INTENT_MODEL),
+    schema: entryIntentSchema,
+    system: ENTRY_INTENT_SYSTEM_PROMPT,
+    prompt: text,
+    temperature: 0,
+  });
+  return object;
+};
+
+const defaultDeps: EntryIntentDeps = { generate: defaultGenerate };
 
 const ROUTINE_TERMS = [
   "academia",
@@ -100,7 +145,7 @@ function hasScheduleShape(text: string) {
   return /\b(\d{1,2}h|\d{1,2}:\d{2}|segunda|terca|quarta|quinta|sexta|sabado|domingo|hoje|amanha|ontem)\b/.test(text);
 }
 
-export function classifyEntryIntent(transcript: string): EntryIntentResult {
+export function classifyEntryIntentHeuristic(transcript: string): EntryIntentResult {
   const text = normalizeText(transcript);
   const words = wordCount(text);
 
@@ -122,4 +167,41 @@ export function classifyEntryIntent(transcript: string): EntryIntentResult {
   }
 
   return { intent: "reflection", reason: "default_reflection" };
+}
+
+function toProductIntent(result: ModelEntryIntentResult): EntryIntentResult {
+  if (result.intent === "practical_log" && result.confidence !== "low") {
+    return {
+      intent: "routine_log",
+      reason: result.reason || "model_practical_log",
+      confidence: result.confidence,
+    };
+  }
+
+  return {
+    intent: "reflection",
+    reason: result.intent === "unclear" ? "model_unclear" : result.reason || "model_reflection",
+    confidence: result.confidence,
+  };
+}
+
+export async function classifyEntryIntent(
+  transcript: string,
+  deps: EntryIntentDeps = defaultDeps,
+): Promise<EntryIntentResult> {
+  if (!transcript.trim()) {
+    return { intent: "reflection", reason: "empty_text", confidence: "low" };
+  }
+
+  const heuristic = classifyEntryIntentHeuristic(transcript);
+  if (heuristic.reason === "risk_signal") {
+    return heuristic;
+  }
+
+  try {
+    const raw = await deps.generate(transcript);
+    return toProductIntent(entryIntentSchema.parse(raw));
+  } catch {
+    return { intent: "reflection", reason: "intent_classifier_failed", confidence: "low" };
+  }
 }

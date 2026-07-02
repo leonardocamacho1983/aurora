@@ -9,7 +9,6 @@ import {
   type CrisisResourcesData,
 } from "@/components/sheets/CrisisResources";
 import { trackAurora } from "@/lib/analytics/client";
-import { classifyEntryIntent } from "@/lib/diary/entry-intent";
 import { renderProse } from "@/lib/render-prose";
 import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
@@ -653,31 +652,6 @@ export function Diario({
         return;
       }
       const entryMode = options?.entryMode ?? nextEntryMode;
-      const intent = classifyEntryIntent(tData.transcript);
-      if (intent.intent === "routine_log") {
-        const pending: PendingRoutineEntry = {
-          transcript: tData.transcript,
-          language: tData.language ?? null,
-          entryId: tData.entryId ?? options?.entryId,
-          segmentId: tData.segmentId,
-          entryMode,
-          requestId: tData.requestId ?? requestId,
-          attempt,
-        };
-        setPendingRoutineEntry(pending);
-        setActiveEntryId(pending.entryId ?? null);
-        setNextEntryMode(entryMode);
-        setPhase("saveDecision");
-        trackProduct("product_diary_save_prompt_shown", {
-          source: "diary_client",
-          intent: intent.intent,
-          entry_mode: entryMode,
-          request_id: pending.requestId,
-          attempt,
-        });
-        return;
-      }
-
       await reflectOn(
         tData.transcript,
         tData.language ?? null,

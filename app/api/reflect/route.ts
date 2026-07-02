@@ -104,12 +104,13 @@ export async function POST(request: Request) {
       });
     }
 
-    const entryIntent = classifyEntryIntent(transcript);
+    const entryIntent = await classifyEntryIntent(transcript);
     if (!body.forceReflection && entryIntent.intent === "routine_log") {
       return NextResponse.json({
         status: "routine",
         intent: entryIntent.intent,
         reason: entryIntent.reason,
+        confidence: entryIntent.confidence,
         requestId,
       });
     }
