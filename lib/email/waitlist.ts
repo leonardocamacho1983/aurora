@@ -496,3 +496,29 @@ ${leoSignatureText()}`,
     text: variant.text,
   });
 }
+
+export async function sendAlphaReactivationEmail(row: WaitlistEmailRow & { name?: string | null }, baseUrl: string) {
+  const diary = `${baseUrl}/diario`;
+  const subject = "Um registro curto na Aurora, quando puder";
+  const html = shell(`
+    <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(row.name)}seu acesso à Aurora continua aberto.</p>
+    <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A primeira turma Alpha já está ajudando a ajustar a Aurora em uso real: quando ela deve refletir, quando deve só guardar um registro e como manter a experiência mais segura e cuidadosa.</p>
+    <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quando tiver dois minutos, queria te convidar a voltar e fazer um registro curto por voz. Não precisa organizar antes; uma fala simples já ajuda a entender se a experiência continua útil.</p>
+    ${button("Fazer um registro curto", diary)}
+    <p style="font-size:14px;line-height:1.6;color:#948fa8">Se algo parecer estranho, pode responder este email. Mas o mais importante agora é testar a Aurora como diário: um momento, uma fala, uma devolutiva.</p>
+    ${leoSignatureHtml()}
+  `);
+  const text = `${greeting(row.name)}seu acesso à Aurora continua aberto.
+
+A primeira turma Alpha já está ajudando a ajustar a Aurora em uso real: quando ela deve refletir, quando deve só guardar um registro e como manter a experiência mais segura e cuidadosa.
+
+Quando tiver dois minutos, queria te convidar a voltar e fazer um registro curto por voz. Não precisa organizar antes; uma fala simples já ajuda a entender se a experiência continua útil.
+
+Fazer um registro curto: ${diary}
+
+Se algo parecer estranho, pode responder este email. Mas o mais importante agora é testar a Aurora como diário: um momento, uma fala, uma devolutiva.
+
+${leoSignatureText()}`;
+
+  return sendEmail({ to: row.email, subject, html, text });
+}

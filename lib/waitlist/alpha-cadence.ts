@@ -125,7 +125,8 @@ function noRecentAlphaEmailFilter(hours: number) {
           'alpha_first_reflection_feedback_email_sent',
           'alpha_invite_companion_email_sent',
           'alpha_last_call_email_sent',
-          'alpha_construction_note_email_sent'
+          'alpha_construction_note_email_sent',
+          'alpha_reactivation_email_sent'
         )
     )
   `;
