@@ -6,6 +6,8 @@ import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
 import { runReflectPipeline, createReflectDeps } from "@/lib/ai/reflect";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { embedText } from "@/lib/ai/embeddings";
+import { bucketLatency } from "@/lib/ai/error-classification";
+import { recordProductEvent, type ProductEventMetadata } from "@/lib/analytics/product-events";
 import {
   classifyDiaryRoute,
   isConfidentPracticalLog,
@@ -18,6 +20,14 @@ export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ENTRY_MODES = new Set(["new", "continue", "reformulate"]);
+
+function transcriptLengthBucket(text: string) {
+  const words = wordCount(text);
+  if (words < 10) return "lt_10w";
+  if (words < 40) return "lt_40w";
+  if (words < 80) return "lt_80w";
+  return "gte_80w";
+}
 
 function cleanEntryMode(value: unknown) {
   return typeof value === "string" && ENTRY_MODES.has(value) ? value : "new";
@@ -60,6 +70,7 @@ async function shouldUseRag({
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   // Auth: a sessão Supabase identifica o dono (RLS por user_id = auth.uid()).
   const supabase = await createClient();
   const {
@@ -92,6 +103,11 @@ export async function POST(request: Request) {
   const locale = body.locale ?? "pt-BR";
   const requestId = body.clientRequestId;
   const entryMode = cleanEntryMode(body.entryMode);
+  const baseMetadata: ProductEventMetadata = {
+    request_id: requestId,
+    entry_mode: entryMode,
+    transcript_length_bucket: transcriptLengthBucket(transcript),
+  };
   const previousEntryId = typeof body.entryId === "string" ? body.entryId.trim() : "";
   if (previousEntryId && !UUID_RE.test(previousEntryId)) {
     return NextResponse.json({ error: "invalid entryId" }, { status: 400 });
@@ -102,7 +118,29 @@ export async function POST(request: Request) {
   const continuedFromEntryId = entryMode === "new" ? null : previousEntryId || null;
 
   try {
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_reflection_attempted",
+      source: "reflect_api",
+      metadata: baseMetadata,
+    });
+
+    const routeStartedAt = Date.now();
     const route = await classifyDiaryRoute(transcript);
+    const routeLatencyBucket = bucketLatency(Date.now() - routeStartedAt);
+
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_reflection_routed",
+      source: "reflect_api",
+      metadata: {
+        ...baseMetadata,
+        route_intent: route.intent,
+        route_confidence: route.confidence,
+        risk_level: route.risk,
+        route_latency_bucket: routeLatencyBucket,
+      },
+    });
 
     // ── Protocolo de crise (§8): roda antes de qualquer decisão de silêncio.
     if (isHighRisk(route)) {
@@ -214,6 +252,23 @@ export async function POST(request: Request) {
       // Falha ao indexar não deve derrubar a reflexão já entregue.
     }
 
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_reflection_succeeded",
+      source: "reflect_api",
+      metadata: {
+        ...baseMetadata,
+        status: "ok",
+        risk_level: result.risk,
+        route_intent: route.intent,
+        route_confidence: route.confidence,
+        route_latency_bucket: routeLatencyBucket,
+        total_latency_bucket: bucketLatency(Date.now() - startedAt),
+        rag_used: useRag,
+        has_mood: Boolean(result.mood),
+      },
+    });
+
     return NextResponse.json({
       status: "ok",
       risk: result.risk,
@@ -225,6 +280,18 @@ export async function POST(request: Request) {
   } catch (error) {
     // Fail-loud: classificador/pipeline falhou → NÃO inventamos reflexão (§13).
     console.error("/api/reflect pipeline error:", error);
+    await recordProductEvent({
+      userId: user.id,
+      eventName: "product_reflection_failed",
+      source: "reflect_api",
+      metadata: {
+        ...baseMetadata,
+        status: "500",
+        error_code: "pipeline_failed",
+        error_class: "network_or_unknown",
+        total_latency_bucket: bucketLatency(Date.now() - startedAt),
+      },
+    });
     return NextResponse.json({ error: "pipeline_failed" }, { status: 500 });
   }
 }
