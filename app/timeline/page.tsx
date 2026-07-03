@@ -42,6 +42,8 @@ type Row = {
   transcript: string | null;
   reflection: string | null;
   mood: string | null;
+  entryMode: string;
+  continuedFromEntryId: string | null;
   createdAt: Date;
 };
 
@@ -117,6 +119,18 @@ function entryMeasure(row: Row): string {
   const words = countWords(row.transcript ?? row.reflection);
   if (words === 0) return "Registro";
   return `${words} ${words === 1 ? "palavra" : "palavras"}`;
+}
+
+function fioHref(row: Row): string {
+  return `/fios/${row.id}`;
+}
+
+function continueHref(row: Row): string {
+  return `/diario?continueEntryId=${row.id}&source=timeline`;
+}
+
+function fioLabel(row: Row): string {
+  return row.entryMode === "continue" || row.continuedFromEntryId ? "No fio" : "Fio";
 }
 
 function hrefFor(range: (typeof RANGES)[number], mood: string | null, updates: TimelineSearchParams) {
@@ -263,9 +277,14 @@ function NowCard({ row }: { row: Row }) {
         <div className={`font-serif ${styles.nowText}`}>{renderProse(excerpt(row, 140))}</div>
         <div className={styles.nowAside}>
           <span>{entryMeasure(row)}</span>
-          <Link href="/diario" className={styles.roundAction} aria-label="Criar nova entrada no diário">
-            <span aria-hidden="true">›</span>
-          </Link>
+          <div className={styles.nowActions}>
+            <Link href={fioHref(row)} className={styles.fioAction} aria-label="Abrir fio deste registro">
+              {fioLabel(row)}
+            </Link>
+            <Link href={continueHref(row)} className={styles.roundAction} aria-label="Continuar fio deste registro">
+              <span aria-hidden="true">›</span>
+            </Link>
+          </div>
         </div>
       </article>
     </section>
@@ -305,10 +324,15 @@ function WeekRail({
               <span>{formatTime(row.createdAt)}</span>
             </div>
             <div className={`font-serif ${styles.weekText}`}>{renderProse(excerpt(row, index === 0 ? 82 : 94))}</div>
-            <span className={styles.weekMood}>
-              <MoodDot mood={row.mood} />
-              {moodLabel(row.mood)}
-            </span>
+            <div className={styles.weekFooter}>
+              <span className={styles.weekMood}>
+                <MoodDot mood={row.mood} />
+                {moodLabel(row.mood)}
+              </span>
+              <Link href={fioHref(row)} className={styles.fioPill} aria-label="Abrir fio deste registro">
+                {fioLabel(row)}
+              </Link>
+            </div>
           </article>
         ))}
         <article className={`${styles.weekCard} ${styles.roundSummary}`}>
@@ -409,7 +433,9 @@ function Archive({ groups }: { groups: [string, Row[]][] }) {
                 <time>{formatShortDate(row.createdAt)}</time>
                 <MoodDot mood={row.mood} />
                 <div className={`font-serif ${styles.archiveText}`}>{renderProse(excerpt(row, 104))}</div>
-                <span className={styles.archiveMeasure}>{entryMeasure(row)}</span>
+                <Link href={fioHref(row)} className={styles.archiveMeasure} aria-label="Abrir fio deste registro">
+                  {fioLabel(row)}
+                </Link>
               </article>
             ))}
           </div>
@@ -473,6 +499,8 @@ export default async function TimelinePage({
       transcript: entries.transcript,
       reflection: entries.reflection,
       mood: entries.mood,
+      entryMode: entries.entryMode,
+      continuedFromEntryId: entries.continuedFromEntryId,
       createdAt: entries.createdAt,
     })
     .from(entries)

@@ -442,9 +442,13 @@ function createMediaRecorder(stream: MediaStream, mimeType: string): ActiveRecor
 export function Diario({
   userEmail = "",
   onboarding,
+  initialEntryId,
+  initialEntryMode = "new",
 }: {
   userEmail?: string;
   onboarding?: OnboardingProfile;
+  initialEntryId?: string;
+  initialEntryMode?: EntryMode;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [reflection, setReflection] = useState<string | null>(null);
@@ -461,8 +465,10 @@ export function Diario({
   const recordingStartedAtRef = useRef<number | null>(null);
   const lastDurationBucketRef = useRef("lt_10s");
   const retryPayloadRef = useRef<RetryPayload | null>(null);
-  const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
-  const [nextEntryMode, setNextEntryMode] = useState<EntryMode>("new");
+  const [activeEntryId, setActiveEntryId] = useState<string | null>(initialEntryId ?? null);
+  const [nextEntryMode, setNextEntryMode] = useState<EntryMode>(
+    initialEntryId ? "continue" : initialEntryMode,
+  );
   const [canRetry, setCanRetry] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
@@ -472,8 +478,9 @@ export function Diario({
       source: "diary",
       has_onboarding_moment: Boolean(onboarding?.moment),
       has_onboarding_presence: Boolean(onboarding?.presence),
+      entry_mode: initialEntryId ? "continue" : "new",
     });
-  }, [onboarding?.moment, onboarding?.presence]);
+  }, [initialEntryId, onboarding?.moment, onboarding?.presence]);
 
   function resetToIdle() {
     setPhase("idle");
@@ -942,15 +949,22 @@ export function Diario({
 
   const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
   const firstName = onboarding?.name?.split(" ")[0] ?? "";
-  const idleTitle = firstName ? `${firstName}, o que está vivo agora?` : DEFAULT_PROMPT;
+  const isContinuingExistingEntry = Boolean(activeEntryId && nextEntryMode === "continue");
+  const idleTitle = isContinuingExistingEntry
+    ? "Quer continuar este fio?"
+    : firstName
+      ? `${firstName}, o que está vivo agora?`
+      : DEFAULT_PROMPT;
   const canExpandReflection = Boolean(
     reflection && (reflection.length > 170 || reflection.trim().split(/\s+/).length > 24),
   );
   const stateCopy: Record<Exclude<Phase, "reflection">, { title: string; body: string; helper: string }> = {
     idle: {
       title: idleTitle,
-      body: onboarding?.moment ? `Se quiser, comece por ${onboarding.moment}.` : "Fale sem organizar antes.",
-      helper: "Toque para falar",
+      body: isContinuingExistingEntry
+        ? "A próxima fala entra ligada ao registro que você abriu."
+        : onboarding?.moment ? `Se quiser, comece por ${onboarding.moment}.` : "Fale sem organizar antes.",
+      helper: isContinuingExistingEntry ? "Toque para continuar" : "Toque para falar",
     },
     recording: {
       title: "Gravando",
@@ -1015,6 +1029,7 @@ export function Diario({
                 state={ORB_STATE[phase]}
                 onClick={onOrbClick}
                 decorative={phase === "saveDecision" || phase === "savedLog"}
+                ariaLabel={isContinuingExistingEntry ? "Toque para continuar o fio" : "Toque para falar"}
               />
             </div>
           )}

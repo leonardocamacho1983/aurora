@@ -54,6 +54,8 @@
 .emptyActions a,
 .softAction,
 .archiveHeader a,
+.fioAction,
+.fioPill,
 .bottomNav a,
 .mobileMoodRow a {
   color: inherit;
@@ -298,6 +300,35 @@
   font: 600 0.9rem/1 var(--font-sans);
 }
 
+.nowActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fioAction,
+.fioPill {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  color: rgba(240, 236, 247, 0.86);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(240, 236, 247, 0.12);
+  font: 800 0.78rem/1 var(--font-sans);
+}
+
+.fioAction {
+  padding: 0 13px;
+}
+
+.fioPill {
+  min-height: 30px;
+  padding: 0 10px;
+  color: rgba(196, 184, 238, 0.92);
+}
+
 .roundAction {
   width: 46px;
   height: 46px;
@@ -374,7 +405,8 @@
 }
 
 .weekCardMeta,
-.weekMood {
+.weekMood,
+.weekFooter {
   position: relative;
   z-index: 1;
   display: flex;
@@ -382,6 +414,10 @@
   gap: 9px;
   color: rgba(179, 173, 196, 0.78);
   font: 600 0.9rem/1.35 var(--font-sans);
+}
+
+.weekFooter {
+  justify-content: space-between;
 }
 
 .weekCardMeta {
@@ -592,6 +628,16 @@
 
 .archiveMeasure {
   justify-self: end;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  color: rgba(196, 184, 238, 0.92);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(240, 236, 247, 0.1);
+  text-decoration: none;
 }
 
 .empty,
