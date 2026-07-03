@@ -474,6 +474,13 @@ export function Diario({
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
 
   useEffect(() => {
+    const routeEntryMode = initialEntryId ? "continue" : initialEntryMode;
+    setActiveEntryId(initialEntryId ?? null);
+    setNextEntryMode(routeEntryMode);
+    recordingEntryModeRef.current = routeEntryMode;
+  }, [initialEntryId, initialEntryMode]);
+
+  useEffect(() => {
     trackProduct("product_diary_viewed", {
       source: "diary",
       has_onboarding_moment: Boolean(onboarding?.moment),
