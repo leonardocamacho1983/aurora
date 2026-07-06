@@ -3,6 +3,9 @@
 import type { CSSProperties, KeyboardEvent } from "react";
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
+import { BottomNav } from "@/components/product/BottomNav";
+import { trackAurora } from "@/lib/analytics/client";
+import type { FocusSignal } from "@/lib/mapa/focus";
 import styles from "./Timeline.module.css";
 
 export type MagazineThread = {
@@ -21,6 +24,7 @@ export type MagazinePiece = {
   href: string;
   continueHref: string;
   thread: MagazineThread | null;
+  focus: FocusSignal | null;
   mood?: string;
   moodColor: string;
   duration: string;
@@ -55,6 +59,27 @@ function ThreadChip({ thread }: { thread: MagazineThread }) {
     >
       <i aria-hidden="true" />
       Fio · {thread.title}
+    </Link>
+  );
+}
+
+function FocusChip({ focus }: { focus: FocusSignal }) {
+  return (
+    <Link
+      className={styles.focusChip}
+      href={`/mapa/${focus.key}`}
+      style={{ "--focus-color": focus.color } as CSSProperties}
+      onClick={(event) => {
+        event.stopPropagation();
+        trackAurora("product_mapa_focus_chip_clicked", {
+          source: "timeline",
+          surface: "timeline_card",
+          focus_key: focus.key,
+        });
+      }}
+    >
+      <i aria-hidden="true" />
+      {focus.label}
     </Link>
   );
 }
@@ -145,6 +170,7 @@ function FlipPiece({ piece, feature = false }: { piece: MagazinePiece; feature?:
               </>
             )}
             <div className={styles.chipRow}>
+              {piece.focus ? <FocusChip focus={piece.focus} /> : null}
               {piece.thread ? <ThreadChip thread={piece.thread} /> : null}
               <MoodPill piece={piece} />
             </div>
@@ -240,7 +266,8 @@ export default function TimelineMagazineClient({
           <Link href="/timeline" aria-current="page">
             Timeline
           </Link>
-          <Link href="/account">Conta</Link>
+          <Link href="/mapa">Mapa</Link>
+          <Link href="/account">Perfil</Link>
         </nav>
         <time>{generatedAtLabel}</time>
       </header>
@@ -292,6 +319,7 @@ export default function TimelineMagazineClient({
           <span>privado · só seu</span>
         </footer>
       </div>
+      <BottomNav active="timeline" />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { BottomNav } from "@/components/product/BottomNav";
 import { createClient } from "@/lib/supabase/server";
 import { getOnboardingContext } from "@/lib/onboarding/context";
 import { signOut } from "../login/actions";
@@ -60,6 +61,7 @@ export default async function AccountPage() {
           </button>
         </form>
       </section>
+      <BottomNav active="perfil" />
     </main>
   );
 }

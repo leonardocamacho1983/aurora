@@ -16,7 +16,11 @@ const ALLOWED_METADATA_KEYS = new Set([
   "error_class",
   "error_code",
   "fallback_saved",
+  "focus_confidence",
+  "focus_count",
+  "focus_key",
   "has_mood",
+  "has_focus",
   "intent",
   "language",
   "latency_bucket",
@@ -34,6 +38,7 @@ const ALLOWED_METADATA_KEYS = new Set([
   "total_latency_bucket",
   "status",
   "storage_path_present",
+  "surface",
   "transcript_length_bucket",
 ]);
 

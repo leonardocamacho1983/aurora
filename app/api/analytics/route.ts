@@ -54,6 +54,12 @@ const ALLOWED_EVENTS = new Set([
   "product_reflection_failed",
   "product_reflection_received",
   "product_crisis_resources_shown",
+  "product_mapa_viewed",
+  "product_mapa_focus_viewed",
+  "product_mapa_focus_card_clicked",
+  "product_mapa_focus_chip_clicked",
+  "product_mapa_entry_opened",
+  "product_focus_hide_clicked",
 ]);
 
 const ALLOWED_PROPERTY_KEYS = new Set([
@@ -119,6 +125,12 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   "language",
   "timezone",
   "is_mobile",
+  "surface",
+  "focus_key",
+  "focus_confidence",
+  "focus_count",
+  "entry_count",
+  "has_focus",
 ]);
 
 type AnalyticsBody = {

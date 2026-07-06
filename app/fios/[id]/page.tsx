@@ -4,6 +4,9 @@ import { and, asc, eq, isNotNull, or } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
+import { HideFocusButton } from "@/app/mapa/HideFocusButton";
+import { MapaTrackedLink } from "@/app/mapa/MapaAnalytics";
+import { focusSignalFromStored } from "@/lib/mapa/focus";
 import { renderProse } from "@/lib/render-prose";
 import styles from "./Fio.module.css";
 
@@ -36,6 +39,9 @@ type FioRow = {
   mood: string | null;
   entryMode: string;
   continuedFromEntryId: string | null;
+  focusKey: string | null;
+  focusConfidence: string | null;
+  focusHiddenAt: Date | null;
   createdAt: Date;
 };
 
@@ -174,6 +180,9 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
       mood: entries.mood,
       entryMode: entries.entryMode,
       continuedFromEntryId: entries.continuedFromEntryId,
+      focusKey: entries.focusKey,
+      focusConfidence: entries.focusConfidence,
+      focusHiddenAt: entries.focusHiddenAt,
       createdAt: entries.createdAt,
     })
     .from(entries)
@@ -264,6 +273,7 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
             {fioRows.map((row, index) => {
               const spoken = cleanText(row.transcript);
               const reflection = cleanText(row.reflection);
+              const focus = row.focusHiddenAt ? null : focusSignalFromStored(row.focusKey, row.focusConfidence);
               return (
                 <article
                   className={`${styles.piece} ${index === 0 ? styles.feature : styles.note}`}
@@ -291,7 +301,36 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
                         {row.entryMode === "continue" || row.continuedFromEntryId ? (
                           <span className={styles.linked}>continuação</span>
                         ) : null}
+                        {focus ? (
+                          <span className={styles.focusChip} style={{ "--focus-color": focus.color } as React.CSSProperties}>
+                            <i aria-hidden="true" />
+                            {focus.label}
+                          </span>
+                        ) : null}
                       </div>
+                      {focus ? (
+                        <div className={styles.focusActions}>
+                          <MapaTrackedLink
+                            className={styles.cBtn}
+                            eventName="product_mapa_focus_chip_clicked"
+                            eventProperties={{
+                              source: "fio",
+                              surface: "fio_entry",
+                              focus_key: focus.key,
+                              focus_confidence: row.focusConfidence,
+                            }}
+                            href={`/mapa/${focus.key}`}
+                          >
+                            Ver no Mapa
+                          </MapaTrackedLink>
+                          <HideFocusButton
+                            className={styles.ghostBtn}
+                            entryId={row.id}
+                            fallbackFocusKey={focus.key}
+                            surface="fio_entry"
+                          />
+                        </div>
+                      ) : null}
                       <div className={styles.reading}>
                         <span className={styles.label}>{reflection ? "A Aurora percebeu" : "Ainda sem devolutiva"}</span>
                         <div>

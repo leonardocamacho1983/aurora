@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents, waitlistProfile } from "@/lib/db/schema";
+import { focusDefinitions } from "@/lib/mapa/focus";
 import styles from "./Admin.module.css";
 
 export const runtime = "nodejs";
@@ -22,6 +23,9 @@ type AdminTab = "launch" | "access" | "product";
 
 const ALPHA_COHORT_START = "2026-06-19T00:00:00.000Z";
 const ALPHA_COHORT_LABEL = "desde 19/06/2026";
+const focusDefinitionMap = new Map<string, { label: string }>(
+  focusDefinitions().map((focus) => [focus.key, focus]),
+);
 
 const adminTabs: Array<{ id: AdminTab; label: string; description: string }> = [
   { id: "launch", label: "Launch", description: "waitlist, email e rede" },
@@ -250,6 +254,50 @@ type PmfDeclaredSummaryRow = {
   microNegative: number;
 };
 
+type MapaFocusSummaryRow = {
+  entries: number;
+  eligibleEntries: number;
+  classifiedEntries: number;
+  visibleFocusEntries: number;
+  hiddenFocusEntries: number;
+  noFocusEntries: number;
+  pendingFocusEntries: number;
+  stalePendingEntries: number;
+  usersWithFocus: number;
+  highConfidenceEntries: number;
+  mediumConfidenceEntries: number;
+  lowConfidenceEntries: number;
+  latestClassifiedAt: Date | string | null;
+};
+
+type MapaUsageRow = {
+  mapaViews: number;
+  mapaViewers: number;
+  focusViews: number;
+  focusCardClicks: number;
+  focusChipClicks: number;
+  entryOpens: number;
+  focusHiddenEvents: number;
+  focusHiddenPeople: number;
+};
+
+type MapaFocusDistributionRow = {
+  focusKey: string;
+  visibleEntries: number;
+  users: number;
+  hiddenEntries: number;
+  highConfidence: number;
+  mediumConfidence: number;
+  latestClassifiedAt: Date | string | null;
+};
+
+type MapaFocusCorrectionRow = {
+  focusKey: string;
+  total: number;
+  people: number;
+  latestAt: Date | string | null;
+};
+
 function rows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
   if (result && typeof result === "object" && "rows" in result) {
@@ -310,6 +358,10 @@ function compactNumber(value: number) {
   return new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
+function focusLabel(focusKey: string) {
+  return focusDefinitionMap.get(focusKey)?.label ?? focusKey;
+}
+
 function formatDay(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
@@ -363,6 +415,11 @@ const help = {
   intenseNoReturn: "Usuários com 3+ reflexões no primeiro dia e nenhum segundo dia de atividade observável.",
   productEvents: "Eventos de produto capturados em product_events desde 19/06/2026, sem conteúdo bruto.",
   safeQualitative: "Distribuições seguras de mood, risco e modo; não renderiza diário, transcrição, reflexão, áudio, nome ou email.",
+  mapaCoverage: "Entradas elegíveis são registros reais, sem risco alto, com transcrição ou reflexão. A cobertura mede quantas já passaram pelo classificador oficial.",
+  mapaVisibleFocus: "Entradas com foco high ou medium, não removidas pelo usuário, agrupadas por tema do Mapa.",
+  mapaUsage: "Eventos de uso do Mapa capturados em product_events. Mede navegação e abertura de focos, não conteúdo do diário.",
+  mapaCorrections: "Correções em que a pessoa removeu uma entrada do Mapa. Ajuda a medir ruído do classificador por foco.",
+  mapaBacklog: "Entradas elegíveis ainda sem focus_classified_at. Se cresce, indica backfill pendente, API ausente ou erro operacional.",
 } as const;
 
 function InfoTooltip({ text }: { text: string }) {
@@ -581,6 +638,78 @@ function AlphaUserTable({ rows: userRows, empty }: { rows: AlphaUserRow[]; empty
           ) : (
             <tr>
               <td colSpan={8}>{empty}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MapaFocusTable({ rows: focusRows }: { rows: MapaFocusDistributionRow[] }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Foco</th>
+            <th title="Entradas high/medium ainda visíveis no Mapa.">Visíveis</th>
+            <th title="Usuários únicos com esse foco visível.">Pessoas</th>
+            <th title="Entradas visíveis classificadas com confiança high.">High</th>
+            <th title="Entradas visíveis classificadas com confiança medium.">Medium</th>
+            <th title="Entradas desse foco removidas do Mapa.">Removidas</th>
+            <th>Último sinal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {focusRows.length ? (
+            focusRows.map((focus) => (
+              <tr key={focus.focusKey}>
+                <td>{focusLabel(focus.focusKey)}</td>
+                <td>{focus.visibleEntries}</td>
+                <td>{focus.users}</td>
+                <td>{focus.highConfidence}</td>
+                <td>{focus.mediumConfidence}</td>
+                <td>{focus.hiddenEntries}</td>
+                <td>{formatDate(focus.latestClassifiedAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={7}>Ainda não há focos visíveis na coorte.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MapaCorrectionsTable({ rows: correctionRows }: { rows: MapaFocusCorrectionRow[] }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Foco removido</th>
+            <th>Correções</th>
+            <th>Pessoas</th>
+            <th>Última correção</th>
+          </tr>
+        </thead>
+        <tbody>
+          {correctionRows.length ? (
+            correctionRows.map((row) => (
+              <tr key={row.focusKey}>
+                <td>{focusLabel(row.focusKey)}</td>
+                <td>{row.total}</td>
+                <td>{row.people}</td>
+                <td>{formatDate(row.latestAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4}>Nenhuma remoção de foco registrada ainda.</td>
             </tr>
           )}
         </tbody>
@@ -1535,6 +1664,216 @@ async function getDashboardData() {
     `),
   );
 
+  const [
+    mapaFocusSummaryRows,
+    mapaUsageRows,
+    mapaFocusDistributionRows,
+    mapaFocusCorrectionRows,
+  ] = await Promise.all([
+    db
+      .execute(sql`
+        with excluded_users as (
+          select id
+          from users
+          where lower(coalesce(email, '')) like '%test%'
+             or lower(coalesce(email, '')) like '%launchtest%'
+             or lower(coalesce(email, '')) like '%example.%'
+             or lower(coalesce(email, '')) like '%leonardocamacho%'
+        ),
+        cohort_users as (
+          select u.id
+          from users u
+          where not exists (select 1 from excluded_users x where x.id = u.id)
+            and (
+              u.created_at >= ${ALPHA_COHORT_START}
+              or exists (
+                select 1
+                from access_invites ai
+                where lower(ai.email) = lower(coalesce(u.email, ''))
+                  and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+              )
+              or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+              or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+            )
+        ),
+        scoped_entries as (
+          select e.*
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+        )
+        select
+          count(*)::int as "entries",
+          count(*) filter (
+            where coalesce(risk_level, 'none') <> 'high'
+              and (
+                nullif(trim(coalesce(transcript, '')), '') is not null
+                or nullif(trim(coalesce(reflection, '')), '') is not null
+              )
+          )::int as "eligibleEntries",
+          count(*) filter (where focus_classified_at is not null)::int as "classifiedEntries",
+          count(*) filter (
+            where focus_key is not null
+              and focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          )::int as "visibleFocusEntries",
+          count(*) filter (
+            where focus_key is not null
+              and focus_hidden_at is not null
+          )::int as "hiddenFocusEntries",
+          count(*) filter (
+            where focus_classified_at is not null
+              and (focus_key is null or focus_confidence = 'low')
+          )::int as "noFocusEntries",
+          count(*) filter (
+            where focus_classified_at is null
+              and coalesce(risk_level, 'none') <> 'high'
+              and (
+                nullif(trim(coalesce(transcript, '')), '') is not null
+                or nullif(trim(coalesce(reflection, '')), '') is not null
+              )
+          )::int as "pendingFocusEntries",
+          count(*) filter (
+            where focus_classified_at is null
+              and created_at < now() - interval '2 hours'
+              and coalesce(risk_level, 'none') <> 'high'
+              and (
+                nullif(trim(coalesce(transcript, '')), '') is not null
+                or nullif(trim(coalesce(reflection, '')), '') is not null
+              )
+          )::int as "stalePendingEntries",
+          count(distinct user_id) filter (
+            where focus_key is not null
+              and focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          )::int as "usersWithFocus",
+          count(*) filter (where focus_confidence = 'high')::int as "highConfidenceEntries",
+          count(*) filter (where focus_confidence = 'medium')::int as "mediumConfidenceEntries",
+          count(*) filter (where focus_confidence = 'low')::int as "lowConfidenceEntries",
+          max(focus_classified_at) as "latestClassifiedAt"
+        from scoped_entries
+      `)
+      .then((result) => rows<MapaFocusSummaryRow>(result)),
+    db
+      .execute(sql`
+        with real_product_events as (
+          select pe.*
+          from product_events pe
+          inner join users u on u.id = pe.user_id
+          where pe.created_at >= ${ALPHA_COHORT_START}
+            and lower(coalesce(u.email, '')) not like '%test%'
+            and lower(coalesce(u.email, '')) not like '%launchtest%'
+            and lower(coalesce(u.email, '')) not like '%example.%'
+            and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+        )
+        select
+          count(*) filter (where event_name = 'product_mapa_viewed')::int as "mapaViews",
+          count(distinct user_id) filter (where event_name = 'product_mapa_viewed')::int as "mapaViewers",
+          count(*) filter (where event_name = 'product_mapa_focus_viewed')::int as "focusViews",
+          count(*) filter (where event_name = 'product_mapa_focus_card_clicked')::int as "focusCardClicks",
+          count(*) filter (where event_name = 'product_mapa_focus_chip_clicked')::int as "focusChipClicks",
+          count(*) filter (where event_name = 'product_mapa_entry_opened')::int as "entryOpens",
+          count(*) filter (where event_name = 'product_focus_hidden')::int as "focusHiddenEvents",
+          count(distinct user_id) filter (where event_name = 'product_focus_hidden')::int as "focusHiddenPeople"
+        from real_product_events
+      `)
+      .then((result) => rows<MapaUsageRow>(result)),
+    db
+      .execute(sql`
+        with excluded_users as (
+          select id
+          from users
+          where lower(coalesce(email, '')) like '%test%'
+             or lower(coalesce(email, '')) like '%launchtest%'
+             or lower(coalesce(email, '')) like '%example.%'
+             or lower(coalesce(email, '')) like '%leonardocamacho%'
+        ),
+        cohort_users as (
+          select u.id
+          from users u
+          where not exists (select 1 from excluded_users x where x.id = u.id)
+            and (
+              u.created_at >= ${ALPHA_COHORT_START}
+              or exists (
+                select 1
+                from access_invites ai
+                where lower(ai.email) = lower(coalesce(u.email, ''))
+                  and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+              )
+              or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+              or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+            )
+        ),
+        scoped_entries as (
+          select e.*
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+        )
+        select
+          focus_key as "focusKey",
+          count(*) filter (
+            where focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          )::int as "visibleEntries",
+          count(distinct user_id) filter (
+            where focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          )::int as "users",
+          count(*) filter (where focus_hidden_at is not null)::int as "hiddenEntries",
+          count(*) filter (
+            where focus_confidence = 'high'
+              and focus_hidden_at is null
+          )::int as "highConfidence",
+          count(*) filter (
+            where focus_confidence = 'medium'
+              and focus_hidden_at is null
+          )::int as "mediumConfidence",
+          max(focus_classified_at) as "latestClassifiedAt"
+        from scoped_entries
+        where focus_key is not null
+        group by focus_key
+        order by
+          count(*) filter (
+            where focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          ) desc,
+          count(distinct user_id) filter (
+            where focus_confidence in ('high', 'medium')
+              and focus_hidden_at is null
+          ) desc,
+          focus_key asc
+      `)
+      .then((result) => rows<MapaFocusDistributionRow>(result)),
+    db
+      .execute(sql`
+        with real_product_events as (
+          select pe.*
+          from product_events pe
+          inner join users u on u.id = pe.user_id
+          where pe.created_at >= ${ALPHA_COHORT_START}
+            and lower(coalesce(u.email, '')) not like '%test%'
+            and lower(coalesce(u.email, '')) not like '%launchtest%'
+            and lower(coalesce(u.email, '')) not like '%example.%'
+            and lower(coalesce(u.email, '')) not like '%leonardocamacho%'
+        )
+        select
+          metadata->>'focus_key' as "focusKey",
+          count(*)::int as total,
+          count(distinct user_id)::int as people,
+          max(created_at) as "latestAt"
+        from real_product_events
+        where event_name = 'product_focus_hidden'
+          and nullif(metadata->>'focus_key', '') is not null
+        group by metadata->>'focus_key'
+        order by count(*) desc, metadata->>'focus_key' asc
+      `)
+      .then((result) => rows<MapaFocusCorrectionRow>(result)),
+  ]);
+
+  const [mapaFocusSummary] = mapaFocusSummaryRows;
+  const [mapaUsage] = mapaUsageRows;
+
   const [pmfDeclaredSummary] = rows<PmfDeclaredSummaryRow>(
     await db.execute(sql`
       with real_feedback as (
@@ -1885,6 +2224,55 @@ async function getDashboardData() {
     },
     alphaUsers,
     productEventBreakdown,
+    mapa: {
+      classifierConfigured: Boolean(process.env.ANTHROPIC_API_KEY?.trim()),
+      summary: {
+        entries: asNumber(mapaFocusSummary?.entries),
+        eligibleEntries: asNumber(mapaFocusSummary?.eligibleEntries),
+        classifiedEntries: asNumber(mapaFocusSummary?.classifiedEntries),
+        visibleFocusEntries: asNumber(mapaFocusSummary?.visibleFocusEntries),
+        hiddenFocusEntries: asNumber(mapaFocusSummary?.hiddenFocusEntries),
+        noFocusEntries: asNumber(mapaFocusSummary?.noFocusEntries),
+        pendingFocusEntries: asNumber(mapaFocusSummary?.pendingFocusEntries),
+        stalePendingEntries: asNumber(mapaFocusSummary?.stalePendingEntries),
+        usersWithFocus: asNumber(mapaFocusSummary?.usersWithFocus),
+        highConfidenceEntries: asNumber(mapaFocusSummary?.highConfidenceEntries),
+        mediumConfidenceEntries: asNumber(mapaFocusSummary?.mediumConfidenceEntries),
+        lowConfidenceEntries: asNumber(mapaFocusSummary?.lowConfidenceEntries),
+        latestClassifiedAt: mapaFocusSummary?.latestClassifiedAt ?? null,
+      },
+      usage: {
+        mapaViews: asNumber(mapaUsage?.mapaViews),
+        mapaViewers: asNumber(mapaUsage?.mapaViewers),
+        focusViews: asNumber(mapaUsage?.focusViews),
+        focusCardClicks: asNumber(mapaUsage?.focusCardClicks),
+        focusChipClicks: asNumber(mapaUsage?.focusChipClicks),
+        entryOpens: asNumber(mapaUsage?.entryOpens),
+        focusHiddenEvents: asNumber(mapaUsage?.focusHiddenEvents),
+        focusHiddenPeople: asNumber(mapaUsage?.focusHiddenPeople),
+      },
+      focusDistribution: mapaFocusDistributionRows.map((focus) => ({
+        focusKey: focus.focusKey,
+        visibleEntries: asNumber(focus.visibleEntries),
+        users: asNumber(focus.users),
+        hiddenEntries: asNumber(focus.hiddenEntries),
+        highConfidence: asNumber(focus.highConfidence),
+        mediumConfidence: asNumber(focus.mediumConfidence),
+        latestClassifiedAt: focus.latestClassifiedAt ?? null,
+      })),
+      focusBreakdown: mapaFocusDistributionRows
+        .filter((focus) => asNumber(focus.visibleEntries) > 0)
+        .map((focus) => ({
+          label: focusLabel(focus.focusKey),
+          total: asNumber(focus.visibleEntries),
+        })),
+      focusCorrections: mapaFocusCorrectionRows.map((row) => ({
+        focusKey: row.focusKey,
+        total: asNumber(row.total),
+        people: asNumber(row.people),
+        latestAt: row.latestAt ?? null,
+      })),
+    },
     pmfDeclared: {
       promptsShown: asNumber(pmfDeclaredSummary?.promptsShown),
       peoplePrompted: asNumber(pmfDeclaredSummary?.peoplePrompted),
@@ -1971,6 +2359,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const pmfLightTone = data.product.returningUsers > 0 ? "neutral" : "warn";
   const pmfDeclaredResponseRate = percent(data.pmfDeclared.answered, data.pmfDeclared.promptsShown);
   const pmfVeryDisappointedRate = percent(data.pmfDeclared.veryDisappointed, data.pmfDeclared.answered);
+  const mapaCoverageRate = percent(data.mapa.summary.classifiedEntries, data.mapa.summary.eligibleEntries);
+  const mapaVisibleFocusRate = percent(data.mapa.summary.visibleFocusEntries, data.mapa.summary.classifiedEntries);
+  const mapaHealthGood = data.mapa.classifierConfigured && data.mapa.summary.stalePendingEntries === 0;
   const returningUsers = data.alphaUsers.filter((user) => user.bucket === "retorno_real");
   const intenseNoReturnUsers = data.alphaUsers.filter((user) => user.bucket === "intenso_sem_retorno");
   const activatedLightUsers = data.alphaUsers.filter((user) => user.bucket === "ativado_leve");
@@ -2633,6 +3024,105 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 tone={data.product.intenseNoReturnUsers ? "warn" : "good"}
                 definition={help.intenseNoReturn}
               />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Mapa e Focos</h2>
+                <p>Observabilidade do classificador oficial, dos focos vivos e dos ajustes feitos pelas pessoas.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={mapaCoverageRate}
+                  label="Cobertura do classificador"
+                  note={`${data.mapa.summary.classifiedEntries}/${data.mapa.summary.eligibleEntries} entradas elegíveis`}
+                  tone={data.mapa.summary.pendingFocusEntries ? "warn" : "good"}
+                  definition={help.mapaCoverage}
+                />
+                <MetricCard
+                  value={compactNumber(data.mapa.summary.visibleFocusEntries)}
+                  label="Focos vivos"
+                  note={`${data.mapa.summary.usersWithFocus} pessoas com ao menos um foco`}
+                  tone={data.mapa.summary.visibleFocusEntries ? "good" : "neutral"}
+                  definition={help.mapaVisibleFocus}
+                />
+                <MetricCard
+                  value={compactNumber(data.mapa.usage.mapaViews)}
+                  label="Views do Mapa"
+                  note={`${data.mapa.usage.mapaViewers} pessoas, ${data.mapa.usage.focusViews} views de foco`}
+                  tone={data.mapa.usage.mapaViews ? "good" : "neutral"}
+                  definition={help.mapaUsage}
+                />
+                <MetricCard
+                  value={compactNumber(data.mapa.usage.focusHiddenEvents)}
+                  label="Correções salvas"
+                  note={`${data.mapa.usage.focusHiddenPeople} pessoas removeram foco`}
+                  tone={data.mapa.usage.focusHiddenEvents ? "warn" : "good"}
+                  definition={help.mapaCorrections}
+                />
+              </div>
+              <div className={styles.split}>
+                <BreakdownList title="Focos vivos" rows={data.mapa.focusBreakdown} definition={help.mapaVisibleFocus} />
+                <div className={styles.signalCard}>
+                  <h3 className={styles.cardTitle}>Saúde do Mapa</h3>
+                  <SignalRow
+                    label="Classificador oficial"
+                    value={data.mapa.classifierConfigured ? "configurado" : "sem chave"}
+                    note="Lê apenas presença de ANTHROPIC_API_KEY, sem expor valor"
+                    tone={data.mapa.classifierConfigured ? "good" : "warn"}
+                  />
+                  <SignalRow
+                    label="Backlog elegível"
+                    value={`${data.mapa.summary.pendingFocusEntries}`}
+                    note={`${data.mapa.summary.stalePendingEntries} pendentes há mais de 2h`}
+                    tone={data.mapa.summary.stalePendingEntries ? "warn" : "good"}
+                    definition={help.mapaBacklog}
+                  />
+                  <SignalRow
+                    label="Última classificação"
+                    value={data.mapa.summary.latestClassifiedAt ? formatDate(data.mapa.summary.latestClassifiedAt) : "sem sinal"}
+                    note={`${data.mapa.summary.noFocusEntries} entradas classificadas como sem foco`}
+                    tone={mapaHealthGood ? "good" : "warn"}
+                  />
+                  <SignalRow
+                    label="High / medium / low"
+                    value={`${data.mapa.summary.highConfidenceEntries}/${data.mapa.summary.mediumConfidenceEntries}/${data.mapa.summary.lowConfidenceEntries}`}
+                    note={`${mapaVisibleFocusRate} das classificadas viraram foco visível`}
+                    tone="neutral"
+                  />
+                  <SignalRow
+                    label="Cartões / chips"
+                    value={`${data.mapa.usage.focusCardClicks}/${data.mapa.usage.focusChipClicks}`}
+                    note="Acessos ao foco pelo Mapa e pela Timeline/Fio"
+                    tone={data.mapa.usage.focusCardClicks || data.mapa.usage.focusChipClicks ? "good" : "neutral"}
+                  />
+                  <SignalRow
+                    label="Entradas abertas"
+                    value={`${data.mapa.usage.entryOpens}`}
+                    note="Aberturas de registro a partir do Mapa"
+                    tone={data.mapa.usage.entryOpens ? "good" : "neutral"}
+                  />
+                </div>
+              </div>
+              <div className={styles.noteCard}>
+                O admin do Mapa mostra apenas contagens, focos, confiança, eventos de uso e correções. Não renderiza transcrição, reflexão, evidência textual, razão do foco, áudio, nome ou email.
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Distribuição dos focos</h2>
+                <p>Onde o Mapa está encontrando padrões recorrentes e onde o usuário está corrigindo o sinal.</p>
+              </div>
+              <MapaFocusTable rows={data.mapa.focusDistribution} />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Correções por foco</h2>
+                <p>Remoções salvas pelo usuário. Alto volume aqui é sinal de categoria ruidosa ou expectativa mal calibrada.</p>
+              </div>
+              <MapaCorrectionsTable rows={data.mapa.focusCorrections} />
             </section>
 
             <section className={styles.section}>

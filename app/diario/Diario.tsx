@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
+import { BottomNav } from "@/components/product/BottomNav";
 import { PmfPrompt } from "@/components/product/PmfPrompt";
 import {
   CrisisResources,
@@ -965,6 +966,7 @@ export function Diario({
   const canExpandReflection = Boolean(
     reflection && (reflection.length > 170 || reflection.trim().split(/\s+/).length > 24),
   );
+  const showBottomNav = phase === "idle" || phase === "savedLog";
   const stateCopy: Record<Exclude<Phase, "reflection">, { title: string; body: string; helper: string }> = {
     idle: {
       title: idleTitle,
@@ -1201,6 +1203,7 @@ export function Diario({
       {phase === "crisis" && crisis && (
         <CrisisResources data={crisis} onClose={resetToIdle} />
       )}
+      {showBottomNav ? <BottomNav active="diario" /> : null}
     </main>
   );
 }
