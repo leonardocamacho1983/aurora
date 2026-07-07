@@ -60,8 +60,8 @@ const ALLOWED_EVENTS = new Set([
   "product_mapa_focus_chip_clicked",
   "product_mapa_entry_opened",
   "product_focus_hide_clicked",
-  "product_focus_resolved",
-  "product_focus_reopened",
+  "product_focus_point_resolved",
+  "product_focus_point_reopened",
 ]);
 
 const ALLOWED_PROPERTY_KEYS = new Set([

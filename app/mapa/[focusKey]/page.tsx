@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/product/BottomNav";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { getFocusDefinition } from "@/lib/mapa/focus";
-import { reopenFocus, resolveFocus } from "../actions";
+import { reopenEntryFocus, resolveEntryFocus } from "../actions";
 import { HideFocusButton } from "../HideFocusButton";
 import { MapaTrackedLink, MapaViewTracker } from "../MapaAnalytics";
 import styles from "../Mapa.module.css";
@@ -37,7 +37,7 @@ export default async function FocusPage({
   searchParams,
 }: {
   params: Promise<{ focusKey: string }>;
-  searchParams?: Promise<{ ajustado?: string; encerrado?: string; reaberto?: string }>;
+  searchParams?: Promise<{ ajustado?: string; pontoResolvido?: string; pontoReaberto?: string }>;
 }) {
   const { focusKey } = await params;
   const query = await searchParams;
@@ -55,7 +55,7 @@ export default async function FocusPage({
     redirect("/login");
   }
 
-  const [rows, statsRows] = await Promise.all([
+  const [rows, resolvedRows, statsRows] = await Promise.all([
     db
       .select({
         id: entries.id,
@@ -78,6 +78,28 @@ export default async function FocusPage({
       )
       .orderBy(desc(entries.createdAt))
       .limit(40),
+    db
+      .select({
+        id: entries.id,
+        transcript: entries.transcript,
+        reflection: entries.reflection,
+        mood: entries.mood,
+        focusConfidence: entries.focusConfidence,
+        focusReason: entries.focusReason,
+        createdAt: entries.createdAt,
+      })
+      .from(entries)
+      .where(
+        and(
+          eq(entries.userId, user.id),
+          eq(entries.focusKey, focus.key),
+          isNull(entries.focusHiddenAt),
+          or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
+          isNotNull(entries.focusResolvedAt),
+        ),
+      )
+      .orderBy(desc(entries.createdAt))
+      .limit(20),
     db.execute<{ resolvedCount: number; latestResolvedAt: Date | string | null }>(sql`
       select
         count(*) filter (where focus_resolved_at is not null)::int as "resolvedCount",
@@ -121,22 +143,10 @@ export default async function FocusPage({
               <i style={{ background: focus.color }} aria-hidden="true" />
               aparece na Timeline e no Mapa
             </span>
-            {resolvedCount ? <span className={styles.chip}>encerrado em {resolvedCount} entrada(s)</span> : null}
-          </div>
-          <div className={styles.heroActions}>
-            {rows.length ? (
-              <form action={resolveFocus.bind(null, { focusKey: focus.key })}>
-                <button className={styles.button} type="submit">
-                  Encerrar por agora
-                </button>
-              </form>
-            ) : null}
             {resolvedCount ? (
-              <form action={reopenFocus.bind(null, { focusKey: focus.key })}>
-                <button className={styles.ghostButton} type="submit">
-                  Reabrir foco
-                </button>
-              </form>
+              <span className={styles.chip}>
+                {resolvedCount} {resolvedCount === 1 ? "ponto resolvido" : "pontos resolvidos"}
+              </span>
             ) : null}
           </div>
         </section>
@@ -144,11 +154,11 @@ export default async function FocusPage({
         <section className={styles.section} aria-labelledby="entradas-do-foco">
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle} id="entradas-do-foco">
-              Entradas com este sinal
+              Pontos vivos neste foco
             </h2>
             {query?.ajustado === "1" ? <p>Pronto. Esse sinal saiu do Mapa.</p> : null}
-            {query?.encerrado === "1" ? <p>Pronto. Esse foco ficou encerrado por agora.</p> : null}
-            {query?.reaberto === "1" ? <p>Pronto. Esse foco voltou para os focos vivos.</p> : null}
+            {query?.pontoResolvido === "1" ? <p>Pronto. Esse ponto ficou resolvido por agora.</p> : null}
+            {query?.pontoReaberto === "1" ? <p>Pronto. Esse ponto voltou para os pontos vivos.</p> : null}
           </div>
           {rows.length ? (
             <div className={styles.entryList}>
@@ -188,6 +198,11 @@ export default async function FocusPage({
                     >
                       Abrir fio
                     </MapaTrackedLink>
+                    <form action={resolveEntryFocus.bind(null, { entryId: row.id, focusKey: focus.key })}>
+                      <button className={styles.ghostButton} type="submit">
+                        Resolver ponto
+                      </button>
+                    </form>
                     <HideFocusButton
                       className={styles.ghostButton}
                       entryId={row.id}
@@ -201,14 +216,7 @@ export default async function FocusPage({
           ) : (
             <article className={styles.card}>
               {resolvedCount ? (
-                <>
-                  <p>Este foco está encerrado por agora. O histórico segue guardado; ele só não ocupa os focos vivos.</p>
-                  <form action={reopenFocus.bind(null, { focusKey: focus.key })}>
-                    <button className={styles.button} type="submit">
-                      Reabrir foco
-                    </button>
-                  </form>
-                </>
+                <p>Não há pontos vivos neste foco agora. Os pontos resolvidos seguem guardados abaixo.</p>
               ) : (
                 <>
                   <p>Nenhuma entrada visível neste foco agora. Quando um novo sinal fizer sentido, ele aparece aqui.</p>
@@ -220,6 +228,63 @@ export default async function FocusPage({
             </article>
           )}
         </section>
+
+        {resolvedRows.length ? (
+          <section className={styles.section} aria-labelledby="pontos-resolvidos">
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle} id="pontos-resolvidos">
+                Pontos resolvidos por agora
+              </h2>
+              <p>Esses pontos não aparecem como vivos, mas continuam no histórico e podem voltar se fizer sentido.</p>
+            </div>
+            <div className={styles.entryList}>
+              {resolvedRows.map((row) => (
+                <article className={styles.entryCard} key={row.id}>
+                  <div className={styles.entryMeta}>
+                    <span>{dateLabel(row.createdAt)}</span>
+                    <span>resolvido por agora</span>
+                  </div>
+                  <MapaTrackedLink
+                    className={styles.entryLink}
+                    eventName="product_mapa_entry_opened"
+                    eventProperties={{
+                      source: "mapa",
+                      surface: "mapa_focus_resolved",
+                      focus_key: focus.key,
+                      focus_confidence: row.focusConfidence,
+                    }}
+                    href={`/fios/${row.id}`}
+                  >
+                    <p className={styles.entryExcerpt}>
+                      {excerpt(row.transcript ?? row.reflection) || "Registro guardado."}
+                    </p>
+                  </MapaTrackedLink>
+                  {row.focusReason ? <p className={styles.entryReason}>{row.focusReason}</p> : null}
+                  <div className={styles.entryActions}>
+                    <MapaTrackedLink
+                      className={styles.button}
+                      eventName="product_mapa_entry_opened"
+                      eventProperties={{
+                        source: "mapa",
+                        surface: "mapa_focus_resolved_button",
+                        focus_key: focus.key,
+                        focus_confidence: row.focusConfidence,
+                      }}
+                      href={`/fios/${row.id}`}
+                    >
+                      Abrir fio
+                    </MapaTrackedLink>
+                    <form action={reopenEntryFocus.bind(null, { entryId: row.id, focusKey: focus.key })}>
+                      <button className={styles.ghostButton} type="submit">
+                        Reabrir ponto
+                      </button>
+                    </form>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <BottomNav active="mapa" />

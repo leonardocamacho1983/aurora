@@ -12,10 +12,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function countLabel(count: number, resolvedCount: number) {
-  if (count === 0 && resolvedCount > 0) return "encerrado por agora";
-  if (count === 0) return "sem entradas";
-  if (count === 1) return "1 entrada";
-  return `${count} entradas`;
+  if (count === 0 && resolvedCount > 0) return "sem pontos vivos";
+  if (count === 0) return "sem pontos";
+  if (count === 1) return "1 ponto vivo";
+  return `${count} pontos vivos`;
 }
 
 export default async function MapaPage() {

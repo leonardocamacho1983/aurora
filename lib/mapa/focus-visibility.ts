@@ -24,11 +24,13 @@ export type ResolveFocusResult =
   | {
       status: "resolved";
       focusKey: FocusKey;
+      focusConfidence: string | null;
       entryCount: number;
     }
   | {
       status: "already_resolved";
       focusKey: FocusKey;
+      focusConfidence: string | null;
       entryCount: number;
     }
   | {
@@ -41,6 +43,7 @@ export type ReopenFocusResult =
   | {
       status: "reopened";
       focusKey: FocusKey;
+      focusConfidence: string | null;
       entryCount: number;
     }
   | {
@@ -146,6 +149,7 @@ export async function resolveEntryFocusByEntryIdForUser({
     return {
       status: "already_resolved",
       focusKey: focus.key,
+      focusConfidence: entry.focusConfidence,
       entryCount: 1,
     };
   }
@@ -175,99 +179,50 @@ export async function resolveEntryFocusByEntryIdForUser({
   return {
     status: "resolved",
     focusKey: focus.key,
+    focusConfidence: entry.focusConfidence,
     entryCount: 1,
   };
 }
 
-export async function resolveFocusForUser({
+export async function reopenEntryFocusByEntryIdForUser({
   userId,
-  focusKey,
-  resolvedAt = new Date(),
+  entryId,
 }: {
   userId: string;
-  focusKey: string;
-  resolvedAt?: Date;
-}): Promise<ResolveFocusResult> {
-  const focus = getFocusDefinition(focusKey);
-  if (!focus) {
-    return {
-      status: "not_resolved",
-      focusKey: null,
-      entryCount: 0,
-    };
-  }
-
-  const updated = await db
-    .update(entries)
-    .set({ focusResolvedAt: resolvedAt })
-    .where(
-      and(
-        eq(entries.userId, userId),
-        eq(entries.focusKey, focus.key),
-        isNull(entries.focusHiddenAt),
-        isNull(entries.focusResolvedAt),
-        or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
-      ),
-    )
-    .returning({ id: entries.id });
-
-  if (!updated.length) {
-    const [alreadyResolved] = await db
-      .select({ id: entries.id })
-      .from(entries)
-      .where(
-        and(
-          eq(entries.userId, userId),
-          eq(entries.focusKey, focus.key),
-          isNull(entries.focusHiddenAt),
-          or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
-        ),
-      )
-      .limit(1);
-
-    if (alreadyResolved) {
-      return {
-        status: "already_resolved",
-        focusKey: focus.key,
-        entryCount: 1,
-      };
-    }
-
-    return {
-      status: "not_resolved",
-      focusKey: focus.key,
-      entryCount: 0,
-    };
-  }
-
-  return {
-    status: "resolved",
-    focusKey: focus.key,
-    entryCount: updated.length,
-  };
-}
-
-export async function reopenFocusForUser({
-  userId,
-  focusKey,
-}: {
-  userId: string;
-  focusKey: string;
+  entryId: string;
 }): Promise<ReopenFocusResult> {
-  const focus = getFocusDefinition(focusKey);
-  if (!focus) {
+  const [entry] = await db
+    .select({
+      focusKey: entries.focusKey,
+      focusConfidence: entries.focusConfidence,
+      focusHiddenAt: entries.focusHiddenAt,
+      focusResolvedAt: entries.focusResolvedAt,
+    })
+    .from(entries)
+    .where(and(eq(entries.id, entryId), eq(entries.userId, userId)))
+    .limit(1);
+
+  const focus = getFocusDefinition(entry?.focusKey ?? "");
+  if (
+    !entry ||
+    !focus ||
+    entry.focusHiddenAt ||
+    !entry.focusResolvedAt ||
+    (entry.focusConfidence !== "high" && entry.focusConfidence !== "medium")
+  ) {
     return {
       status: "not_reopened",
-      focusKey: null,
+      focusKey: focus?.key ?? null,
       entryCount: 0,
     };
   }
 
-  const updated = await db
+  const [updated] = await db
     .update(entries)
     .set({ focusResolvedAt: null })
     .where(
       and(
+        eq(entries.id, entryId),
         eq(entries.userId, userId),
         eq(entries.focusKey, focus.key),
         isNull(entries.focusHiddenAt),
@@ -275,9 +230,9 @@ export async function reopenFocusForUser({
         or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
       ),
     )
-    .returning({ id: entries.id });
+    .returning({ focusConfidence: entries.focusConfidence });
 
-  if (!updated.length) {
+  if (!updated) {
     return {
       status: "not_reopened",
       focusKey: focus.key,
@@ -288,7 +243,8 @@ export async function reopenFocusForUser({
   return {
     status: "reopened",
     focusKey: focus.key,
-    entryCount: updated.length,
+    focusConfidence: updated.focusConfidence,
+    entryCount: 1,
   };
 }
 

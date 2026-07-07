@@ -260,7 +260,7 @@ type MapaFocusSummaryRow = {
   classifiedEntries: number;
   visibleFocusEntries: number;
   hiddenFocusEntries: number;
-  resolvedFocusEntries: number;
+  resolvedPointEntries: number;
   noFocusEntries: number;
   pendingFocusEntries: number;
   stalePendingEntries: number;
@@ -280,9 +280,9 @@ type MapaUsageRow = {
   entryOpens: number;
   focusHiddenEvents: number;
   focusHiddenPeople: number;
-  focusResolvedEvents: number;
-  focusResolvedPeople: number;
-  focusReopenedEvents: number;
+  focusPointResolvedEvents: number;
+  focusPointResolvedPeople: number;
+  focusPointReopenedEvents: number;
 };
 
 type MapaFocusDistributionRow = {
@@ -421,7 +421,7 @@ const help = {
   productEvents: "Eventos de produto capturados em product_events desde 19/06/2026, sem conteúdo bruto.",
   safeQualitative: "Distribuições seguras de mood, risco e modo; não renderiza diário, transcrição, reflexão, áudio, nome ou email.",
   mapaCoverage: "Entradas elegíveis são registros reais, sem risco alto, com transcrição ou reflexão. A cobertura mede quantas já passaram pelo classificador oficial.",
-  mapaVisibleFocus: "Entradas com foco high ou medium, não removidas e não encerradas pelo usuário, agrupadas por tema do Mapa.",
+  mapaVisibleFocus: "Entradas com foco high ou medium, não removidas e sem ponto resolvido pelo usuário, agrupadas por tema do Mapa.",
   mapaUsage: "Eventos de uso do Mapa capturados em product_events. Mede navegação e abertura de focos, não conteúdo do diário.",
   mapaCorrections: "Correções em que a pessoa removeu uma entrada do Mapa. Ajuda a medir ruído do classificador por foco.",
   mapaBacklog: "Entradas elegíveis ainda sem focus_classified_at. Se cresce, indica backfill pendente, API ausente ou erro operacional.",
@@ -663,7 +663,7 @@ function MapaFocusTable({ rows: focusRows }: { rows: MapaFocusDistributionRow[] 
             <th title="Entradas visíveis classificadas com confiança high.">High</th>
             <th title="Entradas visíveis classificadas com confiança medium.">Medium</th>
             <th title="Entradas desse foco removidas do Mapa.">Removidas</th>
-            <th title="Entradas corretas, mas encerradas por agora.">Encerradas</th>
+            <th title="Pontos corretos, mas resolvidos por agora.">Resolvidos</th>
             <th>Último sinal</th>
           </tr>
         </thead>
@@ -1734,7 +1734,7 @@ async function getDashboardData() {
               and focus_confidence in ('high', 'medium')
               and focus_hidden_at is null
               and focus_resolved_at is not null
-          )::int as "resolvedFocusEntries",
+          )::int as "resolvedPointEntries",
           count(*) filter (
             where focus_classified_at is not null
               and (focus_key is null or focus_confidence = 'low')
@@ -1790,9 +1790,9 @@ async function getDashboardData() {
           count(*) filter (where event_name = 'product_mapa_entry_opened')::int as "entryOpens",
           count(*) filter (where event_name = 'product_focus_hidden')::int as "focusHiddenEvents",
           count(distinct user_id) filter (where event_name = 'product_focus_hidden')::int as "focusHiddenPeople",
-          count(*) filter (where event_name = 'product_focus_resolved')::int as "focusResolvedEvents",
-          count(distinct user_id) filter (where event_name = 'product_focus_resolved')::int as "focusResolvedPeople",
-          count(*) filter (where event_name = 'product_focus_reopened')::int as "focusReopenedEvents"
+          count(*) filter (where event_name = 'product_focus_point_resolved')::int as "focusPointResolvedEvents",
+          count(distinct user_id) filter (where event_name = 'product_focus_point_resolved')::int as "focusPointResolvedPeople",
+          count(*) filter (where event_name = 'product_focus_point_reopened')::int as "focusPointReopenedEvents"
         from real_product_events
       `)
       .then((result) => rows<MapaUsageRow>(result)),
@@ -2261,7 +2261,7 @@ async function getDashboardData() {
         classifiedEntries: asNumber(mapaFocusSummary?.classifiedEntries),
         visibleFocusEntries: asNumber(mapaFocusSummary?.visibleFocusEntries),
         hiddenFocusEntries: asNumber(mapaFocusSummary?.hiddenFocusEntries),
-        resolvedFocusEntries: asNumber(mapaFocusSummary?.resolvedFocusEntries),
+        resolvedPointEntries: asNumber(mapaFocusSummary?.resolvedPointEntries),
         noFocusEntries: asNumber(mapaFocusSummary?.noFocusEntries),
         pendingFocusEntries: asNumber(mapaFocusSummary?.pendingFocusEntries),
         stalePendingEntries: asNumber(mapaFocusSummary?.stalePendingEntries),
@@ -2280,9 +2280,9 @@ async function getDashboardData() {
         entryOpens: asNumber(mapaUsage?.entryOpens),
         focusHiddenEvents: asNumber(mapaUsage?.focusHiddenEvents),
         focusHiddenPeople: asNumber(mapaUsage?.focusHiddenPeople),
-        focusResolvedEvents: asNumber(mapaUsage?.focusResolvedEvents),
-        focusResolvedPeople: asNumber(mapaUsage?.focusResolvedPeople),
-        focusReopenedEvents: asNumber(mapaUsage?.focusReopenedEvents),
+        focusPointResolvedEvents: asNumber(mapaUsage?.focusPointResolvedEvents),
+        focusPointResolvedPeople: asNumber(mapaUsage?.focusPointResolvedPeople),
+        focusPointReopenedEvents: asNumber(mapaUsage?.focusPointReopenedEvents),
       },
       focusDistribution: mapaFocusDistributionRows.map((focus) => ({
         focusKey: focus.focusKey,
@@ -3095,10 +3095,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   definition={help.mapaCorrections}
                 />
                 <MetricCard
-                  value={compactNumber(data.mapa.summary.resolvedFocusEntries)}
-                  label="Encerrados por agora"
-                  note={`${data.mapa.usage.focusResolvedPeople} pessoas encerraram foco`}
-                  tone={data.mapa.summary.resolvedFocusEntries ? "neutral" : "good"}
+                  value={compactNumber(data.mapa.summary.resolvedPointEntries)}
+                  label="Pontos resolvidos"
+                  note={`${data.mapa.usage.focusPointResolvedPeople} pessoas resolveram ponto`}
+                  tone={data.mapa.summary.resolvedPointEntries ? "neutral" : "good"}
                   definition={help.mapaVisibleFocus}
                 />
               </div>
@@ -3132,10 +3132,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                     tone="neutral"
                   />
                   <SignalRow
-                    label="Encerrados / reabertos"
-                    value={`${data.mapa.usage.focusResolvedEvents}/${data.mapa.usage.focusReopenedEvents}`}
-                    note={`${data.mapa.summary.resolvedFocusEntries} entradas fora dos focos vivos por encerramento`}
-                    tone={data.mapa.usage.focusResolvedEvents ? "neutral" : "good"}
+                    label="Resolvidos / reabertos"
+                    value={`${data.mapa.usage.focusPointResolvedEvents}/${data.mapa.usage.focusPointReopenedEvents}`}
+                    note={`${data.mapa.summary.resolvedPointEntries} pontos fora dos focos vivos por resolução`}
+                    tone={data.mapa.usage.focusPointResolvedEvents ? "neutral" : "good"}
                   />
                   <SignalRow
                     label="Cartões / chips"
@@ -3152,14 +3152,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 </div>
               </div>
               <div className={styles.noteCard}>
-                O admin do Mapa mostra apenas contagens, focos, confiança, eventos de uso, correções e encerramentos. Não renderiza transcrição, reflexão, evidência textual, razão do foco, áudio, nome ou email.
+                O admin do Mapa mostra apenas contagens, focos, confiança, eventos de uso, correções e pontos resolvidos. Não renderiza transcrição, reflexão, evidência textual, razão do foco, áudio, nome ou email.
               </div>
             </section>
 
             <section className={styles.section}>
               <div className={styles.sectionHeader}>
                 <h2>Distribuição dos focos</h2>
-                <p>Onde o Mapa está encontrando padrões recorrentes, onde o usuário está corrigindo e o que foi encerrado por agora.</p>
+                <p>Onde o Mapa está encontrando padrões recorrentes, onde o usuário está corrigindo e quais pontos foram resolvidos por agora.</p>
               </div>
               <MapaFocusTable rows={data.mapa.focusDistribution} />
             </section>

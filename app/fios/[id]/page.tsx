@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { HideFocusButton } from "@/app/mapa/HideFocusButton";
 import { MapaTrackedLink } from "@/app/mapa/MapaAnalytics";
+import { resolveEntryFocus } from "@/app/mapa/actions";
 import { liveFocusSignalFromStored } from "@/lib/mapa/focus";
 import { renderProse } from "@/lib/render-prose";
 import styles from "./Fio.module.css";
@@ -330,6 +331,11 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
                           >
                             Ver no Mapa
                           </MapaTrackedLink>
+                          <form action={resolveEntryFocus.bind(null, { entryId: row.id, focusKey: focus.key })}>
+                            <button className={styles.ghostBtn} type="submit">
+                              Resolver ponto
+                            </button>
+                          </form>
                           <HideFocusButton
                             className={styles.ghostBtn}
                             entryId={row.id}
