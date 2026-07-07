@@ -3,7 +3,7 @@ import { and, desc, eq, isNotNull, or } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
-import { focusSignalFromStored } from "@/lib/mapa/focus";
+import { liveFocusSignalFromStored } from "@/lib/mapa/focus";
 import TimelineMagazineClient, {
   type MagazineDayGroup,
   type MagazinePiece,
@@ -23,6 +23,7 @@ type EntryRow = {
   focusKey: string | null;
   focusConfidence: string | null;
   focusHiddenAt: Date | null;
+  focusResolvedAt: Date | null;
   createdAt: Date;
 };
 
@@ -178,7 +179,12 @@ function pieceFromRow(
     href: `/fios/${row.id}`,
     continueHref: `/diario?continueEntryId=${row.id}&source=timeline`,
     thread,
-    focus: row.focusHiddenAt ? null : focusSignalFromStored(row.focusKey, row.focusConfidence),
+    focus: liveFocusSignalFromStored({
+      focusKey: row.focusKey,
+      confidence: row.focusConfidence,
+      hiddenAt: row.focusHiddenAt,
+      resolvedAt: row.focusResolvedAt,
+    }),
     mood: row.mood ?? undefined,
     moodColor: MOOD_COLOR[row.mood ?? ""] ?? "var(--mood-neutro)",
     duration: durationFrom(row),
@@ -247,6 +253,7 @@ export default async function TimelinePage() {
       focusKey: entries.focusKey,
       focusConfidence: entries.focusConfidence,
       focusHiddenAt: entries.focusHiddenAt,
+      focusResolvedAt: entries.focusResolvedAt,
       createdAt: entries.createdAt,
     })
     .from(entries)

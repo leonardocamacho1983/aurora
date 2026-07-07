@@ -71,6 +71,22 @@ describe("mapa official focus classifier", () => {
     });
   });
 
+  it("keeps returned reasons inside the product storage limit", async () => {
+    const result = await classifyEntryFocus(
+      { transcript: "Estou cansado e tentando regular meu corpo antes de dormir." },
+      {
+        generate: async () => ({
+          focus: "sono-descanso",
+          confidence: "high",
+          reason: "sono, descanso e regulação aparecem como tema central do registro".repeat(3),
+          evidence: ["sono", "regulação"],
+        }),
+      },
+    );
+
+    expect(result.reason).toHaveLength(MAPA_FOCUS_REASON_STORAGE_MAX_LENGTH);
+  });
+
   it("hides low-confidence non-none classifications from the product signal", async () => {
     const result = await classifyEntryFocus(
       { transcript: "Pensei no tempo hoje." },

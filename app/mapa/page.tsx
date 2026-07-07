@@ -11,7 +11,8 @@ import styles from "./Mapa.module.css";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function countLabel(count: number) {
+function countLabel(count: number, resolvedCount: number) {
+  if (count === 0 && resolvedCount > 0) return "encerrado por agora";
   if (count === 0) return "sem entradas";
   if (count === 1) return "1 entrada";
   return `${count} entradas`;
@@ -28,8 +29,11 @@ export default async function MapaPage() {
   }
 
   const focuses = focusDefinitions();
-  const rows = await db.execute<{ focusKey: string; count: number }>(sql`
-    select focus_key as "focusKey", count(*)::int as count
+  const rows = await db.execute<{ focusKey: string; count: number; resolvedCount: number }>(sql`
+    select
+      focus_key as "focusKey",
+      count(*) filter (where focus_resolved_at is null)::int as count,
+      count(*) filter (where focus_resolved_at is not null)::int as "resolvedCount"
     from entries
     where user_id = ${user.id}::uuid
       and focus_key is not null
@@ -38,6 +42,7 @@ export default async function MapaPage() {
     group by focus_key
   `);
   const counts = new Map(rows.map((row) => [row.focusKey, Number(row.count)]));
+  const resolvedCounts = new Map(rows.map((row) => [row.focusKey, Number(row.resolvedCount)]));
   const focusCount = focuses.filter((focus) => (counts.get(focus.key) ?? 0) > 0).length;
   const entryCount = [...counts.values()].reduce((total, count) => total + count, 0);
 
@@ -78,6 +83,7 @@ export default async function MapaPage() {
           <div className={styles.grid}>
             {focuses.map((focus) => {
               const count = counts.get(focus.key) ?? 0;
+              const resolvedCount = resolvedCounts.get(focus.key) ?? 0;
 
               return (
                 <MapaTrackedLink
@@ -95,7 +101,7 @@ export default async function MapaPage() {
                 >
                   <div className={styles.focusHead}>
                     <h3 className={styles.focusTitle}>{focus.label}</h3>
-                    <span className={styles.meta}>{countLabel(count)}</span>
+                    <span className={styles.meta}>{countLabel(count, resolvedCount)}</span>
                   </div>
                   <p>{focus.description}</p>
                   <span className={styles.chip}>

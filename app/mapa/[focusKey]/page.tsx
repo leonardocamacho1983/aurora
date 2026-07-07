@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/product/BottomNav";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { getFocusDefinition } from "@/lib/mapa/focus";
+import { reopenFocus, resolveFocus } from "../actions";
 import { HideFocusButton } from "../HideFocusButton";
 import { MapaTrackedLink, MapaViewTracker } from "../MapaAnalytics";
 import styles from "../Mapa.module.css";
@@ -36,7 +37,7 @@ export default async function FocusPage({
   searchParams,
 }: {
   params: Promise<{ focusKey: string }>;
-  searchParams?: Promise<{ ajustado?: string }>;
+  searchParams?: Promise<{ ajustado?: string; encerrado?: string; reaberto?: string }>;
 }) {
   const { focusKey } = await params;
   const query = await searchParams;
@@ -54,27 +55,41 @@ export default async function FocusPage({
     redirect("/login");
   }
 
-  const rows = await db
-    .select({
-      id: entries.id,
-      transcript: entries.transcript,
-      reflection: entries.reflection,
-      mood: entries.mood,
-      focusConfidence: entries.focusConfidence,
-      focusReason: entries.focusReason,
-      createdAt: entries.createdAt,
-    })
-    .from(entries)
-    .where(
-      and(
-        eq(entries.userId, user.id),
-        eq(entries.focusKey, focus.key),
-        isNull(entries.focusHiddenAt),
-        or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
-      ),
-    )
-    .orderBy(desc(entries.createdAt))
-    .limit(40);
+  const [rows, statsRows] = await Promise.all([
+    db
+      .select({
+        id: entries.id,
+        transcript: entries.transcript,
+        reflection: entries.reflection,
+        mood: entries.mood,
+        focusConfidence: entries.focusConfidence,
+        focusReason: entries.focusReason,
+        createdAt: entries.createdAt,
+      })
+      .from(entries)
+      .where(
+        and(
+          eq(entries.userId, user.id),
+          eq(entries.focusKey, focus.key),
+          isNull(entries.focusHiddenAt),
+          isNull(entries.focusResolvedAt),
+          or(eq(entries.focusConfidence, "high"), eq(entries.focusConfidence, "medium")),
+        ),
+      )
+      .orderBy(desc(entries.createdAt))
+      .limit(40),
+    db.execute<{ resolvedCount: number; latestResolvedAt: Date | string | null }>(sql`
+      select
+        count(*) filter (where focus_resolved_at is not null)::int as "resolvedCount",
+        max(focus_resolved_at) as "latestResolvedAt"
+      from entries
+      where user_id = ${user.id}::uuid
+        and focus_key = ${focus.key}
+        and focus_confidence in ('high', 'medium')
+        and focus_hidden_at is null
+    `),
+  ]);
+  const resolvedCount = Number(statsRows[0]?.resolvedCount ?? 0);
 
   return (
     <main className={styles.stage}>
@@ -106,6 +121,23 @@ export default async function FocusPage({
               <i style={{ background: focus.color }} aria-hidden="true" />
               aparece na Timeline e no Mapa
             </span>
+            {resolvedCount ? <span className={styles.chip}>encerrado em {resolvedCount} entrada(s)</span> : null}
+          </div>
+          <div className={styles.heroActions}>
+            {rows.length ? (
+              <form action={resolveFocus.bind(null, { focusKey: focus.key })}>
+                <button className={styles.button} type="submit">
+                  Encerrar por agora
+                </button>
+              </form>
+            ) : null}
+            {resolvedCount ? (
+              <form action={reopenFocus.bind(null, { focusKey: focus.key })}>
+                <button className={styles.ghostButton} type="submit">
+                  Reabrir foco
+                </button>
+              </form>
+            ) : null}
           </div>
         </section>
 
@@ -115,6 +147,8 @@ export default async function FocusPage({
               Entradas com este sinal
             </h2>
             {query?.ajustado === "1" ? <p>Pronto. Esse sinal saiu do Mapa.</p> : null}
+            {query?.encerrado === "1" ? <p>Pronto. Esse foco ficou encerrado por agora.</p> : null}
+            {query?.reaberto === "1" ? <p>Pronto. Esse foco voltou para os focos vivos.</p> : null}
           </div>
           {rows.length ? (
             <div className={styles.entryList}>
@@ -166,10 +200,23 @@ export default async function FocusPage({
             </div>
           ) : (
             <article className={styles.card}>
-              <p>Nenhuma entrada visível neste foco agora. Quando um novo sinal fizer sentido, ele aparece aqui.</p>
-              <Link className={styles.button} href="/timeline">
-                Voltar à Timeline
-              </Link>
+              {resolvedCount ? (
+                <>
+                  <p>Este foco está encerrado por agora. O histórico segue guardado; ele só não ocupa os focos vivos.</p>
+                  <form action={reopenFocus.bind(null, { focusKey: focus.key })}>
+                    <button className={styles.button} type="submit">
+                      Reabrir foco
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <p>Nenhuma entrada visível neste foco agora. Quando um novo sinal fizer sentido, ele aparece aqui.</p>
+                  <Link className={styles.button} href="/timeline">
+                    Voltar à Timeline
+                  </Link>
+                </>
+              )}
             </article>
           )}
         </section>

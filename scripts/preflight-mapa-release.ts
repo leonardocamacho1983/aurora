@@ -12,6 +12,7 @@ const expectedEntryColumns = [
   "focus_hidden_at",
   "focus_key",
   "focus_reason",
+  "focus_resolved_at",
 ];
 
 function argValues(name: string) {
@@ -116,6 +117,7 @@ try {
             where focus_key is not null
               and focus_confidence in ('high', 'medium')
               and focus_hidden_at is null
+              and focus_resolved_at is null
           )::int as visible,
           count(*) filter (where focus_hidden_at is not null)::int as hidden,
           count(*) filter (

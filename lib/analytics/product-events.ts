@@ -12,6 +12,7 @@ const ALLOWED_METADATA_KEYS = new Set([
   "capture_side",
   "device_family",
   "duration_bucket",
+  "entry_count",
   "entry_mode",
   "error_class",
   "error_code",

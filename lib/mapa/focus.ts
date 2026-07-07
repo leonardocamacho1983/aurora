@@ -73,3 +73,18 @@ export function focusSignalFromStored(focusKey: string | null | undefined, confi
     score: confidence === "high" ? 3 : 2,
   };
 }
+
+export function liveFocusSignalFromStored({
+  focusKey,
+  confidence,
+  hiddenAt,
+  resolvedAt,
+}: {
+  focusKey: string | null | undefined;
+  confidence: string | null | undefined;
+  hiddenAt?: Date | string | null;
+  resolvedAt?: Date | string | null;
+}) {
+  if (hiddenAt || resolvedAt) return null;
+  return focusSignalFromStored(focusKey, confidence);
+}

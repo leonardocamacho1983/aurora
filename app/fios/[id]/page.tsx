@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { HideFocusButton } from "@/app/mapa/HideFocusButton";
 import { MapaTrackedLink } from "@/app/mapa/MapaAnalytics";
-import { focusSignalFromStored } from "@/lib/mapa/focus";
+import { liveFocusSignalFromStored } from "@/lib/mapa/focus";
 import { renderProse } from "@/lib/render-prose";
 import styles from "./Fio.module.css";
 
@@ -42,6 +42,7 @@ type FioRow = {
   focusKey: string | null;
   focusConfidence: string | null;
   focusHiddenAt: Date | null;
+  focusResolvedAt: Date | null;
   createdAt: Date;
 };
 
@@ -183,6 +184,7 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
       focusKey: entries.focusKey,
       focusConfidence: entries.focusConfidence,
       focusHiddenAt: entries.focusHiddenAt,
+      focusResolvedAt: entries.focusResolvedAt,
       createdAt: entries.createdAt,
     })
     .from(entries)
@@ -273,7 +275,12 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
             {fioRows.map((row, index) => {
               const spoken = cleanText(row.transcript);
               const reflection = cleanText(row.reflection);
-              const focus = row.focusHiddenAt ? null : focusSignalFromStored(row.focusKey, row.focusConfidence);
+              const focus = liveFocusSignalFromStored({
+                focusKey: row.focusKey,
+                confidence: row.focusConfidence,
+                hiddenAt: row.focusHiddenAt,
+                resolvedAt: row.focusResolvedAt,
+              });
               return (
                 <article
                   className={`${styles.piece} ${index === 0 ? styles.feature : styles.note}`}

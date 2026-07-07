@@ -110,6 +110,16 @@ const EMPTY_FOCUS_STORAGE: EntryFocusStorageValues = {
   focusClassifiedAt: null,
 };
 
+function withConciseReason(
+  classification: MapaFocusClassification,
+  fallbackReason: string,
+): MapaFocusClassification {
+  return {
+    ...classification,
+    reason: (classification.reason || fallbackReason).slice(0, MAPA_FOCUS_REASON_STORAGE_MAX_LENGTH),
+  };
+}
+
 export async function classifyEntryFocus(
   input: EntryFocusInput,
   deps: MapaFocusClassifierDeps = defaultDeps,
@@ -127,22 +137,20 @@ export async function classifyEntryFocus(
   const result = mapaFocusClassificationSchema.parse(raw);
 
   if (result.focus === "none" && result.confidence !== "low") {
-    return {
+    return withConciseReason({
       ...result,
       confidence: "low",
-      reason: result.reason || "no_focus",
-    };
+    }, "no_focus");
   }
 
   if (result.confidence === "low" && result.focus !== "none") {
-    return {
+    return withConciseReason({
       ...result,
       focus: "none",
-      reason: result.reason || "low_confidence",
-    };
+    }, "low_confidence");
   }
 
-  return result;
+  return withConciseReason(result, "classified");
 }
 
 export function focusClassificationToSignal(classification: MapaFocusClassification): FocusSignal | null {

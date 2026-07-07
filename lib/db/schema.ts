@@ -54,6 +54,7 @@ export const entries = pgTable(
     focusEvidence: jsonb("focus_evidence").$type<string[]>(),
     focusClassifiedAt: timestamp("focus_classified_at", { withTimezone: true }),
     focusHiddenAt: timestamp("focus_hidden_at", { withTimezone: true }),
+    focusResolvedAt: timestamp("focus_resolved_at", { withTimezone: true }),
     riskLevel: text("risk_level").default("none").notNull(), // none|low|high
     entryMode: text("entry_mode").default("new").notNull(),
     continuedFromEntryId: uuid("continued_from_entry_id").references(
