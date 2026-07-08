@@ -15,7 +15,8 @@
     "db:test": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke:waitlist": "node scripts/smoke-waitlist.mjs"
+    "smoke:waitlist": "node scripts/smoke-waitlist.mjs",
+    "release:mapa:preflight": "tsx scripts/preflight-mapa-release.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.84",

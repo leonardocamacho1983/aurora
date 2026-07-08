@@ -84,6 +84,10 @@ ou botões competindo. Anti-ansiedade acima de tudo.
   cadastro — aha-moment, §6.1).
 - **Continuidade** ("você voltou. 3 dias seguidos.").
 - **Detalhe/edição** da entrada ao abrir um card da timeline.
+- **Confirmar/editar transcrição** como etapa leve e opcional, ou enriquecer contexto de
+  vocabulário técnico, para casos em que termos específicos sejam transcritos errado
+  (ex.: "Fixed-Effect model"). Não é bloqueador do Alpha enquanto o fluxo grava →
+  transcreve → reflete → mostra microfeedback continuar funcionando.
 - **CTA "Levar para a terapia"** (§6.6 / Fase 4).
 - "Complementar" de verdade a mesma entrada com uma 2ª gravação (fio de conversa).
 - **Prompt do dia** hoje é fixo ("O que está vivo em você agora?"); pode virar dinâmico.

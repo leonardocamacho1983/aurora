@@ -8,6 +8,7 @@ import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { embedText } from "@/lib/ai/embeddings";
 import { bucketLatency } from "@/lib/ai/error-classification";
 import { recordProductEvent, type ProductEventMetadata } from "@/lib/analytics/product-events";
+import { classifyEntryFocusForStorage } from "@/lib/mapa/focus-classifier";
 import {
   classifyDiaryRoute,
   isConfidentPracticalLog,
@@ -224,6 +225,12 @@ export async function POST(request: Request) {
       });
     }
 
+    const focus = await classifyEntryFocusForStorage({
+      transcript,
+      reflection: result.reflection,
+      mood: result.mood,
+    });
+
     // ── Caminho normal: salva a entry + embedding e devolve a reflexão.
     const [entry] = await db
       .insert(entries)
@@ -233,6 +240,7 @@ export async function POST(request: Request) {
         language,
         reflection: result.reflection,
         mood: result.mood,
+        ...focus,
         riskLevel: result.risk,
         entryMode,
         continuedFromEntryId,
@@ -266,6 +274,8 @@ export async function POST(request: Request) {
         total_latency_bucket: bucketLatency(Date.now() - startedAt),
         rag_used: useRag,
         has_mood: Boolean(result.mood),
+        focus_key: focus.focusKey,
+        focus_confidence: focus.focusConfidence,
       },
     });
 

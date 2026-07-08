@@ -294,7 +294,8 @@
   align-items: center;
 }
 
-.fioChip {
+.fioChip,
+.focusChip {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -311,6 +312,7 @@
 }
 
 .fioChip i,
+.focusChip i,
 .mood i {
   width: 7px;
   height: 7px;
@@ -320,6 +322,14 @@
 
 .fioChip i {
   background: var(--fio, var(--accent));
+}
+
+.focusChip {
+  border-color: color-mix(in srgb, var(--focus-color, var(--accent)) 32%, transparent);
+}
+
+.focusChip i {
+  background: var(--focus-color, var(--accent));
 }
 
 .mood {
@@ -392,6 +402,12 @@
 @media (prefers-reduced-motion: reduce) {
   .flipInner {
     transition: none !important;
+  }
+}
+
+@media (min-width: 760px) {
+  .mobileBar {
+    display: none;
   }
 }
 

@@ -48,6 +48,13 @@ export const entries = pgTable(
     language: text("language"),
     reflection: text("reflection"), // resposta da Aurora
     mood: text("mood"), // leve|calmo|pesado|sensível|ansioso (opcional)
+    focusKey: text("focus_key"),
+    focusConfidence: text("focus_confidence"),
+    focusReason: text("focus_reason"),
+    focusEvidence: jsonb("focus_evidence").$type<string[]>(),
+    focusClassifiedAt: timestamp("focus_classified_at", { withTimezone: true }),
+    focusHiddenAt: timestamp("focus_hidden_at", { withTimezone: true }),
+    focusResolvedAt: timestamp("focus_resolved_at", { withTimezone: true }),
     riskLevel: text("risk_level").default("none").notNull(), // none|low|high
     entryMode: text("entry_mode").default("new").notNull(),
     continuedFromEntryId: uuid("continued_from_entry_id").references(
@@ -59,6 +66,7 @@ export const entries = pgTable(
   },
   (t) => ({
     userIdx: index("entries_user_id_idx").on(t.userId),
+    userFocusIdx: index("entries_user_focus_idx").on(t.userId, t.focusKey),
   }),
 );
 

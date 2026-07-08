@@ -11,7 +11,7 @@
   width: min(100%, 620px);
   min-height: 100svh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  padding: max(18px, env(safe-area-inset-top)) 20px max(112px, calc(24px + env(safe-area-inset-bottom)));
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -135,5 +135,11 @@
   .signals,
   .actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 760px) {
+  .mobileBrand {
+    display: none;
   }
 }

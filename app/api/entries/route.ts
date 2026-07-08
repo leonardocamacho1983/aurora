@@ -7,6 +7,7 @@ import { classifyCrisis } from "@/lib/ai/crisis-classifier";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { embedText } from "@/lib/ai/embeddings";
 import { recordProductEvent } from "@/lib/analytics/product-events";
+import { classifyEntryFocusForStorage } from "@/lib/mapa/focus-classifier";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -122,12 +123,15 @@ export async function POST(request: Request) {
       });
     }
 
+    const focus = await classifyEntryFocusForStorage({ transcript });
+
     const [entry] = await db
       .insert(entries)
       .values({
         userId: user.id,
         transcript,
         language,
+        ...focus,
         riskLevel: crisis.risk,
         entryMode,
         continuedFromEntryId,
@@ -155,6 +159,8 @@ export async function POST(request: Request) {
         request_id: requestId,
         entry_mode: entryMode,
         intent,
+        focus_key: focus.focusKey,
+        focus_confidence: focus.focusConfidence,
       },
     });
 

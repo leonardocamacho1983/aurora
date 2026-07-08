@@ -52,17 +52,22 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Revisar login como porta de entrada do produto, nao hero/landing.
 - [ ] Criar estados vazios elegantes para diario, timeline e account.
 - [ ] Definir quando e como a Aurora pede mais contexto depois do primeiro uso.
+- [ ] Corrigir feedback comportamental para seguir `docs/product/feedback-comportamental.md`: microfeedback contextual/rate-limited, com excecao obrigatoria para usuarios em perfil PMF.
+- [ ] Backlog pos-Alpha: avaliar etapa leve de confirmar/editar transcricao ou contexto de vocabulario tecnico para melhorar termos especificos sem bloquear o fluxo de diario.
+- [ ] Backlog tecnico: revisar a frente local de `routine log / silent save` e outros arquivos sujos antes de decidir qualquer deploy para producao.
 
 ### Dados, insights e perfil do cliente
 
 - [ ] Consolidar perfil do usuario com dados declarados, uso do diario, preferencias e consentimentos.
 - [ ] Separar dados sensiveis do diario de analytics operacional.
 - [ ] Definir quais insights podem aparecer para o usuario sem parecer diagnostico.
+- [ ] Backlog pos-Alpha: explorar `personality track / map / analysis` como mapa de padroes pessoais, com linguagem nao diagnostica e consentimento claro.
 - [ ] Definir pagina de perfil do cliente com identidade, preferencias, idioma, privacidade e plano.
 - [ ] Mapear eventos de produto alem da waitlist: login, onboarding, primeira gravacao, reflexao, retorno e timeline.
 - [ ] Definir retencao e exclusao de audio, transcricao, reflexao e embeddings.
 - [ ] Garantir que PostHog nao receba conteudo sensivel de diario.
 - [ ] Criar leitura operacional de ativacao: onboarding concluido, primeira entrada, reflexao recebida, retorno.
+- [ ] Backlog pos-Alpha: avaliar Metabase ou BI similar para analise exploratoria em cima de views analytics-safe do Postgres. Manter `/admin` como cockpit operacional; BI deve usar usuario read-only, mascarar/excluir transcricao, reflexao, audio, caminhos de storage e metadados sensiveis, e separar claramente PMF comportamental, microfeedback, PMF mostrado e PMF respondido.
 
 ### Localizacao PT-BR/EN
 

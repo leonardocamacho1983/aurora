@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
+import { BottomNav } from "@/components/product/BottomNav";
+import { ProductNav } from "@/components/product/ProductNav";
 import { PmfPrompt } from "@/components/product/PmfPrompt";
 import {
   CrisisResources,
@@ -217,40 +219,6 @@ function Stars() {
   );
 }
 
-function HeaderIcon({ phase }: { phase: Phase }) {
-  if (phase === "idle") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <circle cx="12" cy="12" r="8.2" />
-        <path d="M12 7.5v5l3.3 1.8" />
-      </svg>
-    );
-  }
-
-  if (phase === "recording") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M4 7h7M15 7h5M4 12h3M11 12h9M4 17h10M18 17h2" />
-        <path d="M11 5v4M7 10v4M14 15v4" />
-      </svg>
-    );
-  }
-
-  if (phase === "reflecting") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M12 4.5c.6 4.1 1.4 4.9 5.5 5.5-4.1.6-4.9 1.4-5.5 5.5-.6-4.1-1.4-4.9-5.5-5.5 4.1-.6 4.9-1.4 5.5-5.5Z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M5 7h14M5 12h14M5 17h14M9 5v4M15 10v4M11 15v4" />
-    </svg>
-  );
-}
-
 function bucketSeconds(ms: number) {
   const seconds = Math.round(ms / 1000);
   if (seconds < 10) return "lt_10s";
@@ -440,7 +408,6 @@ function createMediaRecorder(stream: MediaStream, mimeType: string): ActiveRecor
 }
 
 export function Diario({
-  userEmail = "",
   onboarding,
   initialEntryId,
   initialEntryMode = "new",
@@ -954,7 +921,6 @@ export function Diario({
     );
   }
 
-  const accountLabel = userEmail ? userEmail.split("@")[0] : "Conta";
   const firstName = onboarding?.name?.split(" ")[0] ?? "";
   const isContinuingExistingEntry = Boolean(activeEntryId && nextEntryMode === "continue");
   const idleTitle = isContinuingExistingEntry
@@ -965,6 +931,7 @@ export function Diario({
   const canExpandReflection = Boolean(
     reflection && (reflection.length > 170 || reflection.trim().split(/\s+/).length > 24),
   );
+  const showBottomNav = phase === "idle" || phase === "savedLog";
   const stateCopy: Record<Exclude<Phase, "reflection">, { title: string; body: string; helper: string }> = {
     idle: {
       title: idleTitle,
@@ -1008,17 +975,12 @@ export function Diario({
   return (
     <main className={styles.stage} data-phase={phase}>
       <Stars />
-      <nav className={styles.nav} aria-label="Navegação do diário">
-        <Link href="/" className={styles.brand}>
+      <ProductNav active="diario" showNewEntry={false} />
+      <nav className={styles.nav} aria-label="Marca do diário">
+        <Link href="/diario" className={styles.brand}>
           <span className={styles.brandOrb} aria-hidden="true" />
           <span>Aurora</span>
         </Link>
-        <div className={styles.navLinks}>
-          <Link href="/timeline" className={styles.timelineLink} aria-label="Ver linha do tempo">
-            <HeaderIcon phase={phase} />
-          </Link>
-          <Link href="/account" className={styles.accountLink}>{accountLabel}</Link>
-        </div>
       </nav>
 
       {phase !== "reflection" ? (
@@ -1201,6 +1163,7 @@ export function Diario({
       {phase === "crisis" && crisis && (
         <CrisisResources data={crisis} onClose={resetToIdle} />
       )}
+      {showBottomNav ? <BottomNav active="diario" /> : null}
     </main>
   );
 }
