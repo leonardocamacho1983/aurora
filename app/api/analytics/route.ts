@@ -62,6 +62,18 @@ const ALLOWED_EVENTS = new Set([
   "product_focus_hide_clicked",
   "product_focus_resolved",
   "product_focus_reopened",
+  "account_viewed",
+  "account_invite_modal_opened",
+  "account_invite_copied",
+  "account_invite_shared",
+  "account_invite_whatsapp_clicked",
+  "account_module_tooltip_opened",
+  "account_module_clicked",
+  "account_context_started",
+  "account_context_saved",
+  "account_moment_viewed",
+  "account_moment_started",
+  "account_moment_saved",
 ]);
 
 const ALLOWED_PROPERTY_KEYS = new Set([
@@ -132,7 +144,15 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   "focus_confidence",
   "focus_count",
   "entry_count",
+  "continued_conversation_count",
   "has_focus",
+  "module_key",
+  "module_status",
+  "has_name",
+  "has_moment",
+  "has_presence",
+  "has_rhythm",
+  "has_value",
 ]);
 
 type AnalyticsBody = {
@@ -180,7 +200,7 @@ export async function POST(request: Request) {
         ? properties.source_type
         : "client_analytics";
 
-  const isProductEvent = eventName.startsWith("product_");
+  const isProductEvent = eventName.startsWith("product_") || eventName.startsWith("account_");
   let storedProductEvent = false;
   if (isProductEvent) {
     try {
