@@ -4,6 +4,7 @@ import type { CSSProperties, KeyboardEvent } from "react";
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
 import { BottomNav } from "@/components/product/BottomNav";
+import { PmfPrompt } from "@/components/product/PmfPrompt";
 import { ProductNav } from "@/components/product/ProductNav";
 import { trackAurora } from "@/lib/analytics/client";
 import type { FocusSignal } from "@/lib/mapa/focus";
@@ -258,6 +259,7 @@ export default function TimelineMagazineClient({
   return (
     <main className={styles.stage}>
       <ProductNav active="timeline" contextLabel={generatedAtLabel} />
+      <PmfPrompt mode="session" source="timeline" />
       <header className={`${styles.bar} ${styles.mobileBar}`}>
         <Link className={styles.brand} href="/timeline">
           <i aria-hidden="true" />

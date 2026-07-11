@@ -34,7 +34,8 @@
 .feedbackMicro button:disabled,
 .pmfOptions button:disabled,
 .pmfActions button:disabled,
-.pmfTextAction:disabled {
+.pmfTextAction:disabled,
+.pmfCloseButton:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
@@ -92,6 +93,7 @@
 }
 
 .pmfModal {
+  position: relative;
   width: min(100%, 392px);
   max-height: min(100%, 590px);
   display: block;
@@ -116,9 +118,37 @@
   height: 0;
 }
 
+.pmfCloseButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(248, 246, 252, 0.76);
+  background: rgba(255, 255, 255, 0.045);
+  font: 760 1.08rem / 1 var(--font-sans);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.pmfCloseButton:hover {
+  color: rgba(250, 247, 255, 0.96);
+  border-color: rgba(175, 158, 255, 0.28);
+  background: rgba(255, 255, 255, 0.075);
+}
+
 .pmfModalStep {
   display: grid;
   gap: 12px;
+  padding-right: 18px;
 }
 
 .pmfHeader {
@@ -362,7 +392,7 @@
 }
 
 @media (min-width: 900px) {
-  .pmfModalOverlay {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) {
     position: static;
     inset: auto;
     display: block;
@@ -372,7 +402,7 @@
     backdrop-filter: none;
   }
 
-  .pmfModal {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) .pmfModal {
     width: 100%;
     max-height: none;
     overflow: visible;
@@ -386,23 +416,23 @@
       0 18px 50px -38px rgba(0, 0, 0, 0.9);
   }
 
-  .pmfModalQuestion {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) .pmfModalQuestion {
     max-width: 13.5em;
     font-size: clamp(1rem, 1.25vw, 1.22rem);
     line-height: 1.16;
   }
 
-  .pmfModal .pmfOptions {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) .pmfModal .pmfOptions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .pmfModal .pmfOptions button {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) .pmfModal .pmfOptions button {
     min-height: 38px;
     padding: 0 12px;
     font-size: 0.74rem;
   }
 
-  .pmfModal .pmfActions {
+  .pmfModalOverlay:not(.pmfModalOverlayFixed) .pmfModal .pmfActions {
     justify-content: flex-start;
     gap: 18px;
   }

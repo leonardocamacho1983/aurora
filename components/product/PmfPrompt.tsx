@@ -6,6 +6,7 @@ import styles from "./StateComponents.module.css";
 type FeedbackKind = "reflection_micro" | "pmf";
 type FeedbackAction = "shown" | "answered" | "skipped" | "snoozed";
 type MicroAnswer = "positive" | "negative";
+type FeedbackSource = "diary_reflection" | "timeline" | "account";
 type PmfAnswer =
   | "very_disappointed"
   | "somewhat_disappointed"
@@ -18,10 +19,11 @@ type Eligibility = {
 };
 
 type PmfPromptProps = {
-  entryId: string | null;
-  entryMode: string;
+  entryId?: string | null;
+  entryMode?: string;
+  mode?: "entry" | "session";
   onActiveChange?: (active: boolean) => void;
-  source?: "diary_reflection" | "timeline";
+  source?: FeedbackSource;
   suspended?: boolean;
 };
 
@@ -83,10 +85,10 @@ async function postFeedback({
 }: {
   kind: FeedbackKind;
   action: FeedbackAction;
-  entryId: string;
+  entryId?: string | null;
   answer?: string;
   reason?: string;
-  source: string;
+  source: FeedbackSource;
   entryMode: string;
 }) {
   const response = await fetch("/api/product-feedback", {
@@ -95,7 +97,7 @@ async function postFeedback({
     body: JSON.stringify({
       kind,
       action,
-      entryId,
+      entryId: entryId ?? null,
       answer,
       reason,
       source,
@@ -112,10 +114,14 @@ async function postFeedback({
 export function PmfPrompt({
   entryId,
   entryMode,
+  mode,
   onActiveChange,
   source = "diary_reflection",
   suspended = false,
 }: PmfPromptProps) {
+  const promptMode = mode ?? (entryId ? "entry" : "session");
+  const isSessionPrompt = promptMode === "session";
+  const feedbackEntryMode = entryMode ?? (isSessionPrompt ? "session" : "new");
   const [eligibility, setEligibility] = useState<Eligibility | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [microAnswer, setMicroAnswer] = useState<MicroAnswer | null>(null);
@@ -132,19 +138,20 @@ export function PmfPrompt({
     setPmfAnswer(null);
     setError("");
 
-    if (!entryId) return;
+    if (!entryId && !isSessionPrompt) return;
     let ignore = false;
 
     async function load() {
       try {
-        const response = await fetch(`/api/product-feedback?entryId=${entryId}`, {
+        const query = entryId ? `?entryId=${entryId}` : "";
+        const response = await fetch(`/api/product-feedback${query}`, {
           headers: { accept: "application/json" },
         });
         if (!response.ok) return;
         const data = (await response.json()) as Eligibility;
         if (ignore) return;
         setEligibility(data);
-        if (!data.reflectionMicro.eligible && data.pmf.eligible) {
+        if ((isSessionPrompt || !data.reflectionMicro.eligible) && data.pmf.eligible) {
           setPmfVisible(true);
         }
       } catch {
@@ -156,12 +163,12 @@ export function PmfPrompt({
     return () => {
       ignore = true;
     };
-  }, [entryId]);
+  }, [entryId, isSessionPrompt]);
 
   useEffect(() => {
-    if (!entryId || !eligibility || suspended) return;
+    if (!eligibility || suspended) return;
 
-    if (eligibility.reflectionMicro.eligible) {
+    if (!isSessionPrompt && entryId && eligibility.reflectionMicro.eligible) {
       markShown("reflection_micro");
       return;
     }
@@ -169,11 +176,14 @@ export function PmfPrompt({
     if (eligibility.pmf.eligible && pmfVisible) {
       markShown("pmf");
     }
-  }, [eligibility, entryId, pmfVisible, suspended]);
+  }, [eligibility, entryId, isSessionPrompt, pmfVisible, suspended]);
 
-  const showMicro = Boolean(entryId && eligibility?.reflectionMicro.eligible && !microAnswer);
-  const showPmf = Boolean(entryId && pmfVisible && eligibility?.pmf.eligible);
+  const showMicro = Boolean(!isSessionPrompt && entryId && eligibility?.reflectionMicro.eligible && !microAnswer);
+  const showPmf = Boolean(pmfVisible && eligibility?.pmf.eligible);
   const promptActive = showMicro || showPmf;
+  const modalOverlayClassName = isSessionPrompt
+    ? `${styles.pmfModalOverlay} ${styles.pmfModalOverlayFixed}`
+    : styles.pmfModalOverlay;
 
   useEffect(() => {
     onActiveChange?.(promptActive && !suspended);
@@ -190,10 +200,10 @@ export function PmfPrompt({
   }, [showPmf, suspended]);
 
   async function markShown(kind: FeedbackKind) {
-    if (!entryId || shownRef.current.has(kind)) return;
+    if ((kind === "reflection_micro" && !entryId) || shownRef.current.has(kind)) return;
     shownRef.current.add(kind);
     try {
-      await postFeedback({ kind, action: "shown", entryId, source, entryMode });
+      await postFeedback({ kind, action: "shown", entryId, source, entryMode: feedbackEntryMode });
     } catch {
       shownRef.current.delete(kind);
     }
@@ -210,7 +220,7 @@ export function PmfPrompt({
         entryId,
         answer,
         source,
-        entryMode,
+        entryMode: feedbackEntryMode,
       });
       setMicroAnswer(answer);
       if (eligibility?.pmf.eligible) {
@@ -225,7 +235,6 @@ export function PmfPrompt({
   }
 
   async function completePmf(action: FeedbackAction, answer?: PmfAnswer, reason?: string) {
-    if (!entryId) return;
     setIsLoading(true);
     setError("");
     try {
@@ -236,7 +245,7 @@ export function PmfPrompt({
         answer,
         reason,
         source,
-        entryMode,
+        entryMode: feedbackEntryMode,
       });
       setPmfVisible(false);
       setPmfAnswer(null);
@@ -251,7 +260,7 @@ export function PmfPrompt({
     ? PMF_OPTIONS.find((option) => option.value === pmfAnswer)?.label
     : null;
   if (suspended) return null;
-  if (!entryId || !eligibility || (!showMicro && !showPmf && !error)) return null;
+  if (!eligibility || (!showMicro && !showPmf && !error)) return null;
 
   return (
     <section className={styles.pmfPrompt} aria-label="Feedback sobre a experiência">
@@ -280,13 +289,22 @@ export function PmfPrompt({
       ) : null}
 
       {showPmf ? (
-        <div className={styles.pmfModalOverlay}>
+        <div className={modalOverlayClassName}>
           <div
             aria-labelledby="pmf-dialog-title"
             aria-modal="true"
             className={styles.pmfModal}
             role="dialog"
           >
+            <button
+              aria-label="Fechar pergunta"
+              className={styles.pmfCloseButton}
+              disabled={isLoading}
+              onClick={() => completePmf("snoozed")}
+              type="button"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
             {!pmfAnswer ? (
               <div className={styles.pmfModalStep}>
                 <div className={styles.pmfHeader}>
@@ -312,15 +330,6 @@ export function PmfPrompt({
                       {option.label}
                     </button>
                   ))}
-                </div>
-
-                <div className={styles.pmfActions}>
-                  <button disabled={isLoading} onClick={() => completePmf("skipped")} type="button">
-                    Agora não
-                  </button>
-                  <button disabled={isLoading} onClick={() => completePmf("snoozed")} type="button">
-                    Perguntar depois
-                  </button>
                 </div>
               </div>
             ) : (
