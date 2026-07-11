@@ -254,6 +254,38 @@ type PmfDeclaredSummaryRow = {
   microNegative: number;
 };
 
+type PmfFunnelSummaryRow = {
+  activatedUsers: number;
+  eligibleUsers: number;
+  openEligibleUsers: number;
+  microShownUsers: number;
+  microAnsweredUsers: number;
+  pmfShownUsers: number;
+  pmfAnsweredUsers: number;
+  pmfSkippedUsers: number;
+  pmfSnoozedUsers: number;
+  eligibleNoPromptUsers: number;
+  microShownNoAnswerUsers: number;
+  microAnsweredNoPmfUsers: number;
+  pmfShownNoAnswerUsers: number;
+  latestFeedbackAt: Date | string | null;
+};
+
+type PmfFunnelUserRow = {
+  anonUser: string;
+  reflectedEntries: number;
+  activeDays: number;
+  continuations: number;
+  microShown: number;
+  microAnswered: number;
+  pmfShown: number;
+  pmfAnswered: number;
+  pmfSkipped: number;
+  pmfSnoozed: number;
+  lastActivityAt: Date | string | null;
+  stage: string;
+};
+
 type MapaFocusSummaryRow = {
   entries: number;
   eligibleEntries: number;
@@ -415,6 +447,7 @@ const help = {
   accessFirstReflection: "Convites que chegaram ao primeiro valor observável: primeira reflexão concluída.",
   pmfLight: "PMF leve do Alpha: usuários ativados que voltaram em outro dia ou continuaram um fio. É leitura prática, não PMF estatístico.",
   pmfDeclared: "PMF declarada: resposta opcional à pergunta de perda. Complementa retorno real; não substitui comportamento observado.",
+  pmfFunnel: "Funil operacional do PMF Alpha: elegibilidade por uso real, microfeedback, prompt PMF e resposta declarada. Usa apenas IDs pseudônimos e contagens.",
   activatedUsers: "Usuários reais com ao menos uma entrada refletida desde 19/06/2026.",
   returningUsers: "Usuários ativados com atividade em dois ou mais dias, ou continuidade explícita de fio.",
   intenseNoReturn: "Usuários com 3+ reflexões no primeiro dia e nenhum segundo dia de atividade observável.",
@@ -643,6 +676,64 @@ function AlphaUserTable({ rows: userRows, empty }: { rows: AlphaUserRow[]; empty
           ) : (
             <tr>
               <td colSpan={8}>{empty}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function pmfStageLabel(stage: string) {
+  const labels: Record<string, string> = {
+    eligible_no_prompt: "elegível sem prompt",
+    micro_shown_no_answer: "micro sem resposta",
+    micro_answered_no_pmf: "micro respondido sem PMF",
+    pmf_shown_open: "PMF aberta",
+    pmf_skipped: "PMF pulada",
+    pmf_snoozed: "PMF adiada",
+    pmf_answered: "PMF respondida",
+  };
+  return labels[stage] ?? stage;
+}
+
+function PmfFunnelTable({ rows: userRows }: { rows: PmfFunnelUserRow[] }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th title="Entradas com reflexão preenchida desde 19/06/2026.">Reflexões</th>
+            <th title="Dias com entrada de diário em America/Sao_Paulo.">Dias</th>
+            <th title="Entradas em modo continue ou ligadas a outra entrada.">Fios</th>
+            <th title="Microfeedback mostrado/respondido.">Micro</th>
+            <th title="PMF mostrada/respondida.">PMF</th>
+            <th title="PMF pulada/adiada.">Fechamento</th>
+            <th>Última atividade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {userRows.length ? (
+            userRows.map((user) => (
+              <tr key={user.anonUser}>
+                <td>
+                  <strong>{user.anonUser}</strong>
+                  <br />
+                  <span className={styles.muted}>{pmfStageLabel(user.stage)}</span>
+                </td>
+                <td>{user.reflectedEntries}</td>
+                <td>{user.activeDays}</td>
+                <td>{user.continuations}</td>
+                <td>{user.microShown}/{user.microAnswered}</td>
+                <td>{user.pmfShown}/{user.pmfAnswered}</td>
+                <td>{user.pmfSkipped}/{user.pmfSnoozed}</td>
+                <td>{formatDate(user.lastActivityAt)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={8}>Nenhum usuário elegível sem PMF respondida nesta coorte.</td>
             </tr>
           )}
         </tbody>
@@ -1932,6 +2023,229 @@ async function getDashboardData() {
     `),
   );
 
+  const [pmfFunnelSummary] = rows<PmfFunnelSummaryRow>(
+    await db.execute(sql`
+      with excluded_users as (
+        select id
+        from users
+        where lower(coalesce(email, '')) like '%test%'
+           or lower(coalesce(email, '')) like '%launchtest%'
+           or lower(coalesce(email, '')) like '%example.%'
+           or lower(coalesce(email, '')) like '%leonardocamacho%'
+      ),
+      cohort_users as (
+        select u.id, coalesce((u.onboarding_context->>'pmf_test_enabled')::boolean, false) as pmf_test_enabled
+        from users u
+        where not exists (select 1 from excluded_users x where x.id = u.id)
+          and (
+            u.created_at >= ${ALPHA_COHORT_START}
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(coalesce(u.email, ''))
+                and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+            )
+            or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+            or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+          )
+      ),
+      entry_stats as (
+        select
+          e.user_id,
+          count(*) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as active_days,
+          count(*) filter (
+            where e.entry_mode = 'continue' or e.continued_from_entry_id is not null
+          )::int as continued_entries,
+          max(e.created_at) as last_entry_at
+        from entries e
+        inner join cohort_users cu on cu.id = e.user_id
+        where e.created_at >= ${ALPHA_COHORT_START}
+        group by e.user_id
+      ),
+      feedback_stats as (
+        select
+          pf.user_id,
+          count(*) filter (where pf.kind = 'reflection_micro' and pf.action = 'shown')::int as micro_shown,
+          count(*) filter (where pf.kind = 'reflection_micro' and pf.answered_at is not null)::int as micro_answered,
+          count(*) filter (where pf.kind = 'pmf' and pf.action = 'shown')::int as pmf_shown,
+          count(*) filter (where pf.kind = 'pmf' and pf.answered_at is not null)::int as pmf_answered,
+          count(*) filter (where pf.kind = 'pmf' and pf.skipped_at is not null)::int as pmf_skipped,
+          count(*) filter (where pf.kind = 'pmf' and pf.snoozed_until is not null)::int as pmf_snoozed,
+          max(pf.created_at) as latest_feedback_at
+        from product_feedback pf
+        inner join cohort_users cu on cu.id = pf.user_id
+        where pf.created_at >= ${ALPHA_COHORT_START}
+        group by pf.user_id
+      ),
+      per_user as (
+        select
+          cu.id,
+          coalesce(es.reflected_entries, 0) as reflected_entries,
+          coalesce(es.active_days, 0) as active_days,
+          coalesce(es.continued_entries, 0) as continued_entries,
+          coalesce(fs.micro_shown, 0) as micro_shown,
+          coalesce(fs.micro_answered, 0) as micro_answered,
+          coalesce(fs.pmf_shown, 0) as pmf_shown,
+          coalesce(fs.pmf_answered, 0) as pmf_answered,
+          coalesce(fs.pmf_skipped, 0) as pmf_skipped,
+          coalesce(fs.pmf_snoozed, 0) as pmf_snoozed,
+          fs.latest_feedback_at,
+          (
+            coalesce(es.reflected_entries, 0) >= 2
+            or coalesce(es.active_days, 0) >= 2
+            or coalesce(es.continued_entries, 0) >= 1
+            or (cu.pmf_test_enabled and coalesce(es.reflected_entries, 0) >= 1)
+          ) as pmf_eligible
+        from cohort_users cu
+        left join entry_stats es on es.user_id = cu.id
+        left join feedback_stats fs on fs.user_id = cu.id
+      )
+      select
+        count(*) filter (where reflected_entries > 0)::int as "activatedUsers",
+        count(*) filter (where pmf_eligible)::int as "eligibleUsers",
+        count(*) filter (where pmf_eligible and pmf_answered = 0 and pmf_snoozed = 0)::int as "openEligibleUsers",
+        count(*) filter (where pmf_eligible and micro_shown > 0)::int as "microShownUsers",
+        count(*) filter (where pmf_eligible and micro_answered > 0)::int as "microAnsweredUsers",
+        count(*) filter (where pmf_eligible and pmf_shown > 0)::int as "pmfShownUsers",
+        count(*) filter (where pmf_eligible and pmf_answered > 0)::int as "pmfAnsweredUsers",
+        count(*) filter (where pmf_eligible and pmf_skipped > 0)::int as "pmfSkippedUsers",
+        count(*) filter (where pmf_eligible and pmf_snoozed > 0)::int as "pmfSnoozedUsers",
+        count(*) filter (where pmf_eligible and micro_shown = 0 and pmf_shown = 0)::int as "eligibleNoPromptUsers",
+        count(*) filter (where pmf_eligible and micro_shown > 0 and micro_answered = 0 and pmf_shown = 0)::int as "microShownNoAnswerUsers",
+        count(*) filter (where pmf_eligible and micro_answered > 0 and pmf_shown = 0 and pmf_answered = 0)::int as "microAnsweredNoPmfUsers",
+        count(*) filter (where pmf_eligible and pmf_shown > 0 and pmf_answered = 0 and pmf_skipped = 0 and pmf_snoozed = 0)::int as "pmfShownNoAnswerUsers",
+        max(latest_feedback_at) as "latestFeedbackAt"
+      from per_user
+    `),
+  );
+
+  const pmfFunnelUsers = rows<PmfFunnelUserRow>(
+    await db.execute(sql`
+      with excluded_users as (
+        select id
+        from users
+        where lower(coalesce(email, '')) like '%test%'
+           or lower(coalesce(email, '')) like '%launchtest%'
+           or lower(coalesce(email, '')) like '%example.%'
+           or lower(coalesce(email, '')) like '%leonardocamacho%'
+      ),
+      cohort_users as (
+        select u.id, coalesce((u.onboarding_context->>'pmf_test_enabled')::boolean, false) as pmf_test_enabled
+        from users u
+        where not exists (select 1 from excluded_users x where x.id = u.id)
+          and (
+            u.created_at >= ${ALPHA_COHORT_START}
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(coalesce(u.email, ''))
+                and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+            )
+            or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+            or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+          )
+      ),
+      entry_stats as (
+        select
+          e.user_id,
+          count(*) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as active_days,
+          count(*) filter (
+            where e.entry_mode = 'continue' or e.continued_from_entry_id is not null
+          )::int as continued_entries,
+          max(e.created_at) as last_entry_at
+        from entries e
+        inner join cohort_users cu on cu.id = e.user_id
+        where e.created_at >= ${ALPHA_COHORT_START}
+        group by e.user_id
+      ),
+      feedback_stats as (
+        select
+          pf.user_id,
+          count(*) filter (where pf.kind = 'reflection_micro' and pf.action = 'shown')::int as micro_shown,
+          count(*) filter (where pf.kind = 'reflection_micro' and pf.answered_at is not null)::int as micro_answered,
+          count(*) filter (where pf.kind = 'pmf' and pf.action = 'shown')::int as pmf_shown,
+          count(*) filter (where pf.kind = 'pmf' and pf.answered_at is not null)::int as pmf_answered,
+          count(*) filter (where pf.kind = 'pmf' and pf.skipped_at is not null)::int as pmf_skipped,
+          count(*) filter (where pf.kind = 'pmf' and pf.snoozed_until is not null)::int as pmf_snoozed,
+          max(pf.created_at) as latest_feedback_at
+        from product_feedback pf
+        inner join cohort_users cu on cu.id = pf.user_id
+        where pf.created_at >= ${ALPHA_COHORT_START}
+        group by pf.user_id
+      ),
+      per_user as (
+        select
+          cu.id,
+          left(md5(cu.id::text), 10) as anon_user,
+          coalesce(es.reflected_entries, 0) as reflected_entries,
+          coalesce(es.active_days, 0) as active_days,
+          coalesce(es.continued_entries, 0) as continued_entries,
+          coalesce(fs.micro_shown, 0) as micro_shown,
+          coalesce(fs.micro_answered, 0) as micro_answered,
+          coalesce(fs.pmf_shown, 0) as pmf_shown,
+          coalesce(fs.pmf_answered, 0) as pmf_answered,
+          coalesce(fs.pmf_skipped, 0) as pmf_skipped,
+          coalesce(fs.pmf_snoozed, 0) as pmf_snoozed,
+          greatest(
+            coalesce(es.last_entry_at, fs.latest_feedback_at),
+            coalesce(fs.latest_feedback_at, es.last_entry_at)
+          ) as last_activity_at,
+          (
+            coalesce(es.reflected_entries, 0) >= 2
+            or coalesce(es.active_days, 0) >= 2
+            or coalesce(es.continued_entries, 0) >= 1
+            or (cu.pmf_test_enabled and coalesce(es.reflected_entries, 0) >= 1)
+          ) as pmf_eligible
+        from cohort_users cu
+        left join entry_stats es on es.user_id = cu.id
+        left join feedback_stats fs on fs.user_id = cu.id
+      )
+      select
+        anon_user as "anonUser",
+        reflected_entries as "reflectedEntries",
+        active_days as "activeDays",
+        continued_entries as continuations,
+        micro_shown as "microShown",
+        micro_answered as "microAnswered",
+        pmf_shown as "pmfShown",
+        pmf_answered as "pmfAnswered",
+        pmf_skipped as "pmfSkipped",
+        pmf_snoozed as "pmfSnoozed",
+        last_activity_at as "lastActivityAt",
+        case
+          when pmf_answered > 0 then 'pmf_answered'
+          when pmf_snoozed > 0 then 'pmf_snoozed'
+          when pmf_skipped > 0 then 'pmf_skipped'
+          when pmf_shown > 0 then 'pmf_shown_open'
+          when micro_answered > 0 then 'micro_answered_no_pmf'
+          when micro_shown > 0 then 'micro_shown_no_answer'
+          else 'eligible_no_prompt'
+        end as stage
+      from per_user
+      where pmf_eligible
+        and pmf_answered = 0
+      order by
+        case
+          when pmf_shown > 0 and pmf_skipped = 0 and pmf_snoozed = 0 then 0
+          when micro_answered > 0 and pmf_shown = 0 then 1
+          when micro_shown > 0 and micro_answered = 0 then 2
+          when pmf_skipped > 0 then 3
+          when pmf_snoozed > 0 then 4
+          else 5
+        end,
+        last_activity_at desc nulls last,
+        reflected_entries desc,
+        anon_user asc
+      limit 16
+    `),
+  );
+
   const pmfAnswerDistribution = rows<BreakdownRow>(
     await db.execute(sql`
       select
@@ -2321,6 +2635,23 @@ async function getDashboardData() {
       microPositive: asNumber(pmfDeclaredSummary?.microPositive),
       microNegative: asNumber(pmfDeclaredSummary?.microNegative),
     },
+    pmfFunnel: {
+      activatedUsers: asNumber(pmfFunnelSummary?.activatedUsers),
+      eligibleUsers: asNumber(pmfFunnelSummary?.eligibleUsers),
+      openEligibleUsers: asNumber(pmfFunnelSummary?.openEligibleUsers),
+      microShownUsers: asNumber(pmfFunnelSummary?.microShownUsers),
+      microAnsweredUsers: asNumber(pmfFunnelSummary?.microAnsweredUsers),
+      pmfShownUsers: asNumber(pmfFunnelSummary?.pmfShownUsers),
+      pmfAnsweredUsers: asNumber(pmfFunnelSummary?.pmfAnsweredUsers),
+      pmfSkippedUsers: asNumber(pmfFunnelSummary?.pmfSkippedUsers),
+      pmfSnoozedUsers: asNumber(pmfFunnelSummary?.pmfSnoozedUsers),
+      eligibleNoPromptUsers: asNumber(pmfFunnelSummary?.eligibleNoPromptUsers),
+      microShownNoAnswerUsers: asNumber(pmfFunnelSummary?.microShownNoAnswerUsers),
+      microAnsweredNoPmfUsers: asNumber(pmfFunnelSummary?.microAnsweredNoPmfUsers),
+      pmfShownNoAnswerUsers: asNumber(pmfFunnelSummary?.pmfShownNoAnswerUsers),
+      latestFeedbackAt: pmfFunnelSummary?.latestFeedbackAt ?? null,
+    },
+    pmfFunnelUsers,
     pmfAnswerDistribution,
     pmfReasonDistribution,
     moodDistribution,
@@ -2393,6 +2724,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const pmfLightTone = data.product.returningUsers > 0 ? "neutral" : "warn";
   const pmfDeclaredResponseRate = percent(data.pmfDeclared.answered, data.pmfDeclared.promptsShown);
   const pmfVeryDisappointedRate = percent(data.pmfDeclared.veryDisappointed, data.pmfDeclared.answered);
+  const pmfFunnelPromptRate = percent(data.pmfFunnel.pmfShownUsers, data.pmfFunnel.eligibleUsers);
+  const pmfFunnelAnswerRate = percent(data.pmfFunnel.pmfAnsweredUsers, data.pmfFunnel.pmfShownUsers);
+  const pmfFunnelNeedsAttention =
+    data.pmfFunnel.eligibleNoPromptUsers +
+    data.pmfFunnel.microShownNoAnswerUsers +
+    data.pmfFunnel.microAnsweredNoPmfUsers +
+    data.pmfFunnel.pmfShownNoAnswerUsers;
   const mapaCoverageRate = percent(data.mapa.summary.classifiedEntries, data.mapa.summary.eligibleEntries);
   const mapaVisibleFocusRate = percent(data.mapa.summary.visibleFocusEntries, data.mapa.summary.classifiedEntries);
   const mapaHealthGood = data.mapa.classifierConfigured && data.mapa.summary.stalePendingEntries === 0;
@@ -3052,6 +3390,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 definition={help.pmfLight}
               />
               <SignalRow
+                label="PMF diagnóstico"
+                value={`${pmfFunnelNeedsAttention} pendentes`}
+                note={`${data.pmfFunnel.eligibleUsers} elegíveis, ${data.pmfFunnel.pmfAnsweredUsers} respondidas`}
+                tone={pmfFunnelNeedsAttention ? "warn" : "good"}
+                definition={help.pmfFunnel}
+              />
+              <SignalRow
                 label="Intenso sem retorno"
                 value={`${data.product.intenseNoReturnUsers} usuários`}
                 note="Alta primeira sessão sem segundo dia observável"
@@ -3214,8 +3559,106 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
             <section className={styles.section}>
               <div className={styles.sectionHeader}>
+                <h2>Diagnóstico PMF</h2>
+                <p>Funil operacional para separar retorno real de falha de elegibilidade, exibição, resposta ou leitura no admin.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.pmfFunnel.eligibleUsers)}
+                  label="Elegíveis PMF"
+                  note={`${data.pmfFunnel.openEligibleUsers} ainda sem resposta ou adiamento ativo`}
+                  tone={data.pmfFunnel.eligibleUsers ? "good" : "warn"}
+                  definition={help.pmfFunnel}
+                />
+                <MetricCard
+                  value={compactNumber(data.pmfFunnel.microShownUsers)}
+                  label="Micro mostrado"
+                  note={`${data.pmfFunnel.microAnsweredUsers} responderam Fez sentido / Não tanto`}
+                  tone={data.pmfFunnel.microShownUsers >= data.pmfFunnel.eligibleUsers ? "good" : "warn"}
+                  definition={help.pmfFunnel}
+                />
+                <MetricCard
+                  value={compactNumber(data.pmfFunnel.pmfShownUsers)}
+                  label="PMF mostrada"
+                  note={`${pmfFunnelPromptRate} dos elegíveis chegaram ao prompt PMF`}
+                  tone={data.pmfFunnel.pmfShownUsers ? "good" : "warn"}
+                  definition={help.pmfFunnel}
+                />
+                <MetricCard
+                  value={compactNumber(data.pmfFunnel.pmfAnsweredUsers)}
+                  label="PMF respondida"
+                  note={`${pmfFunnelAnswerRate} dos prompts mostrados`}
+                  tone={data.pmfFunnel.pmfAnsweredUsers ? "good" : "neutral"}
+                  definition={help.pmfFunnel}
+                />
+              </div>
+              <div className={styles.split}>
+                <div className={styles.signalCard}>
+                  <h3 className={styles.cardTitle}>Gargalo atual</h3>
+                  <SignalRow
+                    label="Elegível sem prompt"
+                    value={`${data.pmfFunnel.eligibleNoPromptUsers}`}
+                    note="Não há microfeedback nem PMF mostrados para esse usuário elegível"
+                    tone={data.pmfFunnel.eligibleNoPromptUsers ? "warn" : "good"}
+                    definition={help.pmfFunnel}
+                  />
+                  <SignalRow
+                    label="Micro sem resposta"
+                    value={`${data.pmfFunnel.microShownNoAnswerUsers}`}
+                    note="A pergunta Fez sentido apareceu, mas não foi respondida"
+                    tone={data.pmfFunnel.microShownNoAnswerUsers ? "warn" : "good"}
+                    definition={help.pmfFunnel}
+                  />
+                  <SignalRow
+                    label="Micro respondido sem PMF"
+                    value={`${data.pmfFunnel.microAnsweredNoPmfUsers}`}
+                    note="Pode indicar falha no passo que abre o modal PMF"
+                    tone={data.pmfFunnel.microAnsweredNoPmfUsers ? "warn" : "good"}
+                    definition={help.pmfFunnel}
+                  />
+                  <SignalRow
+                    label="PMF aberta sem resposta"
+                    value={`${data.pmfFunnel.pmfShownNoAnswerUsers}`}
+                    note="Prompt PMF mostrado, mas sem resposta, pulo ou adiamento"
+                    tone={data.pmfFunnel.pmfShownNoAnswerUsers ? "warn" : "good"}
+                    definition={help.pmfFunnel}
+                  />
+                </div>
+                <div className={styles.signalCard}>
+                  <h3 className={styles.cardTitle}>Fechamento</h3>
+                  <SignalRow
+                    label="Respondidas"
+                    value={`${data.pmfFunnel.pmfAnsweredUsers}`}
+                    note={`${data.pmfFunnel.pmfSkippedUsers} puladas, ${data.pmfFunnel.pmfSnoozedUsers} adiadas`}
+                    tone={data.pmfFunnel.pmfAnsweredUsers ? "good" : "neutral"}
+                    definition={help.pmfFunnel}
+                  />
+                  <SignalRow
+                    label="Último feedback"
+                    value={data.pmfFunnel.latestFeedbackAt ? formatDate(data.pmfFunnel.latestFeedbackAt) : "sem sinal"}
+                    note="Último evento em product_feedback dentro da coorte"
+                    tone={data.pmfFunnel.latestFeedbackAt ? "good" : "warn"}
+                    definition={help.pmfFunnel}
+                  />
+                  <SignalRow
+                    label="Atenção operacional"
+                    value={`${pmfFunnelNeedsAttention}`}
+                    note="Soma de gargalos antes de uma resposta PMF declarada"
+                    tone={pmfFunnelNeedsAttention ? "warn" : "good"}
+                    definition={help.pmfFunnel}
+                  />
+                </div>
+              </div>
+              <PmfFunnelTable rows={data.pmfFunnelUsers} />
+              <div className={styles.noteCard}>
+                O diagnóstico PMF usa apenas IDs pseudônimos, contagens e datas de atividade. Não renderiza email, nome, diário, transcrição, reflexão, áudio ou resposta aberta.
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
                 <h2>PMF declarada</h2>
-                <p>Pergunta opcional depois de valor recebido. Complementa a PMF leve comportamental.</p>
+                <p>Respostas fechadas depois de valor recebido. Complementa a PMF leve comportamental.</p>
               </div>
               <div className={styles.grid}>
                 <MetricCard
