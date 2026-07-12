@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PMF_VARIANT = "alpha_pmf_v1";
+const PMF_SNOOZE_DAYS = 3;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const KINDS = new Set(["reflection_micro", "pmf"]);
@@ -111,7 +112,8 @@ function cleanEnum(value: unknown, allowed: Set<string>) {
 
 function cleanSource(value: unknown) {
   if (typeof value !== "string") return "diary_reflection";
-  return value === "timeline" ? "timeline" : "diary_reflection";
+  if (value === "timeline" || value === "account") return value;
+  return "diary_reflection";
 }
 
 function eventName(kind: string, action: string) {
@@ -183,16 +185,18 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const entryId = url.searchParams.get("entryId");
-  if (!isUuid(entryId)) {
+  const entryIdParam = url.searchParams.get("entryId");
+  if (entryIdParam && !isUuid(entryIdParam)) {
     return NextResponse.json({
       reflectionMicro: { eligible: false },
       pmf: { eligible: false, variant: PMF_VARIANT },
     });
   }
 
-  const entry = await entryForUser(user.id, entryId);
-  if (!entry?.hasReflection || entry.riskLevel === "high") {
+  const entryId = isUuid(entryIdParam) ? entryIdParam : null;
+  const entry = entryId ? await entryForUser(user.id, entryId) : null;
+  const entryAllowsFeedback = entry ? entry.hasReflection && entry.riskLevel !== "high" : true;
+  if (entryId && !entryAllowsFeedback) {
     return NextResponse.json({
       reflectionMicro: { eligible: false },
       pmf: { eligible: false, variant: PMF_VARIANT },
@@ -227,6 +231,7 @@ export async function GET(request: Request) {
       select
         count(*) filter (
           where pf.kind = 'reflection_micro'
+            and ${entryId}::uuid is not null
             and pf.entry_id = ${entryId}::uuid
             and pf.answered_at is not null
         )::int as "microAnsweredForEntry",
@@ -318,7 +323,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     reflectionMicro: {
-      eligible: reflectionMicroEligible,
+      eligible: Boolean(entryId && reflectionMicroEligible),
     },
     pmf: {
       eligible: pmfEligible,
@@ -353,6 +358,9 @@ export async function POST(request: Request) {
   if (entryId && !entry) {
     return NextResponse.json({ error: "entry_not_found" }, { status: 404 });
   }
+  if (kind === "reflection_micro" && !entry) {
+    return NextResponse.json({ error: "entry_required" }, { status: 400 });
+  }
 
   const answer =
     kind === "reflection_micro"
@@ -367,8 +375,11 @@ export async function POST(request: Request) {
   const variant = body.variant === PMF_VARIANT ? PMF_VARIANT : PMF_VARIANT;
   const event = eventName(kind, action);
   const now = new Date();
+  const nowIso = now.toISOString();
   const snoozedUntil =
-    action === "snoozed" ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+    action === "snoozed"
+      ? new Date(now.getTime() + PMF_SNOOZE_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
   const metadata = {
     variant,
     source,
@@ -405,9 +416,9 @@ export async function POST(request: Request) {
       ${source},
       ${variant},
       ${JSON.stringify(metadata)}::jsonb,
-      ${action === "shown" ? now : null},
-      ${action === "answered" ? now : null},
-      ${action === "skipped" ? now : null},
+      ${action === "shown" ? nowIso : null},
+      ${action === "answered" ? nowIso : null},
+      ${action === "skipped" ? nowIso : null},
       ${snoozedUntil}
     )
   `);

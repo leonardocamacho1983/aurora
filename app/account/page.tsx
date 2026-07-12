@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { TrackPageView } from "@/components/analytics/TrackPageView";
 import { BottomNav } from "@/components/product/BottomNav";
+import { PmfPrompt } from "@/components/product/PmfPrompt";
 import { db } from "@/lib/db";
 import { waitlist } from "@/lib/db/schema";
 import { getProfileDashboard, profileSinceLine } from "@/lib/account/profile-dashboard";
@@ -100,6 +101,7 @@ export default async function AccountPage() {
           continued_conversation_count: dashboard.latestContinuedConversation?.totalContinuedConversations ?? 0,
         }}
       />
+      <PmfPrompt mode="session" source="account" />
 
       <header className={styles.topnav}>
         <div className={styles.topnavInner}>
