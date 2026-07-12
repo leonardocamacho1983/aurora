@@ -208,6 +208,25 @@ type ProductSummaryRow = {
   highRiskEntries: number;
 };
 
+type ActivationSummaryRow = {
+  cohortUsers: number;
+  onboardingCompletedUsers: number;
+  firstRecordingUsers: number;
+  reflectionReceivedUsers: number;
+  returnOtherDayUsers: number;
+  threadResumedUsers: number;
+  pmfLightUsers: number;
+  latestActivationAt: Date | string | null;
+};
+
+type ActivationFunnelRow = {
+  label: string;
+  count: number;
+  baseLabel: string;
+  baseCount: number;
+  criterion: string;
+};
+
 type AlphaUserRow = {
   anonUser: string;
   entries: number;
@@ -445,6 +464,10 @@ const help = {
   signupSources: "Eventos signup_created agrupados por UTM/source_type/source.",
   accessInvites: "Convites Alpha criados desde 19/06/2026, excluindo emails internos ou de teste.",
   accessFirstReflection: "Convites que chegaram ao primeiro valor observável: primeira reflexão concluída.",
+  activationFunnel: "Funil operacional de ativação real: onboarding concluído, primeira gravação, reflexão recebida, retorno em outro dia, fio retomado e PMF leve. Usa apenas contagens e IDs pseudônimos.",
+  firstRecording: "Usuário real com evento de gravação iniciado ou entrada/transcrição persistida desde 19/06/2026.",
+  returnAfterReflection: "Usuário com reflexão recebida e novo sinal de atividade em dia local posterior à primeira reflexão.",
+  threadResumed: "Usuário com entrada em modo continue ou ligada a uma entrada anterior.",
   pmfLight: "PMF leve do Alpha: usuários ativados que voltaram em outro dia ou continuaram um fio. É leitura prática, não PMF estatístico.",
   pmfDeclared: "PMF declarada: resposta opcional à pergunta de perda. Complementa retorno real; não substitui comportamento observado.",
   pmfFunnel: "Funil operacional do PMF Alpha: elegibilidade por uso real, microfeedback, prompt PMF e resposta declarada. Usa apenas IDs pseudônimos e contagens.",
@@ -609,6 +632,39 @@ function BreakdownList({
         <p className={styles.emptyState}>{empty}</p>
       )}
     </article>
+  );
+}
+
+function ActivationFunnelTable({ rows: funnelRows, cohortUsers }: { rows: ActivationFunnelRow[]; cohortUsers: number }) {
+  return (
+    <div className={styles.tableCard}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Sinal</th>
+            <th>Usuários</th>
+            <th>% coorte</th>
+            <th>Base</th>
+            <th>Critério determinístico</th>
+          </tr>
+        </thead>
+        <tbody>
+          {funnelRows.map((row) => (
+            <tr key={row.label}>
+              <td>
+                <strong>{row.label}</strong>
+              </td>
+              <td>{compactNumber(row.count)}</td>
+              <td>{percent(row.count, cohortUsers)}</td>
+              <td>
+                {percent(row.count, row.baseCount)} de {row.baseLabel}
+              </td>
+              <td>{row.criterion}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -1527,6 +1583,9 @@ async function getDashboardData() {
           count(*) filter (where e.transcript is not null and nullif(trim(e.transcript), '') is not null)::int as transcribed_entries,
           count(*) filter (where e.entry_mode = 'continue' or e.continued_from_entry_id is not null)::int as continued_entries,
           count(distinct e.thread_id) filter (where e.thread_id is not null)::int as threads,
+          min(date_trunc('day', e.created_at at time zone 'America/Sao_Paulo')) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          ) as first_reflection_day,
           count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as entry_days
         from entries e
         inner join cohort_users cu on cu.id = e.user_id
@@ -1544,10 +1603,8 @@ async function getDashboardData() {
         where pe.created_at >= ${ALPHA_COHORT_START}
         group by pe.user_id
       ),
-      activity_stats as (
-        select
-          user_id,
-          count(distinct local_day)::int as active_days
+      activity_days as (
+        select distinct user_id, local_day
         from (
           select e.user_id, date_trunc('day', e.created_at at time zone 'America/Sao_Paulo') as local_day
           from entries e
@@ -1559,6 +1616,12 @@ async function getDashboardData() {
           inner join cohort_users cu on cu.id = pe.user_id
           where pe.created_at >= ${ALPHA_COHORT_START}
         ) activity
+      ),
+      activity_stats as (
+        select
+          user_id,
+          count(*)::int as active_days
+        from activity_days
         group by user_id
       ),
       per_user as (
@@ -1573,7 +1636,14 @@ async function getDashboardData() {
           coalesce(evs.product_events, 0) as product_events,
           coalesce(evs.transcription_failures, 0) as transcription_failures,
           coalesce(evs.reflection_failures, 0) as reflection_failures,
-          coalesce(ac.active_days, 0) as active_days
+          coalesce(ac.active_days, 0) as active_days,
+          exists (
+            select 1
+            from activity_days ad
+            where ad.user_id = cu.id
+              and es.first_reflection_day is not null
+              and ad.local_day > es.first_reflection_day
+          ) as returned_after_reflection
         from cohort_users cu
         left join entry_stats es on es.user_id = cu.id
         left join event_stats evs on evs.user_id = cu.id
@@ -1585,11 +1655,12 @@ async function getDashboardData() {
         count(*) filter (where reflected_entries > 0)::int as "activatedUsers",
         count(*) filter (
           where reflected_entries > 0
-            and (active_days >= 2 or continued_entries > 0)
+            and (returned_after_reflection or continued_entries > 0)
         )::int as "returningUsers",
         count(*) filter (
           where reflected_entries >= 3
-            and active_days = 1
+            and not returned_after_reflection
+            and continued_entries = 0
         )::int as "intenseNoReturnUsers",
         coalesce(sum(entries), 0)::int as "entries",
         coalesce(sum(reflected_entries), 0)::int as "reflectedEntries",
@@ -1613,6 +1684,143 @@ async function getDashboardData() {
           where e.created_at >= ${ALPHA_COHORT_START}
             and e.risk_level = 'high'
         ) as "highRiskEntries"
+      from per_user
+    `),
+  );
+
+  const [activationSummary] = rows<ActivationSummaryRow>(
+    await db.execute(sql`
+      with excluded_users as (
+        select id
+        from users
+        where lower(coalesce(email, '')) like '%test%'
+           or lower(coalesce(email, '')) like '%launchtest%'
+           or lower(coalesce(email, '')) like '%example.%'
+           or lower(coalesce(email, '')) like '%leonardocamacho%'
+      ),
+      cohort_users as (
+        select u.id, u.onboarding_completed_at
+        from users u
+        where not exists (select 1 from excluded_users x where x.id = u.id)
+          and (
+            u.created_at >= ${ALPHA_COHORT_START}
+            or exists (
+              select 1
+              from access_invites ai
+              where lower(ai.email) = lower(coalesce(u.email, ''))
+                and (ai.created_at >= ${ALPHA_COHORT_START} or ai.sent_at >= ${ALPHA_COHORT_START})
+            )
+            or exists (select 1 from entries e where e.user_id = u.id and e.created_at >= ${ALPHA_COHORT_START})
+            or exists (select 1 from product_events pe where pe.user_id = u.id and pe.created_at >= ${ALPHA_COHORT_START})
+          )
+      ),
+      entry_stats as (
+        select
+          e.user_id,
+          count(*)::int as entries,
+          count(*) filter (
+            where e.transcript is not null and nullif(trim(e.transcript), '') is not null
+          )::int as transcribed_entries,
+          count(*) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(*) filter (
+            where e.entry_mode = 'continue' or e.continued_from_entry_id is not null
+          )::int as continued_entries,
+          min(date_trunc('day', e.created_at at time zone 'America/Sao_Paulo')) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          ) as first_reflection_day,
+          max(e.created_at) as last_entry_at
+        from entries e
+        inner join cohort_users cu on cu.id = e.user_id
+        where e.created_at >= ${ALPHA_COHORT_START}
+        group by e.user_id
+      ),
+      event_stats as (
+        select
+          pe.user_id,
+          count(*) filter (where pe.event_name = 'product_onboarding_completed')::int as onboarding_completed_events,
+          count(*) filter (
+            where pe.event_name in (
+              'product_diary_recording_started',
+              'product_transcription_succeeded',
+              'product_diary_silent_save_succeeded'
+            )
+          )::int as recording_signals,
+          max(pe.created_at) filter (
+            where pe.event_name in (
+              'product_onboarding_completed',
+              'product_diary_recording_started',
+              'product_transcription_succeeded',
+              'product_diary_silent_save_succeeded',
+              'product_reflection_succeeded',
+              'product_reflection_received'
+            )
+          ) as latest_event_at
+        from product_events pe
+        inner join cohort_users cu on cu.id = pe.user_id
+        where pe.created_at >= ${ALPHA_COHORT_START}
+        group by pe.user_id
+      ),
+      activity_days as (
+        select distinct user_id, local_day
+        from (
+          select e.user_id, date_trunc('day', e.created_at at time zone 'America/Sao_Paulo') as local_day
+          from entries e
+          inner join cohort_users cu on cu.id = e.user_id
+          where e.created_at >= ${ALPHA_COHORT_START}
+          union
+          select pe.user_id, date_trunc('day', pe.created_at at time zone 'America/Sao_Paulo') as local_day
+          from product_events pe
+          inner join cohort_users cu on cu.id = pe.user_id
+          where pe.created_at >= ${ALPHA_COHORT_START}
+        ) activity
+      ),
+      per_user as (
+        select
+          cu.id,
+          (
+            cu.onboarding_completed_at is not null
+            or coalesce(evs.onboarding_completed_events, 0) > 0
+          ) as onboarding_completed,
+          (
+            coalesce(es.entries, 0) > 0
+            or coalesce(es.transcribed_entries, 0) > 0
+            or coalesce(evs.recording_signals, 0) > 0
+          ) as first_recording,
+          coalesce(es.reflected_entries, 0) > 0 as reflection_received,
+          coalesce(es.continued_entries, 0) > 0 as thread_resumed,
+          exists (
+            select 1
+            from activity_days ad
+            where ad.user_id = cu.id
+              and es.first_reflection_day is not null
+              and ad.local_day > es.first_reflection_day
+          ) as returned_other_day,
+          nullif(
+            greatest(
+              coalesce(cu.onboarding_completed_at, 'epoch'::timestamptz),
+              coalesce(es.last_entry_at, 'epoch'::timestamptz),
+              coalesce(evs.latest_event_at, 'epoch'::timestamptz)
+            ),
+            'epoch'::timestamptz
+          ) as latest_activation_at
+        from cohort_users cu
+        left join entry_stats es on es.user_id = cu.id
+        left join event_stats evs on evs.user_id = cu.id
+      )
+      select
+        count(*)::int as "cohortUsers",
+        count(*) filter (where onboarding_completed)::int as "onboardingCompletedUsers",
+        count(*) filter (where first_recording)::int as "firstRecordingUsers",
+        count(*) filter (where reflection_received)::int as "reflectionReceivedUsers",
+        count(*) filter (where reflection_received and returned_other_day)::int as "returnOtherDayUsers",
+        count(*) filter (where reflection_received and thread_resumed)::int as "threadResumedUsers",
+        count(*) filter (
+          where reflection_received
+            and (returned_other_day or thread_resumed)
+        )::int as "pmfLightUsers",
+        max(latest_activation_at) as "latestActivationAt"
       from per_user
     `),
   );
@@ -1650,6 +1858,9 @@ async function getDashboardData() {
           count(distinct date_trunc('day', e.created_at at time zone 'America/Sao_Paulo'))::int as entry_days,
           count(*) filter (where e.reflection is not null and nullif(trim(e.reflection), '') is not null)::int as reflected_entries,
           count(*) filter (where e.entry_mode = 'continue' or e.continued_from_entry_id is not null)::int as continuations,
+          min(date_trunc('day', e.created_at at time zone 'America/Sao_Paulo')) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          ) as first_reflection_day,
           min(e.created_at) as first_entry_at,
           max(e.created_at) as last_entry_at
         from entries e
@@ -1670,10 +1881,8 @@ async function getDashboardData() {
         where pe.created_at >= ${ALPHA_COHORT_START}
         group by pe.user_id
       ),
-      activity_stats as (
-        select
-          user_id,
-          count(distinct local_day)::int as active_days
+      activity_days as (
+        select distinct user_id, local_day
         from (
           select e.user_id, date_trunc('day', e.created_at at time zone 'America/Sao_Paulo') as local_day
           from entries e
@@ -1685,6 +1894,12 @@ async function getDashboardData() {
           inner join cohort_users cu on cu.id = pe.user_id
           where pe.created_at >= ${ALPHA_COHORT_START}
         ) activity
+      ),
+      activity_stats as (
+        select
+          user_id,
+          count(*)::int as active_days
+        from activity_days
         group by user_id
       ),
       per_user as (
@@ -1698,6 +1913,13 @@ async function getDashboardData() {
           coalesce(es.continuations, 0) as continuations,
           coalesce(evs.transcription_failures, 0) as transcription_failures,
           coalesce(evs.reflection_failures, 0) as reflection_failures,
+          exists (
+            select 1
+            from activity_days ad
+            where ad.user_id = cu.id
+              and es.first_reflection_day is not null
+              and ad.local_day > es.first_reflection_day
+          ) as returned_after_reflection,
           least(
             coalesce(es.first_entry_at, evs.first_event_at),
             coalesce(evs.first_event_at, es.first_entry_at)
@@ -1724,8 +1946,8 @@ async function getDashboardData() {
         first_seen_at as "firstSeenAt",
         last_seen_at as "lastSeenAt",
         case
-          when reflected_entries > 0 and (active_days >= 2 or continuations > 0) then 'retorno_real'
-          when reflected_entries >= 3 and active_days = 1 then 'intenso_sem_retorno'
+          when reflected_entries > 0 and (returned_after_reflection or continuations > 0) then 'retorno_real'
+          when reflected_entries >= 3 and not returned_after_reflection and continuations = 0 then 'intenso_sem_retorno'
           when reflected_entries > 0 then 'ativado_leve'
           else 'sinal_inicial'
         end as bucket
@@ -1733,8 +1955,8 @@ async function getDashboardData() {
       where entries > 0 or product_events > 0
       order by
         case
-          when reflected_entries > 0 and (active_days >= 2 or continuations > 0) then 0
-          when reflected_entries >= 3 and active_days = 1 then 1
+          when reflected_entries > 0 and (returned_after_reflection or continuations > 0) then 0
+          when reflected_entries >= 3 and not returned_after_reflection and continuations = 0 then 1
           when reflected_entries > 0 then 2
           else 3
         end,
@@ -2565,6 +2787,16 @@ async function getDashboardData() {
       lowRiskEntries: asNumber(productSummary?.lowRiskEntries),
       highRiskEntries: asNumber(productSummary?.highRiskEntries),
     },
+    activation: {
+      cohortUsers: asNumber(activationSummary?.cohortUsers),
+      onboardingCompletedUsers: asNumber(activationSummary?.onboardingCompletedUsers),
+      firstRecordingUsers: asNumber(activationSummary?.firstRecordingUsers),
+      reflectionReceivedUsers: asNumber(activationSummary?.reflectionReceivedUsers),
+      returnOtherDayUsers: asNumber(activationSummary?.returnOtherDayUsers),
+      threadResumedUsers: asNumber(activationSummary?.threadResumedUsers),
+      pmfLightUsers: asNumber(activationSummary?.pmfLightUsers),
+      latestActivationAt: activationSummary?.latestActivationAt ?? null,
+    },
     alphaUsers,
     productEventBreakdown,
     mapa: {
@@ -2720,8 +2952,60 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     1,
     ...data.dailyRows.flatMap((row) => [asNumber(row.signups), asNumber(row.confirmed), asNumber(row.referred)]),
   );
-  const pmfLightRate = percent(data.product.returningUsers, data.product.activatedUsers);
-  const pmfLightTone = data.product.returningUsers > 0 ? "neutral" : "warn";
+  const pmfLightRate = percent(data.activation.pmfLightUsers, data.activation.reflectionReceivedUsers);
+  const pmfLightTone = data.activation.pmfLightUsers > 0 ? "neutral" : "warn";
+  const activationRecordingWithoutReflection = Math.max(
+    data.activation.firstRecordingUsers - data.activation.reflectionReceivedUsers,
+    0,
+  );
+  const activationWithoutReturn = Math.max(
+    data.activation.reflectionReceivedUsers - data.activation.pmfLightUsers,
+    0,
+  );
+  const activationFunnelRows: ActivationFunnelRow[] = [
+    {
+      label: "Onboarding concluído",
+      count: data.activation.onboardingCompletedUsers,
+      baseLabel: "coorte real",
+      baseCount: data.activation.cohortUsers,
+      criterion: "users.onboarding_completed_at ou evento product_onboarding_completed",
+    },
+    {
+      label: "Primeira gravação",
+      count: data.activation.firstRecordingUsers,
+      baseLabel: "coorte real",
+      baseCount: data.activation.cohortUsers,
+      criterion: "gravação iniciada, transcrição registrada ou primeira entrada persistida",
+    },
+    {
+      label: "Reflexão recebida",
+      count: data.activation.reflectionReceivedUsers,
+      baseLabel: "primeira gravação",
+      baseCount: data.activation.firstRecordingUsers,
+      criterion: "ao menos uma entry com reflection preenchida",
+    },
+    {
+      label: "Retorno em outro dia",
+      count: data.activation.returnOtherDayUsers,
+      baseLabel: "reflexão recebida",
+      baseCount: data.activation.reflectionReceivedUsers,
+      criterion: "atividade em dia local posterior à primeira reflexão",
+    },
+    {
+      label: "Fio retomado",
+      count: data.activation.threadResumedUsers,
+      baseLabel: "reflexão recebida",
+      baseCount: data.activation.reflectionReceivedUsers,
+      criterion: "entry_mode=continue ou continued_from_entry_id preenchido",
+    },
+    {
+      label: "PMF leve",
+      count: data.activation.pmfLightUsers,
+      baseLabel: "reflexão recebida",
+      baseCount: data.activation.reflectionReceivedUsers,
+      criterion: "retorno em outro dia ou fio retomado",
+    },
+  ];
   const pmfDeclaredResponseRate = percent(data.pmfDeclared.answered, data.pmfDeclared.promptsShown);
   const pmfVeryDisappointedRate = percent(data.pmfDeclared.veryDisappointed, data.pmfDeclared.answered);
   const pmfFunnelPromptRate = percent(data.pmfFunnel.pmfShownUsers, data.pmfFunnel.eligibleUsers);
@@ -3385,7 +3669,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               <SignalRow
                 label="PMF leve"
                 value={pmfLightRate}
-                note={`${data.product.returningUsers}/${data.product.activatedUsers} ativados voltaram de verdade`}
+                note={`${data.activation.pmfLightUsers}/${data.activation.reflectionReceivedUsers} ativados voltaram ou retomaram fio`}
                 tone={pmfLightTone}
                 definition={help.pmfLight}
               />
@@ -3403,6 +3687,93 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 tone={data.product.intenseNoReturnUsers ? "warn" : "good"}
                 definition={help.intenseNoReturn}
               />
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Ativação real</h2>
+                <p>Leitura operacional do funil Alpha antes de experimentos, BI ou pricing: valor recebido, retorno observável e fio retomado.</p>
+              </div>
+              <div className={styles.grid}>
+                <MetricCard
+                  value={compactNumber(data.activation.onboardingCompletedUsers)}
+                  label="Onboarding concluído"
+                  note={`${percent(data.activation.onboardingCompletedUsers, data.activation.cohortUsers)} da coorte real`}
+                  tone={data.activation.onboardingCompletedUsers ? "good" : "warn"}
+                  definition={help.activationFunnel}
+                />
+                <MetricCard
+                  value={compactNumber(data.activation.firstRecordingUsers)}
+                  label="Primeira gravação"
+                  note={`${activationRecordingWithoutReflection} ainda sem reflexão recebida`}
+                  tone={data.activation.firstRecordingUsers ? "good" : "warn"}
+                  definition={help.firstRecording}
+                />
+                <MetricCard
+                  value={compactNumber(data.activation.reflectionReceivedUsers)}
+                  label="Reflexão recebida"
+                  note={`${percent(data.activation.reflectionReceivedUsers, data.activation.firstRecordingUsers)} das primeiras gravações`}
+                  tone={data.activation.reflectionReceivedUsers ? "good" : "warn"}
+                  definition={help.activatedUsers}
+                />
+                <MetricCard
+                  value={compactNumber(data.activation.returnOtherDayUsers)}
+                  label="Retorno em outro dia"
+                  note="Depois da primeira reflexão, não só antes dela"
+                  tone={data.activation.returnOtherDayUsers ? "good" : "warn"}
+                  definition={help.returnAfterReflection}
+                />
+                <MetricCard
+                  value={compactNumber(data.activation.threadResumedUsers)}
+                  label="Fio retomado"
+                  note={`${percent(data.activation.threadResumedUsers, data.activation.reflectionReceivedUsers)} dos ativados`}
+                  tone={data.activation.threadResumedUsers ? "good" : "neutral"}
+                  definition={help.threadResumed}
+                />
+                <MetricCard
+                  value={pmfLightRate}
+                  label="PMF leve"
+                  note={`${activationWithoutReturn} ativados ainda sem retorno/fio`}
+                  tone={pmfLightTone}
+                  definition={help.pmfLight}
+                />
+              </div>
+              <div className={styles.split}>
+                <div className={styles.signalCard}>
+                  <h3 className={styles.cardTitle}>Gargalos de ativação</h3>
+                  <SignalRow
+                    label="Coorte real"
+                    value={`${data.activation.cohortUsers}`}
+                    note="Internos/testes excluídos por regra auditável de email"
+                    tone="neutral"
+                    definition={help.activationFunnel}
+                  />
+                  <SignalRow
+                    label="Gravou sem reflexão"
+                    value={`${activationRecordingWithoutReflection}`}
+                    note="Possível queda entre gravação, transcrição e reflexão"
+                    tone={activationRecordingWithoutReflection ? "warn" : "good"}
+                    definition={help.firstRecording}
+                  />
+                  <SignalRow
+                    label="Ativado sem retorno"
+                    value={`${activationWithoutReturn}`}
+                    note="Recebeu reflexão, mas ainda não voltou em outro dia nem retomou fio"
+                    tone={activationWithoutReturn ? "warn" : "good"}
+                    definition={help.returnAfterReflection}
+                  />
+                  <SignalRow
+                    label="Último sinal"
+                    value={data.activation.latestActivationAt ? formatDate(data.activation.latestActivationAt) : "sem sinal"}
+                    note="Último onboarding, gravação, entrada ou reflexão dentro da coorte"
+                    tone={data.activation.latestActivationAt ? "good" : "warn"}
+                  />
+                </div>
+                <ActivationFunnelTable rows={activationFunnelRows} cohortUsers={data.activation.cohortUsers} />
+              </div>
+              <div className={styles.noteCard}>
+                Ativação real é calculada apenas com timestamps, contagens e estados fechados. O bloco não renderiza email, nome, diário, transcrição, reflexão, áudio ou resposta aberta.
+              </div>
             </section>
 
             <section className={styles.section}>
@@ -3524,23 +3895,23 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               </div>
               <div className={styles.grid}>
                 <MetricCard
-                  value={compactNumber(data.product.activatedUsers)}
+                  value={compactNumber(data.activation.reflectionReceivedUsers)}
                   label="Ativados"
                   note={`${data.product.reflectedEntries} reflexões concluídas`}
-                  tone={data.product.activatedUsers ? "good" : "warn"}
+                  tone={data.activation.reflectionReceivedUsers ? "good" : "warn"}
                   definition={help.activatedUsers}
                 />
                 <MetricCard
-                  value={compactNumber(data.product.returningUsers)}
+                  value={compactNumber(data.activation.returnOtherDayUsers)}
                   label="Retorno real"
-                  note="Atividade em 2+ dias ou continuidade explícita"
-                  tone={data.product.returningUsers ? "good" : "warn"}
-                  definition={help.returningUsers}
+                  note="Atividade em outro dia após a primeira reflexão"
+                  tone={data.activation.returnOtherDayUsers ? "good" : "warn"}
+                  definition={help.returnAfterReflection}
                 />
                 <MetricCard
                   value={pmfLightRate}
                   label="PMF leve"
-                  note="Retorno real dividido por usuários ativados"
+                  note="Retorno outro dia ou fio retomado dividido por usuários ativados"
                   tone={pmfLightTone}
                   definition={help.pmfLight}
                 />
@@ -3553,7 +3924,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 />
               </div>
               <div className={styles.noteCard}>
-                Critérios usados: ativado = pelo menos uma entrada com reflexão; retorno real = usuário ativado com atividade em dois ou mais dias locais ou continuação explícita de fio; intenso sem retorno = três ou mais reflexões no primeiro dia e nenhum segundo dia observável. Com amostra pequena, isso é leitura de Alpha, não prova estatística de PMF.
+                Critérios usados: ativado = pelo menos uma entrada com reflexão; retorno real = usuário ativado com atividade em dia local posterior à primeira reflexão; fio retomado = continuidade explícita por entry_mode=continue ou continued_from_entry_id; PMF leve = retorno real ou fio retomado dividido por usuários ativados. Com amostra pequena, isso é leitura de Alpha, não prova estatística de PMF.
               </div>
             </section>
 

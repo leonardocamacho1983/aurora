@@ -66,7 +66,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Mapear eventos de produto alem da waitlist: login, onboarding, primeira gravacao, reflexao, retorno e timeline.
 - [ ] Definir retencao e exclusao de audio, transcricao, reflexao e embeddings.
 - [ ] Garantir que PostHog nao receba conteudo sensivel de diario.
-- [ ] Criar leitura operacional de ativacao: onboarding concluido, primeira entrada, reflexao recebida, retorno.
+- [x] Criar leitura operacional de ativacao no `/admin`: onboarding concluido, primeira gravacao, reflexao recebida, retorno em outro dia, fio retomado e PMF leve.
 - [ ] Backlog pos-Alpha: avaliar Metabase ou BI similar para analise exploratoria em cima de views analytics-safe do Postgres. Manter `/admin` como cockpit operacional; BI deve usar usuario read-only, mascarar/excluir transcricao, reflexao, audio, caminhos de storage e metadados sensiveis, e separar claramente PMF comportamental, microfeedback, PMF mostrado e PMF respondido.
 
 ### Localizacao PT-BR/EN
