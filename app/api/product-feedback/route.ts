@@ -375,9 +375,10 @@ export async function POST(request: Request) {
   const variant = body.variant === PMF_VARIANT ? PMF_VARIANT : PMF_VARIANT;
   const event = eventName(kind, action);
   const now = new Date();
+  const nowIso = now.toISOString();
   const snoozedUntil =
     action === "snoozed"
-      ? new Date(now.getTime() + PMF_SNOOZE_DAYS * 24 * 60 * 60 * 1000)
+      ? new Date(now.getTime() + PMF_SNOOZE_DAYS * 24 * 60 * 60 * 1000).toISOString()
       : null;
   const metadata = {
     variant,
@@ -415,9 +416,9 @@ export async function POST(request: Request) {
       ${source},
       ${variant},
       ${JSON.stringify(metadata)}::jsonb,
-      ${action === "shown" ? now : null},
-      ${action === "answered" ? now : null},
-      ${action === "skipped" ? now : null},
+      ${action === "shown" ? nowIso : null},
+      ${action === "answered" ? nowIso : null},
+      ${action === "skipped" ? nowIso : null},
       ${snoozedUntil}
     )
   `);
