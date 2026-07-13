@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
+import { entries, crisisEvents } from "@/lib/db/schema";
 import { runReflectPipeline, createReflectDeps } from "@/lib/ai/reflect";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
-import { embedText } from "@/lib/ai/embeddings";
 import { bucketLatency } from "@/lib/ai/error-classification";
 import { recordProductEvent, type ProductEventMetadata } from "@/lib/analytics/product-events";
-import { classifyEntryFocusForStorage } from "@/lib/mapa/focus-classifier";
+import { enrichEntryAfterResponse } from "@/lib/diary/entry-enrichment";
 import {
   classifyDiaryRoute,
   isConfidentPracticalLog,
@@ -225,13 +224,8 @@ export async function POST(request: Request) {
       });
     }
 
-    const focus = await classifyEntryFocusForStorage({
-      transcript,
-      reflection: result.reflection,
-      mood: result.mood,
-    });
-
-    // ── Caminho normal: salva a entry + embedding e devolve a reflexão.
+    // ── Caminho normal: salva a entry e devolve a reflexão.
+    // Foco e embedding rodam após a resposta para não bloquear a devolutiva.
     const [entry] = await db
       .insert(entries)
       .values({
@@ -240,25 +234,22 @@ export async function POST(request: Request) {
         language,
         reflection: result.reflection,
         mood: result.mood,
-        ...focus,
         riskLevel: result.risk,
         entryMode,
         continuedFromEntryId,
       })
       .returning({ id: entries.id });
 
-    // TODO(§5): mover a geração do embedding para o Inngest (assíncrono) e
-    // deduplicar com o embedding já calculado no RAG.
-    try {
-      const vector = await embedText(transcript);
-      await db.insert(embeddings).values({
-        entryId: entry.id,
-        userId: user.id,
-        embedding: vector,
-      });
-    } catch {
-      // Falha ao indexar não deve derrubar a reflexão já entregue.
-    }
+    enrichEntryAfterResponse({
+      entryId: entry.id,
+      userId: user.id,
+      transcript,
+      reflection: result.reflection,
+      mood: result.mood,
+      requestId,
+      entryMode,
+      source: "reflect_api",
+    });
 
     await recordProductEvent({
       userId: user.id,
@@ -274,8 +265,6 @@ export async function POST(request: Request) {
         total_latency_bucket: bucketLatency(Date.now() - startedAt),
         rag_used: useRag,
         has_mood: Boolean(result.mood),
-        focus_key: focus.focusKey,
-        focus_confidence: focus.focusConfidence,
       },
     });
 

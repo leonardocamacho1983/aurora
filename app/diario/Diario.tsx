@@ -16,6 +16,7 @@ import type { OnboardingProfile } from "@/lib/onboarding/context";
 import styles from "./Diario.module.css";
 
 type Phase = "idle" | "recording" | "reflecting" | "saveDecision" | "savedLog" | "reflection" | "crisis" | "error";
+type ProcessingStage = "stopping" | "transcribing" | "routing" | "reflecting";
 
 type ReflectResponse =
   | {
@@ -158,6 +159,25 @@ const REFLECTING_HELPERS = [
   "Olhe pela janela por alguns segundos.",
   "Deixe a respiração ficar um pouco mais lenta.",
 ];
+
+const PROCESSING_COPY: Record<ProcessingStage, { title: string; body: string }> = {
+  stopping: {
+    title: "Guardando sua fala.",
+    body: "A gravação está fechando antes de seguir.",
+  },
+  transcribing: {
+    title: "Transformando voz em texto.",
+    body: "A Aurora está ouvindo com calma.",
+  },
+  routing: {
+    title: "Entendendo o tipo de registro.",
+    body: "Ela está separando o que pede leitura do que só precisa ser guardado.",
+  },
+  reflecting: {
+    title: "Preparando uma leitura.",
+    body: "A Aurora está pensando no que você disse.",
+  },
+};
 
 const MOOD_COLOR: Record<string, string> = {
   leve: "var(--mood-leve)",
@@ -424,6 +444,7 @@ export function Diario({
   const [crisis, setCrisis] = useState<CrisisResourcesData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [reflectingHelper, setReflectingHelper] = useState(REFLECTING_HELPERS[0]);
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>("reflecting");
   const [pendingRoutineEntry, setPendingRoutineEntry] = useState<PendingRoutineEntry | null>(null);
   const [isSavingRoutineEntry, setIsSavingRoutineEntry] = useState(false);
 
@@ -481,7 +502,8 @@ export function Diario({
     setPhase("error");
   }
 
-  function enterReflecting() {
+  function enterReflecting(stage: ProcessingStage = "reflecting") {
+    setProcessingStage(stage);
     setReflectingHelper(pickReflectingHelper());
     setIsReflectionExpanded(false);
     setPhase("reflecting");
@@ -554,7 +576,7 @@ export function Diario({
       recorder_mime_type: recorder.mimeType.split(";")[0],
       entry_mode: entryMode,
     });
-    enterReflecting();
+    enterReflecting("stopping");
     let blob: Blob;
     try {
       blob = await withTimeout(recorder.stop(), STOP_RECORDING_TIMEOUT_MS);
@@ -573,7 +595,7 @@ export function Diario({
     blob: Blob,
     options?: { entryId?: string; entryMode?: EntryMode; durationBucket?: string; attempt?: number },
   ) {
-    enterReflecting();
+    enterReflecting("transcribing");
     setCanRetry(false);
     setRetryNotice(null);
     const requestId = createClientRequestId();
@@ -633,6 +655,7 @@ export function Diario({
         return;
       }
       const entryMode = options?.entryMode ?? nextEntryMode;
+      setProcessingStage("routing");
       await reflectOn(
         tData.transcript,
         tData.language ?? null,
@@ -686,6 +709,7 @@ export function Diario({
     forceReflection = false,
   ) {
     try {
+      setProcessingStage(forceReflection ? "reflecting" : "routing");
       const rRes = await fetchWithTimeout(
         "/api/reflect",
         {
@@ -827,6 +851,7 @@ export function Diario({
       request_id: pending.requestId,
     });
     try {
+      setProcessingStage("reflecting");
       const res = await fetchWithTimeout(
         "/api/entries",
         {
@@ -908,7 +933,7 @@ export function Diario({
       request_id: pending.requestId,
       attempt: pending.attempt,
     });
-    enterReflecting();
+    enterReflecting("reflecting");
     await reflectOn(
       pending.transcript,
       pending.language,
@@ -946,14 +971,14 @@ export function Diario({
       helper: "Toque no orb de novo para encerrar.",
     },
     reflecting: {
-      title: "Aproveite para respirar.",
-      body: "A Aurora está pensando no que você falou.",
+      title: PROCESSING_COPY[processingStage].title,
+      body: PROCESSING_COPY[processingStage].body,
       helper: reflectingHelper,
     },
     saveDecision: {
-      title: "Quer só guardar esse registro?",
-      body: "Se for rotina, a Aurora pode ficar em silêncio.",
-      helper: "Escolha o próximo passo.",
+      title: isSavingRoutineEntry ? "Salvando no diário." : "Quer só guardar esse registro?",
+      body: isSavingRoutineEntry ? "A entrada já está sendo guardada." : "Se for rotina, a Aurora pode ficar em silêncio.",
+      helper: isSavingRoutineEntry ? "Você já pode respirar um instante." : "Escolha o próximo passo.",
     },
     savedLog: {
       title: "Registrado.",

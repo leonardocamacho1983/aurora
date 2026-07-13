@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { entries, embeddings, crisisEvents } from "@/lib/db/schema";
+import { entries, crisisEvents } from "@/lib/db/schema";
 import { classifyCrisis } from "@/lib/ai/crisis-classifier";
 import { getCrisisResources } from "@/lib/ai/crisis-resources";
-import { embedText } from "@/lib/ai/embeddings";
+import { bucketLatency } from "@/lib/ai/error-classification";
 import { recordProductEvent } from "@/lib/analytics/product-events";
-import { classifyEntryFocusForStorage } from "@/lib/mapa/focus-classifier";
+import { enrichEntryAfterResponse } from "@/lib/diary/entry-enrichment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +35,7 @@ async function entryBelongsToUser(userId: string, entryId: string) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const supabase = await createClient();
   const {
     data: { user },
@@ -123,31 +124,26 @@ export async function POST(request: Request) {
       });
     }
 
-    const focus = await classifyEntryFocusForStorage({ transcript });
-
     const [entry] = await db
       .insert(entries)
       .values({
         userId: user.id,
         transcript,
         language,
-        ...focus,
         riskLevel: crisis.risk,
         entryMode,
         continuedFromEntryId,
       })
       .returning({ id: entries.id });
 
-    try {
-      const vector = await embedText(transcript);
-      await db.insert(embeddings).values({
-        entryId: entry.id,
-        userId: user.id,
-        embedding: vector,
-      });
-    } catch {
-      // Silent-save must still succeed when background indexing fails.
-    }
+    enrichEntryAfterResponse({
+      entryId: entry.id,
+      userId: user.id,
+      transcript,
+      requestId,
+      entryMode,
+      source: "entries_api",
+    });
 
     await recordProductEvent({
       userId: user.id,
@@ -159,8 +155,7 @@ export async function POST(request: Request) {
         request_id: requestId,
         entry_mode: entryMode,
         intent,
-        focus_key: focus.focusKey,
-        focus_confidence: focus.focusConfidence,
+        total_latency_bucket: bucketLatency(Date.now() - startedAt),
       },
     });
 
