@@ -17,6 +17,7 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - [x] Webhook do Resend grava eventos seguros em `waitlist_events`, sem conteudo de email, sem email do destinatario em metadata e sem URL completa de clique.
 - [x] Admin passa a mostrar delivered, opened, clicked, bounced e complained dos ultimos 30 dias.
 - [x] `/admin` mostra confiabilidade basica: `CRON_SECRET`, `RESEND_WEBHOOK_SECRET`, `RESEND_API_KEY`, ultimo lifecycle, ultima manutencao, ultimo webhook Resend e problemas recentes de email.
+- [x] `GET/POST /api/observability/resend-webhook` exige token administrativo e audita/sincroniza o cadastro do webhook no Resend sem retornar segredo.
 - [x] Sentry Next.js captura erros client/server com `sendDefaultPii=false`, sem session replay e com scrubbing de query string, tokens, emails, headers, cookies e campos sensiveis.
 - [x] `POST /api/observability/sentry-smoke` exige token administrativo e envia apenas um evento tecnico controlado para validar a integracao.
 - [x] Smoke script read-only: `npm run smoke:waitlist`.
@@ -79,6 +80,8 @@ Validacao operacional:
 
 - Se o endpoint estiver sem `RESEND_WEBHOOK_SECRET`, ele retorna `503`.
 - Se o endpoint estiver configurado e receber payload sem assinatura valida, ele retorna `400 invalid webhook`.
+- Auditoria protegida: `GET /api/observability/resend-webhook?token=$WAITLIST_ADMIN_TOKEN` lista apenas status/eventos/match de signing secret.
+- Sincronizacao protegida: `POST /api/observability/resend-webhook?token=$WAITLIST_ADMIN_TOKEN` reativa o webhook e corrige eventos quando o endpoint ja existe no Resend.
 - Quando o Resend enviar um evento assinado real, o `/admin` deve atualizar "Ultimo webhook Resend" e os contadores de delivered/opened/clicked/bounced/complained.
 
 ## Smoke check

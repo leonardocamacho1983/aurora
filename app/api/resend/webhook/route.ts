@@ -3,20 +3,12 @@ import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents } from "@/lib/db/schema";
+import { RESEND_WEBHOOK_EVENTS } from "@/lib/email/resend-webhook";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TRACKED_EMAIL_EVENTS = new Set([
-  "email.delivered",
-  "email.opened",
-  "email.clicked",
-  "email.bounced",
-  "email.complained",
-  "email.delivery_delayed",
-  "email.failed",
-  "email.suppressed",
-]);
+const TRACKED_EMAIL_EVENTS = new Set<string>(RESEND_WEBHOOK_EVENTS);
 
 function rows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
