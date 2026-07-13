@@ -128,11 +128,13 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [x] Lifecycle emails iniciais implementados via rota protegida.
 - [x] Proteger rota de lifecycle para cron automatico com `CRON_SECRET`.
 - [x] Implementar endpoint assinado do webhook Resend para metricas de entrega, abertura, clique, bounce e complaint.
-- [ ] Configurar `CRON_SECRET` e `RESEND_WEBHOOK_SECRET` no Vercel e cadastrar endpoint no Resend.
+- [x] Configurar `CRON_SECRET` e `RESEND_WEBHOOK_SECRET` no Vercel e expor prontidao de cron/webhook no `/admin`.
+- [ ] Confirmar evento real do Resend no `/admin` depois do proximo envio assinado; se continuar sem sinal, revisar cadastro do endpoint no painel/API do Resend.
 - [ ] Criar A/B tests no PostHog para copy pos-cadastro, CTA da landing e sala de convite.
 - [ ] Garantir que variantes de experimentos sejam persistentes por usuario/navegador.
 - [ ] Criar dashboard de ativacao do produto alem da waitlist.
-- [ ] Avaliar Sentry para erros de producao.
+- [x] Adicionar monitoramento simples no `/admin` para cron, webhook Resend e problemas recentes de email.
+- [ ] Avaliar Sentry externo para erros de producao quando houver DSN/projeto definido.
 - [ ] Avaliar Checkly para monitorar funil critico com Playwright.
 
 ## Decisoes ja tomadas

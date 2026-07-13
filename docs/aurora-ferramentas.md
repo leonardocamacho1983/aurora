@@ -20,9 +20,11 @@ Ja existe ou ja esta em uso:
 - [x] Waitlist viral, confirmacao por email, lifecycle inicial e admin operacional.
 - [x] `faleaurora.com` como dominio PT-BR.
 - [ ] `talkaurora.com` como frente EN/global futura.
-- [ ] Sentry ou equivalente para erro real de producao.
+- [x] Monitoramento simples no `/admin` para cron, webhook Resend e problemas recentes de email.
+- [ ] Sentry ou equivalente externo para erro real de producao.
 - [ ] Monitor sintetico externo para funis criticos.
-- [ ] Webhook Resend ativo em producao para delivered/opened/clicked/bounced/complained.
+- [x] Endpoint assinado do Resend pronto em producao para delivered/opened/clicked/bounced/complained.
+- [ ] Confirmar evento real do Resend no `/admin` depois do proximo envio assinado.
 - [ ] Ferramenta de consentimento/privacidade madura para escala internacional.
 
 ## Principios de decisao
@@ -137,7 +139,8 @@ Ferramentas a observar:
   - [x] `clicked`
   - [x] `bounced`
   - [x] `complained`
-- [ ] Configurar o endpoint no Resend e salvar `RESEND_WEBHOOK_SECRET` no Vercel.
+- [x] Salvar `RESEND_WEBHOOK_SECRET` no Vercel e validar endpoint em producao.
+- [ ] Confirmar no `/admin` que o Resend enviou ao menos um evento assinado real para o endpoint.
 - [x] Criar tabela ou evento interno seguro para email:
   - [x] tipo do email
   - [x] provider
@@ -186,7 +189,8 @@ Ferramentas a observar:
 
 ## Observabilidade e confiabilidade
 
-- [ ] **Sentry**: instalar primeiro para erro real.
+- [x] **Admin reliability**: monitorar cron, endpoint Resend, ultimo webhook e problemas recentes de email.
+- [ ] **Sentry**: instalar quando houver projeto/DSN definido para erro real externo.
 - [ ] **Checkly/OpenStatus**: monitorar home, API de waitlist e login. Depois, monitorar diario.
 - [ ] **Vercel Logs/Observability**: usar para investigacao de deploy e funcao.
 - [ ] **Supabase Logs/Advisors**: revisar auth, database, RLS e performance.

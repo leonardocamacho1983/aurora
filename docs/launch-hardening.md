@@ -16,6 +16,7 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - [x] `POST /api/resend/webhook` verifica assinatura Svix/Resend usando raw body e `RESEND_WEBHOOK_SECRET`.
 - [x] Webhook do Resend grava eventos seguros em `waitlist_events`, sem conteudo de email, sem email do destinatario em metadata e sem URL completa de clique.
 - [x] Admin passa a mostrar delivered, opened, clicked, bounced e complained dos ultimos 30 dias.
+- [x] `/admin` mostra confiabilidade basica: `CRON_SECRET`, `RESEND_WEBHOOK_SECRET`, `RESEND_API_KEY`, ultimo lifecycle, ultima manutencao, ultimo webhook Resend e problemas recentes de email.
 - [x] Smoke script read-only: `npm run smoke:waitlist`.
 
 ## Variaveis obrigatorias em producao
@@ -25,7 +26,7 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - `RESEND_WEBHOOK_SECRET`: signing secret do endpoint de webhook no Resend.
 - `RESEND_API_KEY`: chave ja usada para envio; tambem permite instanciar o SDK que verifica o webhook.
 
-Status local desta revisao: as variaveis nao estavam disponiveis na shell do Codex, entao a ativacao externa ainda precisa ser feita no Vercel/Resend.
+Status desta revisao: `CRON_SECRET` existe em Production, o Vercel Cron esta ativo para `/api/waitlist/lifecycle`, `RESEND_WEBHOOK_SECRET` existe em Production, e `POST /api/resend/webhook` em producao responde `invalid webhook` para payload sem assinatura. O cadastro externo no painel/API do Resend deve ser acompanhado pelo sinal "Ultimo webhook Resend" no `/admin`.
 
 ## Manutencao de email
 
@@ -51,6 +52,12 @@ Configure no Resend:
 
 - Endpoint: `https://www.faleaurora.com/api/resend/webhook`
 - Eventos: `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`, `email.complained`, `email.delivery_delayed`, `email.failed`, `email.suppressed`
+
+Validacao operacional:
+
+- Se o endpoint estiver sem `RESEND_WEBHOOK_SECRET`, ele retorna `503`.
+- Se o endpoint estiver configurado e receber payload sem assinatura valida, ele retorna `400 invalid webhook`.
+- Quando o Resend enviar um evento assinado real, o `/admin` deve atualizar "Ultimo webhook Resend" e os contadores de delivered/opened/clicked/bounced/complained.
 
 ## Smoke check
 

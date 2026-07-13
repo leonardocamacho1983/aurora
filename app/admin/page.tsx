@@ -150,6 +150,15 @@ type EmailHealthRow = {
   lastLifecycleAt: Date | string | null;
 };
 
+type ReliabilitySummaryRow = {
+  resendWebhookEvents30: number;
+  emailDelayed30: number;
+  emailFailed30: number;
+  emailSuppressed30: number;
+  latestResendWebhookAt: Date | string | null;
+  latestEmailProblemAt: Date | string | null;
+};
+
 type EmailHygieneEventRow = {
   eventName: string;
   reason: string | null;
@@ -442,6 +451,9 @@ const help = {
   delivered: "Eventos email_delivered recebidos do webhook do Resend nos últimos 30 dias.",
   bounces: "Eventos email_bounced recebidos do webhook do Resend nos últimos 30 dias.",
   hardBlocked: "Pessoas com bounce, complaint ou supressão de provedor; ficam fora de novos envios.",
+  reliabilityReadiness: "Prontidão operacional sem expor segredos: cron protegido, webhook assinado, envio Resend configurado e último sinal recebido.",
+  resendWebhook: "Endpoint assinado do Resend. Um POST sem assinatura deve falhar; sucesso real aparece quando eventos assinados chegam em waitlist_events.",
+  simpleMonitoring: "Monitoramento simples no /admin com heartbeat de cron, eventos do Resend e problemas recentes de email. Sentry externo continua opcional.",
   paused7d: "Pessoas não confirmadas após 7 dias que foram pausadas pela higiene de email.",
   archived30d: "Pessoas não confirmadas após 30 dias que foram arquivadas operacionalmente.",
   reactivated: "Eventos em que uma pessoa pausada/arquivada voltou ao formulário e foi reativada.",
@@ -1174,6 +1186,40 @@ async function getDashboardData() {
           from waitlist_events
           where event_name = 'waitlist_lifecycle_run'
         ) as "lastLifecycleAt"
+    `),
+  );
+
+  const [reliabilitySummary] = rows<ReliabilitySummaryRow>(
+    await db.execute(sql`
+      select
+        count(*) filter (
+          where source = 'resend_webhook'
+            and created_at >= now() - interval '30 days'
+        )::int as "resendWebhookEvents30",
+        count(*) filter (
+          where event_name = 'email_delivery_delayed'
+            and created_at >= now() - interval '30 days'
+        )::int as "emailDelayed30",
+        count(*) filter (
+          where event_name = 'email_failed'
+            and created_at >= now() - interval '30 days'
+        )::int as "emailFailed30",
+        count(*) filter (
+          where event_name = 'email_suppressed'
+            and created_at >= now() - interval '30 days'
+        )::int as "emailSuppressed30",
+        max(created_at) filter (where source = 'resend_webhook') as "latestResendWebhookAt",
+        max(created_at) filter (
+          where event_name in (
+            'email_bounced',
+            'email_complained',
+            'email_delivery_delayed',
+            'email_failed',
+            'email_suppressed',
+            'waitlist_existing_email_blocked'
+          )
+        ) as "latestEmailProblemAt"
+      from waitlist_events
     `),
   );
 
@@ -2721,6 +2767,21 @@ async function getDashboardData() {
       lastMaintenanceAt: emailHealth?.lastMaintenanceAt ?? null,
       lastLifecycleAt: emailHealth?.lastLifecycleAt ?? null,
     },
+    reliability: {
+      cronSecretConfigured: Boolean(process.env.CRON_SECRET?.trim()),
+      resendWebhookSecretConfigured: Boolean(process.env.RESEND_WEBHOOK_SECRET?.trim()),
+      resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+      sentryConfigured: Boolean(process.env.SENTRY_DSN?.trim() || process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()),
+      lifecycleCronPath: "/api/waitlist/lifecycle",
+      lifecycleCronSchedule: "15 13 * * *",
+      resendWebhookEndpoint: "https://www.faleaurora.com/api/resend/webhook",
+      resendWebhookEvents30: asNumber(reliabilitySummary?.resendWebhookEvents30),
+      emailDelayed30: asNumber(reliabilitySummary?.emailDelayed30),
+      emailFailed30: asNumber(reliabilitySummary?.emailFailed30),
+      emailSuppressed30: asNumber(reliabilitySummary?.emailSuppressed30),
+      latestResendWebhookAt: reliabilitySummary?.latestResendWebhookAt ?? null,
+      latestEmailProblemAt: reliabilitySummary?.latestEmailProblemAt ?? null,
+    },
     emailHygieneEvents,
     engagedPeople,
     recentProfiles,
@@ -2934,6 +2995,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     data.email.milestoneSent +
     data.email.lifecycleSent;
   const emailHardSignalNote = `${data.emailHealth.bouncedPeople} bounce, ${data.emailHealth.complainedPeople} complaint, ${data.emailHealth.providerSuppressedPeople} suppressed`;
+  const reliabilityEmailProblems =
+    data.email.bounced +
+    data.email.complained +
+    data.reliability.emailDelayed30 +
+    data.reliability.emailFailed30 +
+    data.reliability.emailSuppressed30;
+  const reliabilityReady =
+    data.reliability.cronSecretConfigured &&
+    data.reliability.resendWebhookSecretConfigured &&
+    data.reliability.resendApiKeyConfigured &&
+    Boolean(data.emailHealth.lastLifecycleAt);
   const dataHealthGood =
     data.health.testRows === 0 &&
     data.health.brokenReferrals === 0 &&
@@ -3077,6 +3149,110 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             tone={emailFailures === 0 && data.email.bounced === 0 && data.email.complained === 0 ? "good" : "warn"}
             definition={help.emailsSent}
           />
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Confiabilidade básica</h2>
+            <p>Prontidão operacional antes de campanha maior: cron protegido, webhook assinado, sinais de entrega e monitoramento interno.</p>
+          </div>
+          <div className={styles.grid}>
+            <MetricCard
+              value={reliabilityReady ? "pronto" : "atenção"}
+              label="Base operacional"
+              note={`${data.reliability.lifecycleCronPath} · ${data.reliability.lifecycleCronSchedule}`}
+              tone={reliabilityReady ? "good" : "warn"}
+              definition={help.reliabilityReadiness}
+            />
+            <MetricCard
+              value={data.reliability.latestResendWebhookAt ? formatDate(data.reliability.latestResendWebhookAt) : "sem sinal"}
+              label="Último webhook Resend"
+              note={`${data.reliability.resendWebhookEvents30} eventos assinados em 30 dias`}
+              tone={data.reliability.latestResendWebhookAt ? "good" : "warn"}
+              definition={help.resendWebhook}
+            />
+            <MetricCard
+              value={compactNumber(reliabilityEmailProblems)}
+              label="Alertas de email"
+              note={`${data.reliability.emailDelayed30} delayed, ${data.reliability.emailFailed30} failed, ${data.reliability.emailSuppressed30} suppressed`}
+              tone={reliabilityEmailProblems ? "warn" : "good"}
+              definition={help.simpleMonitoring}
+            />
+            <MetricCard
+              value={data.reliability.sentryConfigured ? "Sentry" : "admin"}
+              label="Monitoramento"
+              note={data.reliability.sentryConfigured ? "Sentry configurado por env" : "Monitor simples via /admin e logs Vercel"}
+              tone="neutral"
+              definition={help.simpleMonitoring}
+            />
+          </div>
+          <div className={styles.split}>
+            <div className={styles.signalCard}>
+              <h3 className={styles.cardTitle}>Configuração</h3>
+              <SignalRow
+                label="CRON_SECRET"
+                value={data.reliability.cronSecretConfigured ? "configurado" : "faltando"}
+                note="Usado pelo Vercel Cron no Authorization bearer"
+                tone={data.reliability.cronSecretConfigured ? "good" : "warn"}
+                definition={help.reliabilityReadiness}
+              />
+              <SignalRow
+                label="RESEND_WEBHOOK_SECRET"
+                value={data.reliability.resendWebhookSecretConfigured ? "configurado" : "faltando"}
+                note="Assinatura Svix/Resend verificada contra raw body"
+                tone={data.reliability.resendWebhookSecretConfigured ? "good" : "warn"}
+                definition={help.resendWebhook}
+              />
+              <SignalRow
+                label="RESEND_API_KEY"
+                value={data.reliability.resendApiKeyConfigured ? "configurado" : "faltando"}
+                note="Usado para envio e verificação SDK do webhook"
+                tone={data.reliability.resendApiKeyConfigured ? "good" : "warn"}
+                definition={help.reliabilityReadiness}
+              />
+              <SignalRow
+                label="Sentry externo"
+                value={data.reliability.sentryConfigured ? "configurado" : "opcional"}
+                note="Sem DSN, o monitoramento mínimo fica no /admin + Vercel logs"
+                tone={data.reliability.sentryConfigured ? "good" : "neutral"}
+                definition={help.simpleMonitoring}
+              />
+            </div>
+            <div className={styles.signalCard}>
+              <h3 className={styles.cardTitle}>Sinais recentes</h3>
+              <SignalRow
+                label="Último lifecycle"
+                value={data.emailHealth.lastLifecycleAt ? formatDate(data.emailHealth.lastLifecycleAt) : "sem execução"}
+                note="Cron diário que roda manutenção antes dos envios"
+                tone={data.emailHealth.lastLifecycleAt ? "good" : "warn"}
+                definition={help.lifecycleSent}
+              />
+              <SignalRow
+                label="Última manutenção"
+                value={data.emailHealth.lastMaintenanceAt ? formatDate(data.emailHealth.lastMaintenanceAt) : "sem execução"}
+                note="Heartbeat de higiene da lista"
+                tone={data.emailHealth.lastMaintenanceAt ? "good" : "warn"}
+                definition={help.hardBlocked}
+              />
+              <SignalRow
+                label="Último problema email"
+                value={data.reliability.latestEmailProblemAt ? formatDate(data.reliability.latestEmailProblemAt) : "sem sinal"}
+                note="Bounce, complaint, delayed, failed, suppressed ou reenvio bloqueado"
+                tone={data.reliability.latestEmailProblemAt ? "warn" : "good"}
+                definition={help.simpleMonitoring}
+              />
+              <SignalRow
+                label="Endpoint webhook"
+                value="/api/resend/webhook"
+                note="Não exibe segredo nem payload de email"
+                tone={data.reliability.resendWebhookSecretConfigured ? "good" : "warn"}
+                definition={help.resendWebhook}
+              />
+            </div>
+          </div>
+          <div className={styles.noteCard}>
+            O monitoramento básico mostra apenas configuração booleana, timestamps e contagens. Segredos, destinatários, conteúdo de email e payload bruto do provedor não aparecem no admin.
+          </div>
         </section>
 
         <section className={styles.section}>
