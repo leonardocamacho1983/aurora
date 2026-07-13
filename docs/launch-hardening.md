@@ -17,6 +17,8 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - [x] Webhook do Resend grava eventos seguros em `waitlist_events`, sem conteudo de email, sem email do destinatario em metadata e sem URL completa de clique.
 - [x] Admin passa a mostrar delivered, opened, clicked, bounced e complained dos ultimos 30 dias.
 - [x] `/admin` mostra confiabilidade basica: `CRON_SECRET`, `RESEND_WEBHOOK_SECRET`, `RESEND_API_KEY`, ultimo lifecycle, ultima manutencao, ultimo webhook Resend e problemas recentes de email.
+- [x] Sentry Next.js captura erros client/server com `sendDefaultPii=false`, sem session replay e com scrubbing de query string, tokens, emails, headers, cookies e campos sensiveis.
+- [x] `POST /api/observability/sentry-smoke` exige token administrativo e envia apenas um evento tecnico controlado para validar a integracao.
 - [x] Smoke script read-only: `npm run smoke:waitlist`.
 
 ## Variaveis obrigatorias em producao
@@ -25,8 +27,28 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - `WAITLIST_ADMIN_TOKEN`: token para execucao manual/admin.
 - `RESEND_WEBHOOK_SECRET`: signing secret do endpoint de webhook no Resend.
 - `RESEND_API_KEY`: chave ja usada para envio; tambem permite instanciar o SDK que verifica o webhook.
+- `NEXT_PUBLIC_SENTRY_DSN`: DSN publico do projeto Sentry para o SDK.
+- `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`: usados pela build/deploy para release e sourcemaps.
 
 Status desta revisao: `CRON_SECRET` existe em Production, o Vercel Cron esta ativo para `/api/waitlist/lifecycle`, `RESEND_WEBHOOK_SECRET` existe em Production, e `POST /api/resend/webhook` em producao responde `invalid webhook` para payload sem assinatura. O cadastro externo no painel/API do Resend deve ser acompanhado pelo sinal "Ultimo webhook Resend" no `/admin`.
+
+Status Sentry desta revisao: as variaveis existem em Preview e Production via integracao Vercel. Preview cobre staging baseado em branch/deploy preview; se houver um ambiente/branch `staging` separado, ele deve herdar ou receber as mesmas variaveis antes de virar ambiente operacional.
+
+## Privacidade de monitoramento
+
+Sentry e Vercel observability sao ferramentas de erro e estabilidade, nao o pipeline de insight de produto.
+
+- Nao enviar email, nome, audio, transcricao, reflexao, resposta aberta, prompt, entrada de diario ou payload bruto de API como contexto automatico de erro.
+- Logs que passem por Vercel/Sentry devem ser tecnicos: rota, status, classe de erro, request id, duracao e flags fechadas.
+- Entradas e reflexoes podem alimentar conteudo, marketing, GTM, produto, estrategia e personas, mas essa frente deve ser propria, controlada, auditavel e separada de monitoramento externo de erro.
+
+Smoke de Sentry:
+
+```bash
+curl -X POST "https://www.faleaurora.com/api/observability/sentry-smoke?token=$WAITLIST_ADMIN_TOKEN"
+```
+
+Resposta esperada: `{"ok":true,"eventId":"..."}`. Depois, confirmar o evento "Aurora Sentry smoke test" no painel do Sentry.
 
 ## Manutencao de email
 

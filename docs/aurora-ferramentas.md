@@ -21,7 +21,8 @@ Ja existe ou ja esta em uso:
 - [x] `faleaurora.com` como dominio PT-BR.
 - [ ] `talkaurora.com` como frente EN/global futura.
 - [x] Monitoramento simples no `/admin` para cron, webhook Resend e problemas recentes de email.
-- [ ] Sentry ou equivalente externo para erro real de producao.
+- [x] Sentry externo conectado ao Vercel e SDK Next.js configurado para erro real de producao.
+- [ ] Confirmar primeiro evento real no painel do Sentry depois do proximo deploy.
 - [ ] Monitor sintetico externo para funis criticos.
 - [x] Endpoint assinado do Resend pronto em producao para delivered/opened/clicked/bounced/complained.
 - [ ] Confirmar evento real do Resend no `/admin` depois do proximo envio assinado.
@@ -31,7 +32,8 @@ Ja existe ou ja esta em uso:
 
 - [ ] Preferir configurar melhor o que ja existe antes de adicionar fornecedor novo.
 - [ ] Separar analytics de waitlist, analytics de produto e dados sensiveis do diario.
-- [ ] Nunca enviar email, nome, transcricao, reflexao, audio ou respostas abertas para analytics generico.
+- [ ] Nunca enviar email, nome, transcricao, reflexao, audio ou respostas abertas para analytics generico ou monitoramento externo de erro.
+- [ ] Manter uma frente separada e controlada para transformar entradas/reflexoes em insights de conteudo, marketing, GTM, produto, estrategia e personas.
 - [ ] Privacidade e compliance entram antes de escala internacional.
 - [ ] Billing/Stripe fica atras da decisao de modelo de negocio.
 - [ ] Profissionais continuam como frente exploratoria ate haver validacao.
@@ -45,7 +47,7 @@ Estas frentes tem alto valor e baixo risco para o momento atual.
 
 | Ferramenta | Tipo | Por que agora | Acao recomendada | Cuidado |
 |---|---|---|---|---|
-| Sentry | Erros e performance | Hoje o produto ja tem rotas autenticadas, APIs, emails e banco. Erros silenciosos prejudicam confianca. | Instalar no Next.js, capturar erros server/client e filtrar PII. | Configurar scrubbing antes de ativar session replay. |
+| Sentry | Erros e performance | Hoje o produto ja tem rotas autenticadas, APIs, emails e banco. Erros silenciosos prejudicam confianca. | Instalado no Next.js para capturar erros server/client com scrubbing. | Nao ativar session replay nem anexar payloads sensiveis automaticamente. |
 | Resend Webhooks | Email lifecycle | A estrategia de email depende de saber entrega, bounce, complaint e cliques. | Criar endpoint assinado e tabela/eventos de email. | Abertura de email e imperfeita; usar como sinal fraco, nao verdade absoluta. |
 | PostHog Feature Flags e Experiments | Produto e growth | Ja existe PostHog. Permite testar CTA, pos-cadastro e onboarding sem redeploy pesado. | Criar flags para experimentos pequenos e persistentes. | Nao mandar conteudo sensivel; evitar experimento demais com pouca amostra. |
 | Supabase Advisors / RLS review | Seguranca de dados | A Aurora lida com intimidade. RLS e grants precisam estar corretos antes de abrir produto. | Rodar advisors e documentar achados. | Corrigir com migracoes revisadas, nao direto em producao sem registro. |
@@ -190,7 +192,8 @@ Ferramentas a observar:
 ## Observabilidade e confiabilidade
 
 - [x] **Admin reliability**: monitorar cron, endpoint Resend, ultimo webhook e problemas recentes de email.
-- [ ] **Sentry**: instalar quando houver projeto/DSN definido para erro real externo.
+- [x] **Sentry**: SDK Next.js configurado para erro client/server, source maps via Vercel e scrubbing de PII/conteudo sensivel.
+- [ ] **Sentry**: confirmar primeiro evento no painel depois do deploy.
 - [ ] **Checkly/OpenStatus**: monitorar home, API de waitlist e login. Depois, monitorar diario.
 - [ ] **Vercel Logs/Observability**: usar para investigacao de deploy e funcao.
 - [ ] **Supabase Logs/Advisors**: revisar auth, database, RLS e performance.
@@ -266,7 +269,7 @@ Regra:
 - [ ] Nao instalar CMS agora.
 - [ ] Nao trocar Resend agora.
 - [ ] Nao trocar PostHog agora.
-- [ ] Instalar/configurar Sentry antes de abrir mais produto.
+- [x] Instalar/configurar Sentry antes de abrir mais produto.
 - [ ] Configurar Resend Webhooks no Resend/Vercel antes de aumentar cadencia de email.
 - [ ] Usar Supabase Queues/Cron apenas quando jobs forem automatizados de verdade.
 - [ ] Tratar Bemi/Metabase/Basedash como avaliacao, nao urgencia.

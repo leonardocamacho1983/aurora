@@ -134,7 +134,8 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Garantir que variantes de experimentos sejam persistentes por usuario/navegador.
 - [ ] Criar dashboard de ativacao do produto alem da waitlist.
 - [x] Adicionar monitoramento simples no `/admin` para cron, webhook Resend e problemas recentes de email.
-- [ ] Avaliar Sentry externo para erros de producao quando houver DSN/projeto definido.
+- [x] Configurar Sentry externo para erros de producao com SDK Next.js, source maps via Vercel e scrubbing de PII/conteudo sensivel.
+- [ ] Confirmar primeiro evento real no painel do Sentry depois do deploy.
 - [ ] Avaliar Checkly para monitorar funil critico com Playwright.
 
 ## Decisoes ja tomadas
@@ -156,7 +157,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Se havera plano gratuito, beta, founder, trial ou acesso pago antecipado.
 - [ ] Se profissionais terao produto separado, parceria ou apenas material de indicacao.
 - [ ] Qual nivel de memoria historica a Aurora deve oferecer ao usuario.
-- [ ] Quais dados podem alimentar insights sem gerar risco de privacidade ou interpretacao clinica.
+- [ ] Quais dados podem alimentar insights sem gerar risco de privacidade ou interpretacao clinica. Diretriz atual: entradas/reflexoes podem alimentar insights de conteudo, marketing, GTM, produto, estrategia e personas em frente propria e controlada; nao devem vazar automaticamente para Sentry, analytics generico ou logs de fornecedor.
 - [ ] Quando abrir `talkaurora.com` para publico global.
 - [ ] Quais jurisdicoes internacionais serao priorizadas alem do Brasil.
 
