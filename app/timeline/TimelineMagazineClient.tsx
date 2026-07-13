@@ -292,7 +292,7 @@ export default function TimelineMagazineClient({
               <span>primeiro registro</span>
             </div>
             <h2 className={styles.fioTitle}>Sua linha começa no diário.</h2>
-            <p>Grave uma entrada para ver os momentos aparecerem aqui.</p>
+            <p>Quando quiser falar, seus momentos aparecem aqui como memória e continuidade.</p>
             <Link className={styles.flipBtn} href="/diario">
               Nova entrada <span aria-hidden="true">→</span>
             </Link>

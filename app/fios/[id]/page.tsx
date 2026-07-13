@@ -345,7 +345,7 @@ export default async function FioPage({ params }: { params: Promise<{ id: string
                         <div>
                           {reflection
                             ? renderProse(reflection)
-                            : "Este momento está guardado, mas ainda não tem uma leitura da Aurora disponível."}
+                            : "Este momento está no seu diário. A leitura da Aurora aparece quando houver uma devolutiva salva."}
                         </div>
                       </div>
                     </div>

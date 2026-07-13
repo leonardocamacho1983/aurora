@@ -189,16 +189,16 @@ function pieceFromRow(
     moodColor: MOOD_COLOR[row.mood ?? ""] ?? "var(--mood-neutro)",
     duration: durationFrom(row),
     title: titleFrom(row.transcript ?? row.reflection),
-    said: frontText || "Registro sem texto visível.",
-    excerpt: frontText || "Registro sem texto visível.",
+    said: frontText || "Este momento está guardado.",
+    excerpt: frontText || "Este momento está guardado.",
     reading: hasReflection
       ? {
           head: "A Aurora percebeu",
           body: reflection,
         }
-      : {
+        : {
           head: "Ainda sem devolutiva",
-          body: "Este momento está guardado, mas ainda não tem uma leitura da Aurora para virar card.",
+          body: "Este momento está no seu diário. A leitura da Aurora aparece quando houver uma devolutiva salva.",
         },
   };
 }

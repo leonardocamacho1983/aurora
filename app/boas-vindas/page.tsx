@@ -7,7 +7,7 @@ import styles from "./BoasVindas.module.css";
 
 export const dynamic = "force-dynamic";
 
-const PRESENCE_OPTIONS = ["Gentil", "Direta", "Profunda", "Prática"];
+const PRESENCE_OPTIONS = ["Mais calma", "Mais direta", "Mais prática", "Mais acolhedora"];
 
 type Field = keyof OnboardingProfile;
 
@@ -46,7 +46,7 @@ function questionFor(field: Field) {
     },
     presence: {
       title: "Que tipo de presença combina com você hoje?",
-      help: "Isso ajuda a Aurora a ajustar o tom da primeira resposta.",
+      help: "Isso ajuda a Aurora a ajustar o tom sem virar um chat genérico.",
     },
     moment: {
       title: "O que você quer trazer primeiro?",
@@ -101,7 +101,7 @@ export default async function BoasVindasPage() {
   const body =
     context.completion === "complete"
       ? "Trouxe o que você contou no Ritual de Chegada para começar com mais cuidado."
-      : "Responda só o mínimo para a primeira fala ficar mais próxima de você.";
+      : "Responda só o mínimo para a primeira fala ficar mais próxima de você. Também dá para pular e começar direto.";
 
   return (
     <main className={styles.stage}>

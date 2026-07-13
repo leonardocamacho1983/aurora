@@ -14,6 +14,7 @@ export type OnboardingContext = {
   userId: string;
   email: string;
   completedAt: Date | null;
+  updatedAt: Date | null;
   profile: OnboardingProfile;
   completedFields: number;
   totalFields: number;
@@ -32,6 +33,13 @@ const PROFILE_FIELDS: Array<keyof OnboardingProfile> = [
 function clean(value: string | null | undefined) {
   const next = value?.trim() ?? "";
   return next ? next : null;
+}
+
+function cleanDate(value: unknown) {
+  if (value instanceof Date && Number.isFinite(value.getTime())) return value;
+  if (typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
 }
 
 function nextMissing(profile: OnboardingProfile) {
@@ -56,13 +64,18 @@ export async function getOnboardingContext(userId: string, email: string): Promi
       rhythm: waitlistProfile.rhythm,
       presence: waitlistProfile.presence,
       value: waitlistProfile.value,
+      updatedAt: waitlistProfile.updatedAt,
     })
     .from(waitlist)
     .leftJoin(waitlistProfile, eq(waitlistProfile.waitlistId, waitlist.id))
     .where(eq(waitlist.email, normalizedEmail))
     .limit(1);
 
-  const savedContext = (userRow?.onboardingContext ?? {}) as Partial<Record<keyof OnboardingProfile, unknown>>;
+  const savedContext = (userRow?.onboardingContext ?? {}) as Partial<Record<keyof OnboardingProfile, unknown>> & {
+    completed_at?: unknown;
+    updated_at?: unknown;
+  };
+  const savedUpdatedAt = cleanDate(savedContext.updated_at ?? savedContext.completed_at);
   const profile: OnboardingProfile = {
     name: clean(rows[0]?.name),
     moment: clean(rows[0]?.moment),
@@ -87,6 +100,7 @@ export async function getOnboardingContext(userId: string, email: string): Promi
     userId,
     email: normalizedEmail,
     completedAt: userRow?.onboardingCompletedAt ?? null,
+    updatedAt: rows[0]?.updatedAt ?? savedUpdatedAt ?? userRow?.onboardingCompletedAt ?? null,
     profile,
     completedFields,
     totalFields: PROFILE_FIELDS.length,
