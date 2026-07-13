@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { PRODUCT_NAV_ITEMS, type ProductNavKey } from "./navigation";
+import { ProductNavLink } from "./ProductNavLink";
 import styles from "./ProductNav.module.css";
 
 type ProductNavProps = {
@@ -17,38 +17,38 @@ export function ProductNav({ active, contextLabel, showNewEntry }: ProductNavPro
 
   return (
     <header className={styles.header}>
-      <Link className={styles.brand} href="/diario" aria-label="Aurora, ir para o Diário">
+      <ProductNavLink className={styles.brand} href="/diario" aria-label="Aurora, ir para o Diário">
         <span className={styles.brandOrb} aria-hidden="true" />
         <span>Aurora</span>
-      </Link>
+      </ProductNavLink>
 
       <nav className={styles.links} aria-label="Navegação principal">
         {PRIMARY_NAV_ITEMS.map((item) => (
-          <Link
+          <ProductNavLink
             href={item.href}
             aria-current={item.key === active ? "page" : undefined}
             key={item.key}
           >
             {item.label}
-          </Link>
+          </ProductNavLink>
         ))}
       </nav>
 
       <div className={styles.actions}>
         {contextLabel ? <span className={styles.context}>{contextLabel}</span> : null}
         {shouldShowNewEntry ? (
-          <Link className={styles.newEntry} href="/diario">
+          <ProductNavLink className={styles.newEntry} href="/diario">
             Nova entrada
-          </Link>
+          </ProductNavLink>
         ) : null}
         {PROFILE_NAV_ITEM ? (
-          <Link
+          <ProductNavLink
             className={styles.profile}
             href={PROFILE_NAV_ITEM.href}
             aria-current={PROFILE_NAV_ITEM.key === active ? "page" : undefined}
           >
             {PROFILE_NAV_ITEM.label}
-          </Link>
+          </ProductNavLink>
         ) : null}
       </div>
     </header>

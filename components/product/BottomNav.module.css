@@ -24,16 +24,27 @@
 }
 
 .nav a {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 44px;
   border-radius: var(--r-pill);
+  --nav-pending-right: 8px;
   color: var(--ink-faint);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0;
   text-decoration: none;
   text-transform: uppercase;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.nav a:active {
+  color: var(--ink);
+  transform: translateY(1px);
 }
 
 .nav a[aria-current="page"] {

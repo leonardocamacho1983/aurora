@@ -1,0 +1,66 @@
+.pendingLink {
+  color: var(--ink) !important;
+}
+
+.pendingCue {
+  position: absolute;
+  top: 50%;
+  right: var(--nav-pending-right, 8px);
+  display: inline-grid;
+  place-items: center;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) scale(0.72);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.pendingCue[data-pending="true"] {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.pendingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--aurora-mint);
+  box-shadow: 0 0 14px rgba(127, 208, 196, 0.78);
+  animation: nav-pending-pulse 840ms var(--ease-out) infinite;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+}
+
+@keyframes nav-pending-pulse {
+  0%,
+  100% {
+    opacity: 0.56;
+    transform: scale(0.82);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingCue,
+  .pendingDot {
+    transition: none;
+    animation: none;
+  }
+}

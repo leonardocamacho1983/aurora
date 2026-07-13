@@ -1,0 +1,144 @@
+.stage {
+  min-height: 100svh;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(169, 155, 217, 0.12), transparent 54%),
+    linear-gradient(180deg, var(--bg-base) 0%, var(--bg) 58%, #090812 100%);
+}
+
+.shell {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+  padding:
+    max(92px, calc(env(safe-area-inset-top) + 72px))
+    clamp(20px, 5vw, 72px)
+    max(104px, calc(env(safe-area-inset-bottom) + 92px));
+}
+
+.head {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 34rem;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  font-weight: 820;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.head h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.7rem, 6vw, 2.8rem);
+  font-weight: 760;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.line,
+.shortLine,
+.midLine,
+.longLine {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.line {
+  width: min(100%, 24rem);
+  height: 11px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin-top: clamp(28px, 6vw, 48px);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-3);
+  min-height: 156px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--space-5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.074), rgba(255, 255, 255, 0.035)),
+    rgba(24, 21, 39, 0.72);
+  box-shadow: var(--shadow-panel);
+}
+
+.feature {
+  min-height: 220px;
+}
+
+.shortLine {
+  width: 34%;
+  height: 12px;
+}
+
+.midLine {
+  width: 62%;
+  height: 14px;
+}
+
+.longLine {
+  width: 88%;
+  height: 18px;
+}
+
+.line::after,
+.shortLine::after,
+.midLine::after,
+.longLine::after {
+  content: "";
+  display: block;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(248, 246, 252, 0.16), transparent);
+  animation: route-loading-sheen 1.25s var(--ease-linear) infinite;
+}
+
+@keyframes route-loading-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(240%);
+  }
+}
+
+@media (min-width: 760px) {
+  .shell {
+    padding-bottom: clamp(56px, 7vw, 92px);
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.72fr);
+  }
+
+  .feature {
+    grid-row: span 2;
+    min-height: 388px;
+  }
+
+  .wide {
+    grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line::after,
+  .shortLine::after,
+  .midLine::after,
+  .longLine::after {
+    animation: none;
+  }
+}

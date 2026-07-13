@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "@/components/orb/Orb";
 import { BottomNav } from "@/components/product/BottomNav";
 import { ProductNav } from "@/components/product/ProductNav";
+import { ProductNavLink } from "@/components/product/ProductNavLink";
 import { PmfPrompt } from "@/components/product/PmfPrompt";
 import {
   CrisisResources,
@@ -1087,9 +1088,9 @@ export function Diario({
           {phase === "savedLog" && (
             <div className={styles.decisionPanel}>
               <div className={styles.decisionActions}>
-                <Link href="/timeline" className={`${styles.primaryAction} ${styles.actionLink}`}>
+                <ProductNavLink href="/timeline" className={`${styles.primaryAction} ${styles.actionLink}`}>
                   Ver na timeline
-                </Link>
+                </ProductNavLink>
                 <button type="button" onClick={() => startWithMode("continue")} className={styles.secondaryAction}>
                   Continuar o fio
                 </button>
@@ -1143,12 +1144,6 @@ export function Diario({
                   </button>
                 )}
 
-                <PmfPrompt
-                  entryId={activeEntryId}
-                  entryMode={nextEntryMode}
-                  suspended={isReflectionExpanded}
-                />
-
                 <div className={styles.metaRow}>
                   {mood ? (
                     <span className={styles.mood}>
@@ -1177,8 +1172,14 @@ export function Diario({
                   <button type="button" onClick={resetToIdle} className={styles.secondaryAction}>
                     Novo momento
                   </button>
-                  <Link href="/timeline" className={styles.softLink}>Linha do tempo</Link>
+                  <ProductNavLink href="/timeline" className={styles.softLink}>Linha do tempo</ProductNavLink>
                 </div>
+
+                <PmfPrompt
+                  entryId={activeEntryId}
+                  entryMode={nextEntryMode}
+                  suspended={isReflectionExpanded}
+                />
               </div>
             </div>
           </div>

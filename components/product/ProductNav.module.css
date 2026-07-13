@@ -25,6 +25,7 @@
 .links a,
 .newEntry,
 .profile {
+  position: relative;
   color: inherit;
   text-decoration: none;
 }
@@ -32,6 +33,7 @@
 .brand {
   width: fit-content;
   gap: 10px;
+  --nav-pending-right: -12px;
   color: var(--ink);
   font: 500 1rem / 1 var(--font-serif);
 }
@@ -52,6 +54,10 @@
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.links a {
+  --nav-pending-right: -12px;
 }
 
 .links a,
@@ -90,6 +96,7 @@
   justify-content: center;
   border-radius: var(--r-pill);
   padding: 0 14px;
+  --nav-pending-right: 8px;
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0;
