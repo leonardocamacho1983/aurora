@@ -31,7 +31,7 @@ Este documento registra os controles minimos para operar o funil de lancamento s
 - `NEXT_PUBLIC_SENTRY_DSN`: DSN publico do projeto Sentry para o SDK.
 - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`: usados pela build/deploy para release e sourcemaps.
 
-Status desta revisao: `CRON_SECRET` existe em Production, o Vercel Cron esta ativo para `/api/waitlist/lifecycle`, `RESEND_WEBHOOK_SECRET` existe em Production, e `POST /api/resend/webhook` em producao responde `invalid webhook` para payload sem assinatura. O cadastro externo no painel/API do Resend deve ser acompanhado pelo sinal "Ultimo webhook Resend" no `/admin`.
+Status desta revisao: `CRON_SECRET` existe em Production, o Vercel Cron esta ativo para `/api/waitlist/lifecycle`, `RESEND_WEBHOOK_SECRET` existe em Production, e `POST /api/resend/webhook` em producao responde `invalid webhook` para payload sem assinatura. O webhook externo do Resend esta habilitado para `https://www.faleaurora.com/api/resend/webhook`, cobre todos os eventos operacionais esperados e o signing secret bate com `RESEND_WEBHOOK_SECRET`.
 
 Status Sentry desta revisao: as variaveis existem em Preview e Production via integracao Vercel. Preview cobre staging baseado em branch/deploy preview; se houver um ambiente/branch `staging` separado, ele deve herdar ou receber as mesmas variaveis antes de virar ambiente operacional.
 
