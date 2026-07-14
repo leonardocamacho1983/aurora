@@ -92,7 +92,13 @@ async function segmentId(client: Resend, key: ResendSegmentKey) {
   if (!canManageAudience()) return null;
 
   const created = await client.segments.create({ name });
-  if (created.error) throw new Error(created.error.message);
+  if (created.error) {
+    const message = created.error.message.toLowerCase();
+    if (message.includes("plan includes") || message.includes("upgrade")) {
+      return null;
+    }
+    throw new Error(created.error.message);
+  }
   const id = created.data?.id ?? null;
   if (id) segments.set(name, id);
   return id;

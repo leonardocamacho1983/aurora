@@ -52,6 +52,10 @@ para `_`, por exemplo `aurora_ritual_completed`.
 
 ## Segments
 
+Segments sao opcionais na execucao. O plano atual do Resend pode limitar a
+quantidade de segments; nesse caso, a Aurora continua sincronizando Contacts e
+propriedades, e pula os segments que nao puderem ser criados.
+
 - `Aurora - Waitlist sem Ritual`
 - `Aurora - Ritual iniciado incompleto`
 - `Aurora - Ritual completo sem acesso`
