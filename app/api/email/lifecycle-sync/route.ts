@@ -2,16 +2,23 @@ import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  AURORA_LIFECYCLE_EVENTS,
   lifecycleStateFromSignals,
+  type AuroraLifecycleEventName,
   type AccessStatus,
   type RitualStatus,
 } from "@/lib/email/lifecycle-contract";
 import { classifyRitualIntent } from "@/lib/email/ritual-intent";
-import { syncAuroraLifecycleContact } from "@/lib/email/lifecycle-events";
+import {
+  recordAuroraLifecycleEvent,
+  syncAuroraLifecycleContact,
+} from "@/lib/email/lifecycle-events";
 import { isResendLifecycleSyncEnabled } from "@/lib/email/resend-lifecycle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const INTERNAL_TEST_EMAILS = new Set(["leonardocamacho@gmail.com"]);
 
 type SyncRow = {
   id: string;
@@ -63,6 +70,20 @@ function limitFromUrl(request: Request) {
   const parsed = Number(new URL(request.url).searchParams.get("limit") ?? 200);
   if (!Number.isFinite(parsed)) return 200;
   return Math.max(1, Math.min(500, Math.floor(parsed)));
+}
+
+function testEmailFromUrl(request: Request) {
+  const value = new URL(request.url).searchParams.get("testEmail")?.trim().toLowerCase();
+  if (!value) return null;
+  return INTERNAL_TEST_EMAILS.has(value) ? value : "forbidden";
+}
+
+function eventNameFromUrl(request: Request): AuroraLifecycleEventName | null | "invalid" {
+  const value = new URL(request.url).searchParams.get("eventName")?.trim();
+  if (!value) return null;
+  return (AURORA_LIFECYCLE_EVENTS as readonly string[]).includes(value)
+    ? (value as AuroraLifecycleEventName)
+    : "invalid";
 }
 
 function syncDelayMsFromEnv() {
@@ -138,12 +159,61 @@ async function selectRows(limit: number) {
   );
 }
 
+async function selectTestRow(email: string) {
+  return rows<SyncRow>(
+    await db.execute(sql`
+      with product as (
+        select
+          lower(coalesce(u.email, '')) as email,
+          count(distinct e.id)::int as entries,
+          count(distinct e.id) filter (
+            where e.reflection is not null and nullif(trim(e.reflection), '') is not null
+          )::int as reflected_entries,
+          count(distinct date_trunc('day', coalesce(e.created_at, pe.created_at) at time zone 'America/Sao_Paulo'))::int as active_days
+        from users u
+        left join entries e on e.user_id = u.id
+        left join product_events pe on pe.user_id = u.id
+        where lower(coalesce(u.email, '')) = ${email}
+        group by lower(coalesce(u.email, ''))
+      )
+      select
+        w.id,
+        w.email,
+        w.unlocked_at as "unlockedAt",
+        wp.name,
+        wp.moment,
+        wp.rhythm,
+        wp.presence,
+        wp.value,
+        exists (select 1 from users u where lower(u.email) = lower(w.email)) as "hasAccount",
+        coalesce(product.entries, 0)::int as entries,
+        coalesce(product.reflected_entries, 0)::int as "reflectedEntries",
+        coalesce(product.active_days, 0)::int as "activeDays"
+      from waitlist w
+      left join waitlist_profile wp on wp.waitlist_id = w.id
+      left join product on product.email = lower(w.email)
+      where lower(w.email) = ${email}
+      limit 1
+    `),
+  );
+}
+
 async function run(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
   const dryRun = dryRunFromUrl(request);
+  const testEmail = testEmailFromUrl(request);
+  if (testEmail === "forbidden") {
+    return NextResponse.json({ error: "testEmail not allowed" }, { status: 400 });
+  }
+
+  const eventName = eventNameFromUrl(request);
+  if (eventName === "invalid") {
+    return NextResponse.json({ error: "invalid eventName" }, { status: 400 });
+  }
+
   if (!dryRun && !isResendLifecycleSyncEnabled()) {
     return NextResponse.json(
       {
@@ -154,7 +224,7 @@ async function run(request: Request) {
     );
   }
 
-  const selected = await selectRows(limitFromUrl(request));
+  const selected = testEmail ? await selectTestRow(testEmail) : await selectRows(limitFromUrl(request));
   const results = [];
   const syncDelayMs = syncDelayMsFromEnv();
 
@@ -185,11 +255,23 @@ async function run(request: Request) {
     } as const;
 
     if (!dryRun) {
-      await syncAuroraLifecycleContact({
-        waitlistId: row.id,
-        source: "email_lifecycle_sync",
-        contact,
-      });
+      if (eventName) {
+        await recordAuroraLifecycleEvent({
+          waitlistId: row.id,
+          eventName,
+          source: "email_lifecycle_test",
+          contact,
+          metadata: {
+            test_contact: true,
+          },
+        });
+      } else {
+        await syncAuroraLifecycleContact({
+          waitlistId: row.id,
+          source: testEmail ? "email_lifecycle_test" : "email_lifecycle_sync",
+          contact,
+        });
+      }
       if (syncDelayMs > 0 && index < selected.length - 1) {
         await sleep(syncDelayMs);
       }
@@ -199,6 +281,8 @@ async function run(request: Request) {
       id: row.id,
       email: maskEmail(row.email),
       dryRun,
+      mode: testEmail ? "test" : "sync",
+      eventName,
       lifecycleState: contact.lifecycleState,
       ritualIntent: contact.ritualIntent,
     });
@@ -207,6 +291,8 @@ async function run(request: Request) {
   return NextResponse.json({
     status: "ok",
     dryRun,
+    mode: testEmail ? "test" : "sync",
+    eventName,
     selected: selected.length,
     synced: dryRun ? 0 : selected.length,
     results,
