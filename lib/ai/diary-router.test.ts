@@ -67,4 +67,20 @@ describe("classifyDiaryRoute", () => {
     expect(route.confidence).toBe("medium");
     expect(toCrisisResult(route)).toEqual({ risk: "high", type: "suicidal" });
   });
+
+  it("does not fail routing when model reason is longer than the UI contract", async () => {
+    const route = await classifyDiaryRoute("estou tentando entender minha direção profissional", {
+      generate: async () => ({
+        risk: "none",
+        crisisType: "none",
+        intent: "reflection",
+        confidence: "high",
+        reason:
+          "Expressa dúvida sobre diferenciação em mercado competitivo; busca elaboração pessoal sobre identidade profissional e posicionamento.",
+      }),
+    });
+
+    expect(route.intent).toBe("reflection");
+    expect(route.reason.length).toBeLessThanOrEqual(120);
+  });
 });

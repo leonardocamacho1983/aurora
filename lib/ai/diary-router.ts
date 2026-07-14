@@ -7,6 +7,7 @@ export const DIARY_ROUTER_MODEL = "claude-haiku-4-5";
 
 export const DIARY_INTENTS = ["practical_log", "reflection", "unclear"] as const;
 export const ROUTER_CONFIDENCE = ["low", "medium", "high"] as const;
+const MAX_REASON_LENGTH = 120;
 
 export type DiaryIntent = (typeof DIARY_INTENTS)[number];
 export type RouterConfidence = (typeof ROUTER_CONFIDENCE)[number];
@@ -16,7 +17,7 @@ export const diaryRouteSchema = z.object({
   crisisType: z.enum(CRISIS_TYPES),
   intent: z.enum(DIARY_INTENTS),
   confidence: z.enum(ROUTER_CONFIDENCE),
-  reason: z.string().max(120),
+  reason: z.string().max(500),
 });
 
 export type DiaryRoute = z.infer<typeof diaryRouteSchema>;
@@ -59,20 +60,29 @@ const defaultGenerate = async (text: string): Promise<unknown> => {
 
 const defaultDeps: DiaryRouterDeps = { generate: defaultGenerate };
 
+function cleanReason(reason: string) {
+  return reason.trim().slice(0, MAX_REASON_LENGTH);
+}
+
 function normalizeRoute(route: DiaryRoute): DiaryRoute {
-  if (route.risk === "high") {
+  const normalized = {
+    ...route,
+    reason: cleanReason(route.reason),
+  };
+
+  if (normalized.risk === "high") {
     return {
-      ...route,
+      ...normalized,
       intent: "reflection",
-      confidence: route.confidence === "low" ? "medium" : route.confidence,
+      confidence: normalized.confidence === "low" ? "medium" : normalized.confidence,
     };
   }
 
-  if (route.risk === "none" && route.crisisType !== "none") {
-    return { ...route, crisisType: "none" };
+  if (normalized.risk === "none" && normalized.crisisType !== "none") {
+    return { ...normalized, crisisType: "none" };
   }
 
-  return route;
+  return normalized;
 }
 
 export async function classifyDiaryRoute(

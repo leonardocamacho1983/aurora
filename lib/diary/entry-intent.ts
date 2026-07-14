@@ -11,11 +11,12 @@ export type EntryIntentResult = {
 };
 
 export const ENTRY_INTENT_MODEL = "claude-haiku-4-5";
+const MAX_REASON_LENGTH = 120;
 
 const entryIntentSchema = z.object({
   intent: z.enum(["practical_log", "reflection", "unclear"]),
   confidence: z.enum(["low", "medium", "high"]),
-  reason: z.string().max(120),
+  reason: z.string().max(500),
 });
 
 type ModelEntryIntentResult = z.infer<typeof entryIntentSchema>;
@@ -170,17 +171,19 @@ export function classifyEntryIntentHeuristic(transcript: string): EntryIntentRes
 }
 
 function toProductIntent(result: ModelEntryIntentResult): EntryIntentResult {
+  const reason = result.reason.trim().slice(0, MAX_REASON_LENGTH);
+
   if (result.intent === "practical_log" && result.confidence !== "low") {
     return {
       intent: "routine_log",
-      reason: result.reason || "model_practical_log",
+      reason: reason || "model_practical_log",
       confidence: result.confidence,
     };
   }
 
   return {
     intent: "reflection",
-    reason: result.intent === "unclear" ? "model_unclear" : result.reason || "model_reflection",
+    reason: result.intent === "unclear" ? "model_unclear" : reason || "model_reflection",
     confidence: result.confidence,
   };
 }
