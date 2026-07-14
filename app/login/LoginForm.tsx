@@ -24,8 +24,16 @@ function SubmitButton({ mode }: { mode: Mode }) {
   );
 }
 
-export function LoginForm({ error, message }: { error?: string; message?: string }) {
-  const [mode, setMode] = useState<Mode>("signin");
+export function LoginForm({
+  error,
+  message,
+  initialMode = "signin",
+}: {
+  error?: string;
+  message?: string;
+  initialMode?: Mode;
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [showPw, setShowPw] = useState(false);
   useVisualViewportHeight();
 
@@ -40,6 +48,23 @@ export function LoginForm({ error, message }: { error?: string; message?: string
         <p className={styles.notice}>
           Se esse email tiver acesso, enviamos um link para voce criar uma nova senha.
         </p>
+      )}
+      {message === "open-spots-claimed" && (
+        <p className={styles.notice}>
+          Seu acesso gratuito esta liberado. Use o mesmo email da lista para entrar ou criar sua conta.
+        </p>
+      )}
+      {message === "limited-access" && (
+        <div className={styles.notice}>
+          <strong>Quer acesso antecipado?</strong>
+          <span>
+            Responda ao Ritual de Chegada. Quando você completa o Ritual, sua entrada no teste da
+            Aurora é liberada e os próximos passos chegam por email.
+          </span>
+          <a className={styles.noticeAction} href="/chegada?source=limited_access">
+            Responder ao Ritual de Chegada
+          </a>
+        </div>
       )}
       {error && (
         <p className={styles.error} role="alert">

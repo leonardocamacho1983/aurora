@@ -41,7 +41,36 @@ describe("waitlist profile patch", () => {
     expect(() =>
       waitlistProfilePatchSchema.parse({
         statusToken: token,
-        email: "leo@example.com",
+        unexpected: "leo@example.com",
+      }),
+    ).toThrow();
+  });
+
+  it("requires either token or email identity", () => {
+    expect(() =>
+      waitlistProfilePatchSchema.parse({
+        name: "Leo",
+        source: "arrival_ritual",
+      }),
+    ).toThrow();
+  });
+
+  it("accepts email identity when no status token is present", () => {
+    const parsed = waitlistProfilePatchSchema.parse({
+      email: " LEO@EXAMPLE.COM ",
+      name: "Leo",
+      source: "arrival_ritual",
+    });
+
+    expect(parsed.email).toBe("leo@example.com");
+    expect(profileValues(parsed)).toEqual({ name: "Leo" });
+  });
+
+  it("rejects invalid email identity", () => {
+    expect(() =>
+      waitlistProfilePatchSchema.parse({
+        email: "sem-email",
+        name: "Leo",
       }),
     ).toThrow();
   });

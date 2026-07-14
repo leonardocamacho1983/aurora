@@ -282,6 +282,40 @@
   background: rgba(197, 132, 104, 0.16);
 }
 
+.notice {
+  display: grid;
+  gap: 8px;
+}
+
+.notice strong {
+  color: var(--ink);
+}
+
+.notice span {
+  color: var(--ink-soft);
+}
+
+.notice a {
+  color: var(--accent);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.noticeAction {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(169, 155, 217, 0.28);
+  background: rgba(169, 155, 217, 0.14);
+  color: var(--ink) !important;
+  text-align: center;
+  text-decoration: none;
+}
+
 @media (min-width: 900px) {
   .shell {
     width: min(480px, 100%);

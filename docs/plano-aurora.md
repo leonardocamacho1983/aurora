@@ -19,6 +19,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [x] Diario contextualizado criado como primeira experiencia de produto.
 - [x] Admin revisado para leitura operacional de waitlist, email e rede de convites.
 - [x] Cadencia inicial de emails de lifecycle implementada.
+- [x] Campanha de 20 vagas gratuitas implementada com Ritual como porta de acesso, follow-up segmentado e login visivel.
 - [ ] Webhook Resend ativo em producao para delivered, opened, clicked, bounced e complained.
 - [ ] Timeline/account redesenhados com o mesmo nivel de qualidade do diario.
 - [ ] Billing/modelo de negocios definido.
@@ -34,7 +35,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Manter elegancia, calma, calor emocional e clareza.
 - [ ] Usar microcopy humana, sem cara de texto interno.
 - [ ] Evitar promessas medicas, terapeuticas ou clinicas indevidas.
-- [ ] Nenhum usuario deve ficar bloqueado por nao ter completado Ritual de Chegada.
+- [ ] Depois do acesso liberado, nenhum usuario deve ficar bloqueado dentro do produto por nao ter completado ou revisado o Ritual de Chegada.
 - [ ] Decisoes de billing nao devem ser implementadas antes da proposta de valor e pricing.
 
 ## Checklist por frente
@@ -43,7 +44,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 
 - [x] Definir primeira experiencia como `login -> onboarding contextual -> diario por voz`.
 - [x] Ler contexto do Ritual de Chegada quando existir.
-- [x] Permitir entrada no produto mesmo sem Ritual completo.
+- [x] Usar o Ritual como porta de acesso antecipado quando a pessoa ainda nao tem permissao.
 - [x] Criar onboarding curto, com opcao de pular.
 - [x] Persistir conclusao de onboarding no banco.
 - [x] Contextualizar a primeira tela do diario com nome, momento e presenca quando existirem.
@@ -132,6 +133,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 - [ ] Criar A/B tests no PostHog para copy pos-cadastro, CTA da landing e sala de convite.
 - [ ] Garantir que variantes de experimentos sejam persistentes por usuario/navegador.
 - [ ] Criar dashboard de ativacao do produto alem da waitlist.
+- [x] Criar automacao de abertura de 20 vagas gratuitas com follow-up por Ritual completo, conta, primeira entrada, feedback e retorno.
 - [ ] Avaliar Sentry para erros de producao.
 - [ ] Avaliar Checkly para monitorar funil critico com Playwright.
 
@@ -139,7 +141,7 @@ O **Plano Aurora** consolida a evolucao do projeto alem da waitlist: transformar
 
 - [x] A frente imediata da waitlist deve ficar separada do produto/app.
 - [x] A primeira fatia de produto e `login + onboarding + diario`.
-- [x] O Ritual de Chegada informa a primeira experiencia, mas nao bloqueia entrada.
+- [x] O Ritual de Chegada libera acesso antecipado e informa a primeira experiencia, sem virar obstaculo depois da liberacao.
 - [x] Timeline e account devem ser redesenhados depois do diario.
 - [x] Billing nao deve ser implementado antes de discutir modelo de negocio.
 - [x] Profissionais sao oportunidade a avaliar, nao escopo fechado.

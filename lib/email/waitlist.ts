@@ -40,6 +40,23 @@ type AlphaCadenceEmailInput = {
   hasAccount?: boolean;
 };
 
+export type OpenSpotsEmailKind =
+  | "invite"
+  | "claim_reminder"
+  | "account_reminder"
+  | "first_entry_prompt"
+  | "feedback_checkin"
+  | "return_prompt";
+
+type OpenSpotsEmailInput = {
+  row: WaitlistEmailRow & { name?: string | null };
+  kind: OpenSpotsEmailKind;
+  baseUrl: string;
+  ritualUrl: string;
+  segment?: string;
+  hasAccount?: boolean;
+};
+
 let resend: Resend | null = null;
 
 function getResend(): Resend | null {
@@ -521,4 +538,187 @@ Se algo parecer estranho, pode responder este email. Mas o mais importante agora
 ${leoSignatureText()}`;
 
   return sendEmail({ to: row.email, subject, html, text });
+}
+
+export async function sendOpenSpotsEmail(input: OpenSpotsEmailInput) {
+  const baseUrl = input.baseUrl.replace(/\/+$/, "");
+  const login = `${baseUrl}/login?mode=${input.hasAccount ? "signin" : "signup"}`;
+  const diary = `${baseUrl}/diario`;
+  const status = statusUrl(input.row.statusToken, input.baseUrl);
+  const ritual = input.ritualUrl;
+
+  const variants: Record<OpenSpotsEmailKind, { subject: string; html: string; text: string }> = {
+    invite: {
+      subject: "20 vagas abertas para usar a Aurora gratuitamente",
+      html: shell(`
+        <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden">Uso ilimitado durante o programa de testes.</span>
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}abri 20 vagas para usar a Aurora gratuitamente.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Se você quiser acesso antecipado, o próximo passo é responder ao Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Depois de completar o Ritual, sua entrada no teste é liberada. O uso é gratuito e ilimitado enquanto durar o programa de testes.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora ainda está em construção, mas a experiência principal já funciona: você fala, ela organiza sua fala e devolve uma reflexão para ajudar você a se escutar melhor.</p>
+        ${button("Responder ao Ritual de Chegada", ritual)}
+        <p style="font-size:13px;line-height:1.6;color:#948fa8">Se perder este email, acesse ${quietLink("faleaurora.com", baseUrl)} e toque em Entrar. A Aurora vai te orientar para o Ritual.</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}abri 20 vagas para usar a Aurora gratuitamente.
+
+Se você quiser acesso antecipado, o próximo passo é responder ao Ritual de Chegada: algumas perguntas rápidas para a Aurora entender seu momento, seu ritmo e o tipo de presença que você espera encontrar ali.
+
+Depois de completar o Ritual, sua entrada no teste é liberada. O uso é gratuito e ilimitado enquanto durar o programa de testes.
+
+A Aurora ainda está em construção, mas a experiência principal já funciona: você fala, ela organiza sua fala e devolve uma reflexão para ajudar você a se escutar melhor.
+
+Responder ao Ritual de Chegada: ${ritual}
+
+Se perder este email, acesse faleaurora.com e toque em Entrar. A Aurora vai te orientar para o Ritual.
+
+${leoSignatureText()}`,
+    },
+    claim_reminder: {
+      subject: "Ainda dá tempo de usar a Aurora gratuitamente",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}passando para lembrar da abertura das 20 vagas gratuitas.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Se a Aurora ainda faz sentido para este momento, complete o Ritual de Chegada. Depois disso, sua entrada no teste é liberada.</p>
+        ${button("Completar meu Ritual", ritual)}
+        <p style="font-size:13px;line-height:1.6;color:#948fa8">A Aurora está em construção. Justamente por isso, seu uso real ajuda a ajustar o produto com cuidado.</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}passando para lembrar da abertura das 20 vagas gratuitas.
+
+Se a Aurora ainda faz sentido para este momento, complete o Ritual de Chegada. Depois disso, sua entrada no teste é liberada.
+
+Completar meu Ritual: ${ritual}
+
+A Aurora está em construção. Justamente por isso, seu uso real ajuda a ajustar o produto com cuidado.
+
+${leoSignatureText()}`,
+    },
+    account_reminder: {
+      subject: "Sua vaga na Aurora está liberada",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}sua entrada na Aurora já está liberada.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O próximo passo é criar sua conta com o mesmo email da lista. Não precisa começar grande: um primeiro registro curto já ajuda você e também ajuda a Aurora a nascer melhor.</p>
+        ${button("Criar minha conta", login)}
+        <p style="font-size:13px;line-height:1.6;color:#948fa8">Se o botão não abrir, entre por ${quietLink(baseUrl, baseUrl)} e toque em Entrar.</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}sua entrada na Aurora já está liberada.
+
+O próximo passo é criar sua conta com o mesmo email da lista. Não precisa começar grande: um primeiro registro curto já ajuda você e também ajuda a Aurora a nascer melhor.
+
+Criar minha conta: ${login}
+
+Se o botão não abrir, entre por ${baseUrl} e toque em Entrar.
+
+${leoSignatureText()}`,
+    },
+    first_entry_prompt: {
+      subject: "Comece com um registro de poucos minutos",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}sua conta já pode começar.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Quando tiver dois ou três minutos, faça um registro por voz. Pode ser só uma frase sobre como você chega hoje.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora funciona melhor quando começa pequena: uma fala, uma pausa, uma devolutiva para ajudar você a se escutar.</p>
+        ${button("Fazer meu primeiro registro", diary)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}sua conta já pode começar.
+
+Quando tiver dois ou três minutos, faça um registro por voz. Pode ser só uma frase sobre como você chega hoje.
+
+A Aurora funciona melhor quando começa pequena: uma fala, uma pausa, uma devolutiva para ajudar você a se escutar.
+
+Fazer meu primeiro registro: ${diary}
+
+${leoSignatureText()}`,
+    },
+    feedback_checkin: {
+      subject: "Como foi sua primeira conversa com a Aurora?",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}vi que você já fez um primeiro registro na Aurora.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Queria te fazer uma pergunta simples: a devolutiva ajudou você a se escutar melhor?</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Pode responder este email com uma frase. O que ficou claro, estranho ou faltando já ajuda a ajustar a experiência.</p>
+        ${button("Voltar para a Aurora", diary)}
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}vi que você já fez um primeiro registro na Aurora.
+
+Queria te fazer uma pergunta simples: a devolutiva ajudou você a se escutar melhor?
+
+Pode responder este email com uma frase. O que ficou claro, estranho ou faltando já ajuda a ajustar a experiência.
+
+Voltar para a Aurora: ${diary}
+
+${leoSignatureText()}`,
+    },
+    return_prompt: {
+      subject: "Volte quando tiver dois minutos",
+      html: shell(`
+        <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(input.row.name)}a Aurora costuma ganhar sentido quando aparece em mais de um dia.</p>
+        <p style="font-size:15px;line-height:1.6;color:#b8b1ca">Se puder, volte para um registro curto. Não precisa ser profundo; só um ponto real do seu dia já ajuda a Aurora a acompanhar melhor seus sinais.</p>
+        ${button("Fazer um novo registro", diary)}
+        <p style="font-size:13px;line-height:1.6;color:#948fa8">Sua sala da lista continua aqui se quiser ver seu convite: ${quietLink(status, status)}</p>
+        ${leoSignatureHtml()}
+      `),
+      text: `${greeting(input.row.name)}a Aurora costuma ganhar sentido quando aparece em mais de um dia.
+
+Se puder, volte para um registro curto. Não precisa ser profundo; só um ponto real do seu dia já ajuda a Aurora a acompanhar melhor seus sinais.
+
+Fazer um novo registro: ${diary}
+
+Sua sala da lista continua aqui se quiser ver seu convite: ${status}
+
+${leoSignatureText()}`,
+    },
+  };
+
+  const variant = variants[input.kind];
+  return sendEmail({
+    to: input.row.email,
+    subject: variant.subject,
+    html: variant.html,
+    text: variant.text,
+  });
+}
+
+export async function sendRitualAlphaAccessEmail(
+  row: WaitlistEmailRow & { name?: string | null },
+  baseUrl: string,
+) {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, "");
+  const login = `${cleanBaseUrl}/login?mode=signup`;
+  const status = statusUrl(row.statusToken, baseUrl);
+  const share = referralUrl(row.referralCode, baseUrl);
+
+  return sendEmail({
+    to: row.email,
+    subject: "Sua entrada na Aurora foi liberada",
+    html: shell(`
+      <p style="font-size:16px;line-height:1.6;color:#d8d3e6">${greeting(row.name)}você completou o Ritual de Chegada. Sua entrada no teste da Aurora está liberada.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">A Aurora está em construção. A experiência principal já funciona: você fala, ela organiza sua fala e devolve uma reflexão para ajudar você a se escutar melhor. Agora, o mais importante é observar onde ela traz presença de verdade e onde ainda precisa de ajuste.</p>
+      <p style="font-size:15px;line-height:1.6;color:#b8b1ca">O uso é gratuito e ilimitado enquanto durar o programa de testes. Comece com um registro real, pequeno, no seu ritmo.</p>
+      ${button("Entrar na Aurora", login)}
+      <div style="margin:22px 0;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#151225">
+        <p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#d8d3e6"><strong>Se quiser chamar alguém:</strong></p>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#b8b1ca">Convide uma pessoa para quem a Aurora possa ser uma pausa boa nos dias. Não precisa divulgar. Pode ser só: “pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias.”</p>
+        <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#948fa8">Seu link de convite: ${quietLink(share, share)}</p>
+      </div>
+      <p style="font-size:13px;line-height:1.6;color:#948fa8">Sua sala da lista continua aqui: ${quietLink(status, status)}</p>
+      ${leoSignatureHtml()}
+    `),
+    text: `${greeting(row.name)}você completou o Ritual de Chegada. Sua entrada no teste da Aurora está liberada.
+
+A Aurora está em construção. A experiência principal já funciona: você fala, ela organiza sua fala e devolve uma reflexão para ajudar você a se escutar melhor. Agora, o mais importante é observar onde ela traz presença de verdade e onde ainda precisa de ajuste.
+
+O uso é gratuito e ilimitado enquanto durar o programa de testes. Comece com um registro real, pequeno, no seu ritmo.
+
+Entrar na Aurora: ${login}
+
+Se quiser chamar alguém:
+Convide uma pessoa para quem a Aurora possa ser uma pausa boa nos dias. Não precisa divulgar. Pode ser só: "pensei em você quando vi isso. Acho que a Aurora pode fazer sentido para os seus dias."
+
+Seu link de convite: ${share}
+Sua sala da lista: ${status}
+
+${leoSignatureText()}`,
+  });
 }

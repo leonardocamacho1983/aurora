@@ -1,16 +1,210 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { waitlist, waitlistEvents, waitlistProfile } from "@/lib/db/schema";
+import { createUniqueReferralCode } from "@/lib/referral/code";
+import { siteUrl } from "@/lib/referral/urls";
 import {
   profileFieldNames,
   profileValues,
   waitlistProfilePatchSchema,
 } from "@/lib/referral/profile";
 import { captureAuroraServer } from "@/lib/analytics/server";
+import { sendRitualAlphaAccessEmail } from "@/lib/email/waitlist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const OPEN_SPOTS_CAMPAIGN = "open_spots_20_free_2026_07_14";
+
+type WaitlistIdentity = {
+  id: string;
+  email: string;
+  referralCode: string;
+  statusToken: string;
+  confirmToken: string;
+  confirmedAt: Date | null;
+  unlockedAt: Date | null;
+};
+
+function isProfileComplete(profile: {
+  name: string | null;
+  moment: string | null;
+  rhythm: string | null;
+  presence: string | null;
+  value: string | null;
+}) {
+  return Boolean(
+    profile.name?.trim() &&
+      profile.moment?.trim() &&
+      profile.rhythm?.trim() &&
+      profile.presence?.trim() &&
+      profile.value?.trim(),
+  );
+}
+
+async function findOrCreateWaitlistIdentity(input: {
+  statusToken?: string;
+  email?: string;
+}): Promise<WaitlistIdentity | null> {
+  if (input.statusToken) {
+    const [row] = await db
+      .select({
+        id: waitlist.id,
+        email: waitlist.email,
+        referralCode: waitlist.referralCode,
+        statusToken: waitlist.statusToken,
+        confirmToken: waitlist.confirmToken,
+        confirmedAt: waitlist.confirmedAt,
+        unlockedAt: waitlist.unlockedAt,
+      })
+      .from(waitlist)
+      .where(eq(waitlist.statusToken, input.statusToken))
+      .limit(1);
+    return row ?? null;
+  }
+
+  const email = input.email?.trim().toLowerCase();
+  if (!email) return null;
+
+  const [existing] = await db
+    .select({
+      id: waitlist.id,
+      email: waitlist.email,
+      referralCode: waitlist.referralCode,
+      statusToken: waitlist.statusToken,
+      confirmToken: waitlist.confirmToken,
+      confirmedAt: waitlist.confirmedAt,
+      unlockedAt: waitlist.unlockedAt,
+    })
+    .from(waitlist)
+    .where(eq(waitlist.email, email))
+    .limit(1);
+  if (existing) return existing;
+
+  const referralCode = await createUniqueReferralCode(db);
+  const [created] = await db
+    .insert(waitlist)
+    .values({
+      email,
+      referralCode,
+    })
+    .returning({
+      id: waitlist.id,
+      email: waitlist.email,
+      referralCode: waitlist.referralCode,
+      statusToken: waitlist.statusToken,
+      confirmToken: waitlist.confirmToken,
+      confirmedAt: waitlist.confirmedAt,
+      unlockedAt: waitlist.unlockedAt,
+    });
+
+  if (created) {
+    await db.insert(waitlistEvents).values({
+      waitlistId: created.id,
+      eventName: "ritual_waitlist_created",
+      source: "arrival_ritual",
+      metadata: {
+        campaign: OPEN_SPOTS_CAMPAIGN,
+      },
+    });
+  }
+
+  return created ?? null;
+}
+
+async function wasRitualAccessEmailSent(waitlistId: string) {
+  const result = await db.execute(
+    sql`
+      select exists (
+        select 1
+        from waitlist_events
+        where waitlist_id = ${waitlistId}
+          and event_name in (
+            'ritual_alpha_access_email_sent',
+            'ritual_alpha_access_email_send_failed'
+          )
+          and metadata->>'campaign' = ${OPEN_SPOTS_CAMPAIGN}
+      ) as "exists"
+    `,
+  );
+  if (Array.isArray(result)) return Boolean((result[0] as { exists?: boolean } | undefined)?.exists);
+  if (result && typeof result === "object" && "rows" in result) {
+    return Boolean((result as { rows?: Array<{ exists?: boolean }> }).rows?.[0]?.exists);
+  }
+  return false;
+}
+
+async function grantAccessAfterRitual(input: {
+  row: WaitlistIdentity;
+  name: string | null;
+  source: string;
+  baseUrl: string;
+}) {
+  const wasUnlocked = Boolean(input.row.unlockedAt);
+  const now = new Date();
+
+  await db
+    .update(waitlist)
+    .set({
+      confirmedAt: input.row.confirmedAt ?? now,
+      unlockedAt: input.row.unlockedAt ?? now,
+    })
+    .where(eq(waitlist.id, input.row.id));
+
+  const alreadySent = await wasRitualAccessEmailSent(input.row.id);
+  const shouldSend = !wasUnlocked && !alreadySent;
+  const sent = shouldSend
+    ? await sendRitualAlphaAccessEmail(
+        {
+          email: input.row.email,
+          referralCode: input.row.referralCode,
+          statusToken: input.row.statusToken,
+          confirmToken: input.row.confirmToken,
+          name: input.name,
+        },
+        input.baseUrl,
+      )
+    : false;
+
+  if (!wasUnlocked) {
+    await db.insert(waitlistEvents).values({
+      waitlistId: input.row.id,
+      eventName: "open_spots_access_claimed",
+      source: "arrival_ritual",
+      metadata: {
+        campaign: OPEN_SPOTS_CAMPAIGN,
+        claim_source: "arrival_ritual_completed",
+        segment: "ritual_complete",
+      },
+    });
+    await db.insert(waitlistEvents).values({
+      waitlistId: input.row.id,
+      eventName: "ritual_alpha_access_granted",
+      source: "arrival_ritual",
+      metadata: {
+        campaign: OPEN_SPOTS_CAMPAIGN,
+        source: input.source,
+      },
+    });
+  }
+
+  if (shouldSend) {
+    await db.insert(waitlistEvents).values({
+      waitlistId: input.row.id,
+      eventName: sent ? "ritual_alpha_access_email_sent" : "ritual_alpha_access_email_send_failed",
+      source: "arrival_ritual",
+      metadata: {
+        provider: "resend",
+        campaign: OPEN_SPOTS_CAMPAIGN,
+        email_type: "ritual_alpha_access",
+        success: sent,
+      },
+    });
+  }
+
+  return { accessGranted: !wasUnlocked, accessEmailSent: sent };
+}
 
 export async function POST(request: Request) {
   let json: unknown;
@@ -31,13 +225,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty profile" }, { status: 400 });
   }
 
-  const rows = await db
-    .select({ id: waitlist.id, referralCode: waitlist.referralCode })
-    .from(waitlist)
-    .where(eq(waitlist.statusToken, parsed.data.statusToken))
-    .limit(1);
-
-  const row = rows[0];
+  const row = await findOrCreateWaitlistIdentity({
+    statusToken: parsed.data.statusToken,
+    email: parsed.data.email,
+  });
   if (!row) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -71,5 +262,34 @@ export async function POST(request: Request) {
     field_count: fields.length,
   });
 
-  return NextResponse.json({ status: "ok", fields });
+  const [profile] = await db
+    .select({
+      name: waitlistProfile.name,
+      moment: waitlistProfile.moment,
+      rhythm: waitlistProfile.rhythm,
+      presence: waitlistProfile.presence,
+      value: waitlistProfile.value,
+    })
+    .from(waitlistProfile)
+    .where(eq(waitlistProfile.waitlistId, row.id))
+    .limit(1);
+  const complete = profile ? isProfileComplete(profile) : false;
+  const access = complete
+    ? await grantAccessAfterRitual({
+        row,
+        name: profile.name,
+        source: parsed.data.source ?? "unknown",
+        baseUrl: siteUrl(request.url),
+      })
+    : { accessGranted: false, accessEmailSent: false };
+
+  return NextResponse.json({
+    status: "ok",
+    fields,
+    complete,
+    accessGranted: access.accessGranted,
+    accessEmailSent: access.accessEmailSent,
+    statusToken: row.statusToken,
+    referralCode: row.referralCode,
+  });
 }

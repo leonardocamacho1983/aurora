@@ -43,6 +43,7 @@ const CAMPAIGNS: Record<AlphaCadenceEmailKind, string> = {
   last_call: "alpha_last_call_2026_06_29",
   construction_note: "alpha_construction_note_2026_06_28",
 };
+const OPEN_SPOTS_CAMPAIGN = "open_spots_20_free_2026_07_14";
 
 const EVENT_BASE: Record<AlphaCadenceEmailKind, string> = {
   access_granted: "alpha_access_granted",
@@ -132,6 +133,17 @@ function noRecentAlphaEmailFilter(hours: number) {
   `;
 }
 
+function notOpenSpotsCampaignFilter() {
+  return sql`
+    not exists (
+      select 1
+      from waitlist_events open_spots_event
+      where open_spots_event.waitlist_id = w.id
+        and open_spots_event.metadata->>'campaign' = ${OPEN_SPOTS_CAMPAIGN}
+    )
+  `;
+}
+
 function alphaAccessFilter() {
   return sql`
     (
@@ -178,6 +190,7 @@ async function selectAccessGranted(limit: number) {
       where w.confirmed_at is not null
         and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and not exists (select 1 from users u where lower(u.email) = lower(w.email))
         and ${notSentFilter("access_granted")}
         and ${noRecentAlphaEmailFilter(20)}
@@ -203,6 +216,7 @@ async function selectAccountReady(limit: number) {
       where w.confirmed_at is not null
         and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and not exists (select 1 from users u where lower(u.email) = lower(w.email))
         and exists (
           select 1
@@ -236,6 +250,7 @@ async function selectFirstEntryPrompt(limit: number) {
       where w.confirmed_at is not null
         and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and u.created_at <= now() - interval '6 hours'
         and not exists (select 1 from entries entry where entry.user_id = u.id)
         and ${notSentFilter("first_entry_prompt")}
@@ -263,6 +278,7 @@ async function selectFirstReflectionFeedback(limit: number) {
       where w.confirmed_at is not null
         and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and exists (
           select 1
           from entries entry
@@ -298,6 +314,7 @@ async function selectInviteCompanion(limit: number) {
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and (
           (
             nullif(trim(wp.moment), '') is not null
@@ -337,6 +354,7 @@ async function selectLastCall(limit: number) {
       left join waitlist_profile wp on wp.waitlist_id = w.id
       where w.confirmed_at is not null
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and (
           wp.waitlist_id is null
           or nullif(trim(wp.moment), '') is null
@@ -376,6 +394,7 @@ async function selectConstructionNote(limit: number) {
       where w.confirmed_at is not null
         and ${alphaAccessFilter()}
         and ${activeEmailBlockFilter()}
+        and ${notOpenSpotsCampaignFilter()}
         and exists (
           select 1
           from entries entry

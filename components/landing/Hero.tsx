@@ -411,7 +411,7 @@ export function Hero() {
     ? "Seu convite"
     : isReferralArrival
       ? "Você chegou por convite"
-      : "Diário por voz · acesso em ondas";
+      : "Diário por voz · testes gratuitos limitados";
   const heroTitle = isInviteMode ? (
     <>
       Vamos preparar a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> para você.
@@ -466,7 +466,10 @@ export function Hero() {
                 ))}
               </div>
             </details>
-            <a href="#lista" className={styles.pill}>Pedir convite</a>
+            <div className={styles.navActions}>
+              <a href="/login" className={styles.navLogin}>Entrar</a>
+              <a href="#lista" className={styles.pill}>Quero participar</a>
+            </div>
           </nav>
 
           <details className={styles.mobileMenu}>
@@ -485,7 +488,8 @@ export function Hero() {
                   {"note" in item && typeof item.note === "string" ? <small>{item.note}</small> : null}
                 </a>
               ))}
-              <a href="#lista" className={styles.mobilePanelCta}>Pedir convite</a>
+              <a href="/login" className={styles.mobilePanelLogin}>Entrar</a>
+              <a href="#lista" className={styles.mobilePanelCta}>Quero participar do teste</a>
             </div>
           </details>
         </div>
@@ -643,7 +647,7 @@ export function Hero() {
               <div
                 className={`${styles.heroAccessNote} ${styles.heroAccessDesktop}`}
                 tabIndex={0}
-                aria-label="A Aurora ainda não está aberta para todo mundo. O acesso será liberado em ondas para quem confirmar o email."
+                aria-label="A Aurora está em fase de testes com uso gratuito e limitado."
               >
                 <span className={styles.launchStar} aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -653,9 +657,9 @@ export function Hero() {
                   </svg>
                 </span>
                 <span className={styles.launchTooltip} role="tooltip">
-                  O acesso será liberado em ondas para quem confirmar o email.
+                  Se você já recebeu acesso, toque em Entrar. Se ainda não recebeu, participe pelo Ritual de Chegada.
                 </span>
-                <span className={styles.heroAccessText}>A Aurora ainda não está aberta para todo mundo.</span>
+                <span className={styles.heroAccessText}>Acesso gratuito em testes, com vagas limitadas.</span>
               </div>
 
               <details className={styles.heroAccessMobile}>
@@ -667,12 +671,12 @@ export function Hero() {
                       <path d="M20.2 5.5h-3.4" />
                     </svg>
                   </span>
-                  <span className={styles.heroAccessText}>Acesso em ondas por convite.</span>
+                  <span className={styles.heroAccessText}>Acesso gratuito em testes.</span>
                   <svg className={styles.mobileAccessChevron} viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </summary>
-                <p>A Aurora ainda não está aberta para todo mundo. O acesso será liberado em ondas para quem confirmar o email.</p>
+                <p>Se você já recebeu acesso, toque em Entrar. Se ainda não recebeu, participe pelo Ritual de Chegada.</p>
               </details>
             </>
           ) : null}
@@ -681,7 +685,10 @@ export function Hero() {
             {inviteGreeting ? (
               <HeroInviteNextStep initialName={inviteGreeting.name} />
             ) : (
-              <WaitlistForm />
+              <WaitlistForm
+                buttonLabel="Quero participar do teste"
+                microcopy="A Aurora está em fase de testes com acesso gratuito e limitado. Sem spam."
+              />
             )}
           </div>
         </div>

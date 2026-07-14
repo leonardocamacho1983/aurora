@@ -67,12 +67,13 @@ export function LaunchHeader({ page }: { page: string }) {
           <Link href="/diario-por-voz">Diário por voz</Link>
           <Link href="/privacidade">Privacidade</Link>
           <Link href="/para-terapeutas">Profissionais</Link>
+          <Link href="/login" className={styles.loginLink}>Entrar</Link>
           <TrackedLink
             href="/#lista"
             className={styles.pill}
-            eventProperties={{ page, source: "launch_header", label: "Pedir convite" }}
+            eventProperties={{ page, source: "launch_header", label: "Quero participar" }}
           >
-            Pedir convite
+            Quero participar
           </TrackedLink>
         </nav>
       </div>
@@ -134,27 +135,27 @@ const journeyByPage: Record<string, Array<keyof typeof launchPaths>> = {
 const conversionCopy: Record<string, { eyebrow: string; title: string; body: string; label: string }> = {
   manifesto: {
     eyebrow: "Próximo gesto",
-    title: "Se a ideia fez sentido, peça seu convite.",
-    body: "A Aurora será aberta em ondas. Confirme seu email para acompanhar os próximos passos com calma.",
-    label: "Pedir meu convite",
+    title: "Se a ideia fez sentido, participe do teste.",
+    body: "A Aurora está em construção, com acesso gratuito e limitado. Confirme seu email para acompanhar os próximos passos com calma.",
+    label: "Quero participar",
   },
   metodo: {
     eyebrow: "Convite",
     title: "Acompanhe a Aurora enquanto o método ganha forma.",
     body: "Você recebe os próximos passos por email e pode convidar pessoas queridas quando fizer sentido.",
-    label: "Pedir meu convite",
+    label: "Quero participar",
   },
   "diario-por-voz": {
     eyebrow: "Experimente primeiro",
     title: "Quando a Aurora abrir, você pode começar pela voz.",
-    body: "Peça seu convite e prepare sua chegada com calma.",
-    label: "Pedir meu convite",
+    body: "Participe do teste e prepare sua chegada com calma.",
+    label: "Quero participar",
   },
   "ia-para-reflexao": {
     eyebrow: "Tecnologia com limite",
     title: "Quer acompanhar essa forma de usar IA?",
-    body: "Peça seu convite para acompanhar uma IA pensada para clareza, não para dependência.",
-    label: "Pedir meu convite",
+    body: "Participe do teste para acompanhar uma IA pensada para clareza, não para dependência.",
+    label: "Quero participar",
   },
   "para-terapeutas": {
     eyebrow: "Profissionais",
@@ -166,7 +167,7 @@ const conversionCopy: Record<string, { eyebrow: string; title: string; body: str
     eyebrow: "Próximo passo",
     title: "Acompanhe a Aurora.org desde o início.",
     body: "Seu convite também aproxima você do compromisso regenerativo que vai crescer junto com a Aurora.",
-    label: "Pedir meu convite",
+    label: "Quero participar",
   },
 };
 

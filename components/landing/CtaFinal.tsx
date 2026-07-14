@@ -23,13 +23,13 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
           {inviteMode ? (
             <>Se lembrar de alguém querido, a <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>Aurora</span> recebe com cuidado.</>
           ) : (
-            <>Peça seu <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>convite</span> para chegar com calma.</>
+            <>Participe do <span style={{ fontStyle: "italic", color: "#ECB6D2" }}>teste</span> gratuito da Aurora.</>
           )}
         </h2>
         <p style={{ margin: "20px 0 0", font: "400 17px/1.6 var(--font-sans)", color: "#C3BED4", maxWidth: 480, textWrap: "pretty" }}>
           {inviteMode
             ? "Seu convite é só uma porta discreta. A pessoa decide se quer chegar, no tempo dela, e a Aurora cuida para que a comunicação seja leve."
-            : "A Aurora será aberta em ondas. Quem confirma o email recebe os próximos passos e pode convidar pessoas queridas quando fizer sentido."}
+            : "A Aurora está em construção, com acesso gratuito e limitado. Quem confirma o email recebe os próximos passos e pode preparar sua chegada pelo Ritual."}
         </p>
         {inviteMode ? (
           <div className={styles.ctaInviteReturn}>
@@ -38,7 +38,11 @@ export function CtaFinal({ orbGlow = 1 }: { orbGlow?: number }) {
           </div>
         ) : (
           <div style={{ marginTop: 34, width: "100%", maxWidth: 460 }}>
-            <WaitlistForm source="landing_final_cta" />
+            <WaitlistForm
+              source="landing_final_cta"
+              buttonLabel="Quero participar do teste"
+              microcopy="Uso gratuito nas aberturas limitadas. Sem spam, sem pressão."
+            />
             <a className={styles.trustMicroLink} href="/privacidade/email">
               Sem spam, sem pressão. Conheça nosso compromisso.
             </a>

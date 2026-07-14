@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { getOnboardingContext, needsOnboarding } from "@/lib/onboarding/context";
+import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
 import { Diario } from "./Diario";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,10 @@ export default async function DiarioPage({
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login");
+  }
+  if (!user.email || !(await hasAuroraAccess(user.email))) {
+    await supabase.auth.signOut();
+    redirect("/login?message=limited-access");
   }
 
   const onboarding = await getOnboardingContext(user.id, user.email ?? "");

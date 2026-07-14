@@ -11,6 +11,7 @@ import { accountProfileView, fieldLabel } from "@/lib/account/profile-state";
 import { referralUrl } from "@/lib/referral/urls";
 import { createClient } from "@/lib/supabase/server";
 import { getOnboardingContext } from "@/lib/onboarding/context";
+import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
 import { signOut } from "../login/actions";
 import { ProfileInvitePrompt } from "./ProfileInvitePrompt";
 import { ProfileMoodTabs } from "./ProfileMoodTabs";
@@ -66,6 +67,10 @@ export default async function AccountPage() {
 
   if (!user) {
     redirect("/login");
+  }
+  if (!user.email || !(await hasAuroraAccess(user.email))) {
+    await supabase.auth.signOut();
+    redirect("/login?message=limited-access");
   }
 
   const userEmail = user.email ?? "";

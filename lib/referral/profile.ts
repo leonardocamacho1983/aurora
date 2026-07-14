@@ -10,7 +10,8 @@ const textField = (max: number) =>
 
 export const waitlistProfilePatchSchema = z
   .object({
-    statusToken: z.uuid(),
+    statusToken: z.uuid().optional(),
+    email: z.string().trim().toLowerCase().pipe(z.email()).optional(),
     source: z.string().trim().max(40).optional(),
     name: textField(40),
     moment: textField(140),
@@ -18,7 +19,8 @@ export const waitlistProfilePatchSchema = z
     presence: textField(40),
     value: textField(160),
   })
-  .strict();
+  .strict()
+  .refine((input) => Boolean(input.statusToken || input.email), "identity required");
 
 export type WaitlistProfilePatch = z.infer<typeof waitlistProfilePatchSchema>;
 

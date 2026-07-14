@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { entries } from "@/lib/db/schema";
 import { liveFocusSignalFromStored } from "@/lib/mapa/focus";
+import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
 import TimelineMagazineClient, {
   type MagazineDayGroup,
   type MagazinePiece,
@@ -240,6 +241,10 @@ export default async function TimelinePage() {
 
   if (!user) {
     redirect("/login");
+  }
+  if (!user.email || !(await hasAuroraAccess(user.email))) {
+    await supabase.auth.signOut();
+    redirect("/login?message=limited-access");
   }
 
   const rows: EntryRow[] = await db

@@ -5,6 +5,7 @@ import { waitlistEvents } from "@/lib/db/schema";
 import { sendLifecycleEmail, type LifecycleEmailKind } from "@/lib/email/waitlist";
 import { siteUrl } from "@/lib/referral/urls";
 import { runAlphaCadenceAutomation } from "@/lib/waitlist/alpha-cadence";
+import { runOpenSpotsFollowUpAutomation } from "@/lib/waitlist/open-spots-campaign";
 import { runWaitlistMaintenance } from "@/lib/waitlist/maintenance";
 
 export const runtime = "nodejs";
@@ -397,6 +398,16 @@ async function runLifecycle(request: Request) {
   } catch (error) {
     alphaCadence = { error: error instanceof Error ? error.message : "alpha_cadence_error" };
   }
+  let openSpotsCadence: Awaited<ReturnType<typeof runOpenSpotsFollowUpAutomation>> | { error: string };
+  try {
+    openSpotsCadence = await runOpenSpotsFollowUpAutomation({
+      baseUrl,
+      dryRun,
+      limit: 100,
+    });
+  } catch (error) {
+    openSpotsCadence = { error: error instanceof Error ? error.message : "open_spots_cadence_error" };
+  }
 
   if (!dryRun) {
     await db.insert(waitlistEvents).values({
@@ -419,6 +430,7 @@ async function runLifecycle(request: Request) {
     dryRun,
     maintenance,
     alphaCadence,
+    openSpotsCadence,
     selected: candidates.length,
     sent: sentCount,
     results,

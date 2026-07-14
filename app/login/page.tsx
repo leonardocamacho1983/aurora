@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; mode?: string }>;
 }) {
-  const { error, message } = await searchParams;
+  const { error, message, mode } = await searchParams;
 
   // Já logado → vai direto pro diário.
   const supabase = await createClient();
@@ -35,7 +35,7 @@ export default async function LoginPage({
             <h1 className="font-serif">Entre na Aurora.</h1>
             <p>Retome seu diário e continue de onde parou.</p>
           </div>
-          <LoginForm error={error} message={message} />
+          <LoginForm error={error} message={message} initialMode={mode === "signup" ? "signup" : "signin"} />
         </div>
       </div>
     </main>

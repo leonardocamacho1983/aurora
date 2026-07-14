@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { absoluteUrl } from "@/lib/seo/site";
 import { createClient } from "@/lib/supabase/server";
+import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
 
 // Mensagens de erro do Supabase → pt-BR amigável.
 function friendly(message: string): string {
@@ -52,6 +53,10 @@ export async function signIn(formData: FormData) {
 export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+
+  if (!(await hasAuroraAccess(email))) {
+    redirect("/login?message=limited-access");
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({ email, password });

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { captureAuroraServer } from "@/lib/analytics/server";
 import { getOnboardingContext, needsOnboarding, type OnboardingProfile } from "@/lib/onboarding/context";
+import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
 import { completeOnboarding } from "./actions";
 import styles from "./BoasVindas.module.css";
 
@@ -74,6 +75,10 @@ export default async function BoasVindasPage() {
   } = await supabase.auth.getUser();
   if (!user?.email) {
     redirect("/login");
+  }
+  if (!(await hasAuroraAccess(user.email))) {
+    await supabase.auth.signOut();
+    redirect("/login?message=limited-access");
   }
 
   const context = await getOnboardingContext(user.id, user.email);
