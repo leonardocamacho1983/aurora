@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import { waitlistEvents } from "@/lib/db/schema";
 import { sendAlphaReactivationEmail } from "@/lib/email/waitlist";
 import { siteUrl } from "@/lib/referral/urls";
+import {
+  canSendNonTransactionalEmailToday,
+  recordEmailFrequencyGuardSkip,
+} from "@/lib/email/frequency-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -212,6 +216,25 @@ async function run(request: Request) {
     const entries = asNumber(candidate.entries);
     const reflectedEntries = asNumber(candidate.reflectedEntries);
     const productEvents = asNumber(candidate.productEvents);
+    if (!dryRun && !(await canSendNonTransactionalEmailToday(candidate.id))) {
+      await recordEmailFrequencyGuardSkip({
+        waitlistId: candidate.id,
+        source: "alpha_reactivation",
+        emailType: "alpha_reactivation",
+        campaign: CAMPAIGN,
+      });
+      results.push({
+        id: candidate.id,
+        email: maskEmail(candidate.email),
+        sent: false,
+        dryRun,
+        entries,
+        reflectedEntries,
+        productEvents,
+      });
+      continue;
+    }
+
     const sent = dryRun ? false : await sendAlphaReactivationEmail(candidate, baseUrl);
 
     await recordEvent({

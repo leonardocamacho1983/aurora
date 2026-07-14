@@ -8,6 +8,7 @@ import {
   timestamp,
   vector,
   index,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
@@ -192,5 +193,34 @@ export const waitlistEvents = pgTable(
   (t) => ({
     waitlistIdx: index("waitlist_events_waitlist_id_idx").on(t.waitlistId),
     eventIdx: index("waitlist_events_event_name_idx").on(t.eventName),
+  }),
+);
+
+// email_outbox — fila auditavel para operacoes de lifecycle/email sem dados sensiveis.
+export const emailOutbox = pgTable(
+  "email_outbox",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    waitlistId: uuid("waitlist_id").references(() => waitlist.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    eventName: text("event_name").notNull(),
+    templateKey: text("template_key"),
+    topicKey: text("topic_key"),
+    priority: integer("priority").default(50).notNull(),
+    status: text("status").default("pending").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    payloadSummary: jsonb("payload_summary").$type<Record<string, unknown>>(),
+    providerEventId: text("provider_event_id"),
+    lastError: text("last_error"),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).defaultNow().notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    waitlistIdx: index("email_outbox_waitlist_id_idx").on(t.waitlistId),
+    statusNextAttemptIdx: index("email_outbox_status_next_attempt_idx").on(t.status, t.nextAttemptAt),
+    idempotencyIdx: uniqueIndex("email_outbox_idempotency_key_idx").on(t.idempotencyKey),
   }),
 );

@@ -64,6 +64,13 @@
       "when": 1783386210082,
       "tag": "0008_harsh_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784039766414,
+      "tag": "0009_email_lifecycle_outbox",
+      "breakpoints": true
     }
   ]
 }

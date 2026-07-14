@@ -5,6 +5,10 @@ import {
   sendOpenSpotsEmail,
   type OpenSpotsEmailKind,
 } from "@/lib/email/waitlist";
+import {
+  canSendNonTransactionalEmailToday,
+  recordEmailFrequencyGuardSkip,
+} from "@/lib/email/frequency-guard";
 
 export const OPEN_SPOTS_CAMPAIGN = "open_spots_20_free_2026_07_14";
 export const OPEN_SPOTS_CAPACITY = 20;
@@ -626,6 +630,24 @@ async function sendRows(input: {
   const results = [];
 
   for (const row of input.rows) {
+    if (!input.dryRun && !(await canSendNonTransactionalEmailToday(row.id))) {
+      await recordEmailFrequencyGuardSkip({
+        waitlistId: row.id,
+        source: "open_spots_campaign",
+        emailType: EVENT_BASE[input.kind],
+        campaign: OPEN_SPOTS_CAMPAIGN,
+      });
+      results.push({
+        id: row.id,
+        email: maskEmail(row.email),
+        segment: row.segment,
+        sent: false,
+        skipped: "frequency_guard",
+        dryRun: input.dryRun,
+      });
+      continue;
+    }
+
     const sent = input.dryRun
       ? false
       : await sendOpenSpotsEmail({

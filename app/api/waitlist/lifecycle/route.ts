@@ -7,6 +7,10 @@ import { siteUrl } from "@/lib/referral/urls";
 import { runAlphaCadenceAutomation } from "@/lib/waitlist/alpha-cadence";
 import { runOpenSpotsFollowUpAutomation } from "@/lib/waitlist/open-spots-campaign";
 import { runWaitlistMaintenance } from "@/lib/waitlist/maintenance";
+import {
+  canSendNonTransactionalEmailToday,
+  recordEmailFrequencyGuardSkip,
+} from "@/lib/email/frequency-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -355,6 +359,22 @@ async function runLifecycle(request: Request) {
   const results: SendResult[] = [];
 
   for (const candidate of candidates) {
+    if (!dryRun && !(await canSendNonTransactionalEmailToday(candidate.id))) {
+      await recordEmailFrequencyGuardSkip({
+        waitlistId: candidate.id,
+        source: "email_lifecycle",
+        emailType: candidate.kind,
+      });
+      results.push({
+        id: candidate.id,
+        email: maskEmail(candidate.email),
+        kind: candidate.kind,
+        sent: false,
+        dryRun,
+      });
+      continue;
+    }
+
     const sent = dryRun
       ? false
       : await sendLifecycleEmail({

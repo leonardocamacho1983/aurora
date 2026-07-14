@@ -8,6 +8,7 @@ import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { bucketLatency } from "@/lib/ai/error-classification";
 import { recordProductEvent } from "@/lib/analytics/product-events";
 import { enrichEntryAfterResponse } from "@/lib/diary/entry-enrichment";
+import { recordProductLifecycleAfterEntry } from "@/lib/email/product-lifecycle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -157,6 +158,14 @@ export async function POST(request: Request) {
         intent,
         total_latency_bucket: bucketLatency(Date.now() - startedAt),
       },
+    });
+
+    await recordProductLifecycleAfterEntry({
+      userId: user.id,
+      email: user.email,
+      source: "entries_api",
+      entryId: entry.id,
+      hasReflection: false,
     });
 
     return NextResponse.json({

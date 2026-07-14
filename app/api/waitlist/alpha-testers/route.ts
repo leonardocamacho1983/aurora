@@ -8,6 +8,10 @@ import {
 } from "@/lib/email/waitlist";
 import { siteUrl } from "@/lib/referral/urls";
 import { runWaitlistMaintenance } from "@/lib/waitlist/maintenance";
+import {
+  canSendNonTransactionalEmailToday,
+  recordEmailFrequencyGuardSkip,
+} from "@/lib/email/frequency-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -318,6 +322,22 @@ async function runAlphaBroadcast(request: Request) {
   const results: SendResult[] = [];
 
   for (const candidate of candidates) {
+    if (!dryRun && !(await canSendNonTransactionalEmailToday(candidate.id))) {
+      await recordEmailFrequencyGuardSkip({
+        waitlistId: candidate.id,
+        source: "email_campaign",
+        emailType: eventBase,
+        campaign,
+      });
+      results.push({
+        id: candidate.id,
+        email: maskEmail(candidate.email),
+        sent: false,
+        dryRun,
+      });
+      continue;
+    }
+
     const sent = dryRun
       ? false
       : segment === "ritual_complete"

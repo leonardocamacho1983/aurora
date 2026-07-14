@@ -5,6 +5,12 @@ import { headers } from "next/headers";
 import { absoluteUrl } from "@/lib/seo/site";
 import { createClient } from "@/lib/supabase/server";
 import { hasAuroraAccess } from "@/lib/waitlist/open-spots-campaign";
+import { db } from "@/lib/db";
+import { waitlist, waitlistProfile } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { classifyRitualIntent } from "@/lib/email/ritual-intent";
+import { lifecycleStateFromSignals } from "@/lib/email/lifecycle-contract";
+import { recordAuroraLifecycleEvent } from "@/lib/email/lifecycle-events";
 
 // Mensagens de erro do Supabase → pt-BR amigável.
 function friendly(message: string): string {
@@ -37,6 +43,64 @@ async function recoveryRedirectTo() {
   return url.toString();
 }
 
+function profileComplete(profile: {
+  moment: string | null;
+  rhythm: string | null;
+  presence: string | null;
+  value: string | null;
+} | null) {
+  return Boolean(
+    profile?.moment?.trim() &&
+      profile.rhythm?.trim() &&
+      profile.presence?.trim() &&
+      profile.value?.trim(),
+  );
+}
+
+async function recordAccountCreated(email: string) {
+  const [row] = await db
+    .select({
+      id: waitlist.id,
+      email: waitlist.email,
+      unlockedAt: waitlist.unlockedAt,
+      name: waitlistProfile.name,
+      moment: waitlistProfile.moment,
+      rhythm: waitlistProfile.rhythm,
+      presence: waitlistProfile.presence,
+      value: waitlistProfile.value,
+    })
+    .from(waitlist)
+    .leftJoin(waitlistProfile, eq(waitlistProfile.waitlistId, waitlist.id))
+    .where(eq(waitlist.email, email))
+    .limit(1);
+
+  if (!row) return;
+
+  const ritualStatus = profileComplete(row) ? "completed" : row.moment || row.rhythm || row.presence || row.value ? "started" : "not_started";
+  const accessStatus = row.unlockedAt ? "active" : "no_access";
+
+  await recordAuroraLifecycleEvent({
+    waitlistId: row.id,
+    eventName: "aurora.account.created",
+    source: "login_signup",
+    contact: {
+      waitlistId: row.id,
+      email: row.email,
+      firstName: row.name,
+      ritualStatus,
+      ritualIntent: classifyRitualIntent(row),
+      accessStatus,
+      lifecycleState: lifecycleStateFromSignals({
+        ritualStatus,
+        accessStatus,
+        hasAccount: true,
+        hasEntry: false,
+      }),
+      testerStatus: accessStatus === "active" ? "tester" : "candidate",
+    },
+  });
+}
+
 export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -64,6 +128,7 @@ export async function signUp(formData: FormData) {
   if (error) {
     redirect(`/login?error=${encodeURIComponent(friendly(error.message))}`);
   }
+  await recordAccountCreated(email);
   // Confirmação de email desativada → já vem com sessão → entra direto.
   if (data.session) {
     redirect("/boas-vindas");

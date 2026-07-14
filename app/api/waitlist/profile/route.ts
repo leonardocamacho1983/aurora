@@ -11,6 +11,13 @@ import {
 } from "@/lib/referral/profile";
 import { captureAuroraServer } from "@/lib/analytics/server";
 import { sendRitualAlphaAccessEmail } from "@/lib/email/waitlist";
+import { classifyRitualIntent } from "@/lib/email/ritual-intent";
+import {
+  lifecycleStateFromSignals,
+  type AuroraLifecycleEventName,
+  type LifecycleContactProperties,
+} from "@/lib/email/lifecycle-contract";
+import { recordAuroraLifecycleEvent } from "@/lib/email/lifecycle-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -133,6 +140,42 @@ async function wasRitualAccessEmailSent(waitlistId: string) {
     return Boolean((result as { rows?: Array<{ exists?: boolean }> }).rows?.[0]?.exists);
   }
   return false;
+}
+
+async function lifecycleEventAlreadyRecorded(waitlistId: string, eventName: AuroraLifecycleEventName) {
+  const storedEventName = eventName.replaceAll(".", "_");
+  const result = await db.execute(
+    sql`
+      select exists (
+        select 1
+        from waitlist_events
+        where waitlist_id = ${waitlistId}
+          and event_name = ${storedEventName}
+      ) as "exists"
+    `,
+  );
+  if (Array.isArray(result)) return Boolean((result[0] as { exists?: boolean } | undefined)?.exists);
+  if (result && typeof result === "object" && "rows" in result) {
+    return Boolean((result as { rows?: Array<{ exists?: boolean }> }).rows?.[0]?.exists);
+  }
+  return false;
+}
+
+async function recordLifecycleEventOnce(input: {
+  row: WaitlistIdentity;
+  eventName: AuroraLifecycleEventName;
+  source: string;
+  contact: LifecycleContactProperties;
+  metadata?: Record<string, unknown>;
+}) {
+  if (await lifecycleEventAlreadyRecorded(input.row.id, input.eventName)) return;
+  await recordAuroraLifecycleEvent({
+    waitlistId: input.row.id,
+    eventName: input.eventName,
+    source: input.source,
+    contact: input.contact,
+    metadata: input.metadata,
+  });
 }
 
 async function grantAccessAfterRitual(input: {
@@ -274,6 +317,34 @@ export async function POST(request: Request) {
     .where(eq(waitlistProfile.waitlistId, row.id))
     .limit(1);
   const complete = profile ? isProfileComplete(profile) : false;
+  const ritualIntent = classifyRitualIntent(profile ?? values);
+  const accessStatus = row.unlockedAt ? "active" : "no_access";
+  const contact: LifecycleContactProperties = {
+    waitlistId: row.id,
+    email: row.email,
+    firstName: profile?.name ?? values.name ?? null,
+    ritualStatus: complete ? "completed" : "started",
+    ritualIntent,
+    accessStatus,
+    lifecycleState: lifecycleStateFromSignals({
+      ritualStatus: complete ? "completed" : "started",
+      accessStatus,
+    }),
+    testerStatus: row.unlockedAt ? "tester" : "candidate",
+  };
+
+  await recordLifecycleEventOnce({
+    row,
+    eventName: complete ? "aurora.ritual.completed" : "aurora.ritual.started",
+    source: "arrival_ritual",
+    contact,
+    metadata: {
+      source: parsed.data.source ?? "unknown",
+      field_count: fields.length,
+      campaign: OPEN_SPOTS_CAMPAIGN,
+    },
+  });
+
   const access = complete
     ? await grantAccessAfterRitual({
         row,
@@ -282,6 +353,28 @@ export async function POST(request: Request) {
         baseUrl: siteUrl(request.url),
       })
     : { accessGranted: false, accessEmailSent: false };
+
+  if (access.accessGranted) {
+    await recordLifecycleEventOnce({
+      row,
+      eventName: "aurora.access.granted",
+      source: "arrival_ritual",
+      contact: {
+        ...contact,
+        accessStatus: "active",
+        lifecycleState: lifecycleStateFromSignals({
+          ritualStatus: "completed",
+          accessStatus: "active",
+          hasAccount: false,
+        }),
+        testerStatus: "tester",
+      },
+      metadata: {
+        campaign: OPEN_SPOTS_CAMPAIGN,
+        access_email_sent: access.accessEmailSent,
+      },
+    });
+  }
 
   return NextResponse.json({
     status: "ok",

@@ -8,6 +8,7 @@ import { getCrisisResources } from "@/lib/ai/crisis-resources";
 import { bucketLatency } from "@/lib/ai/error-classification";
 import { recordProductEvent, type ProductEventMetadata } from "@/lib/analytics/product-events";
 import { enrichEntryAfterResponse } from "@/lib/diary/entry-enrichment";
+import { recordProductLifecycleAfterEntry } from "@/lib/email/product-lifecycle";
 import {
   classifyDiaryRoute,
   isConfidentPracticalLog,
@@ -266,6 +267,14 @@ export async function POST(request: Request) {
         rag_used: useRag,
         has_mood: Boolean(result.mood),
       },
+    });
+
+    await recordProductLifecycleAfterEntry({
+      userId: user.id,
+      email: user.email,
+      source: "reflect_api",
+      entryId: entry.id,
+      hasReflection: true,
     });
 
     return NextResponse.json({

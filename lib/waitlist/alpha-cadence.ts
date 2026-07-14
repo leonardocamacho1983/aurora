@@ -5,6 +5,10 @@ import {
   sendAlphaCadenceEmail,
   type AlphaCadenceEmailKind,
 } from "@/lib/email/waitlist";
+import {
+  canSendNonTransactionalEmailToday,
+  recordEmailFrequencyGuardSkip,
+} from "@/lib/email/frequency-guard";
 
 type AlphaCadenceRow = {
   id: string;
@@ -486,6 +490,16 @@ export async function runAlphaCadenceAutomation({
 
     let sentCount = 0;
     for (const candidate of candidates) {
+      if (!dryRun && !(await canSendNonTransactionalEmailToday(candidate.id))) {
+        await recordEmailFrequencyGuardSkip({
+          waitlistId: candidate.id,
+          source: "alpha_cadence",
+          emailType: EVENT_BASE[currentKind],
+          campaign: CAMPAIGNS[currentKind],
+        });
+        continue;
+      }
+
       const sent = dryRun
         ? false
         : await sendAlphaCadenceEmail({
