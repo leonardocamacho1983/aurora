@@ -65,6 +65,16 @@ function limitFromUrl(request: Request) {
   return Math.max(1, Math.min(500, Math.floor(parsed)));
 }
 
+function syncDelayMsFromEnv() {
+  const parsed = Number(process.env.RESEND_LIFECYCLE_SYNC_DELAY_MS ?? 400);
+  if (!Number.isFinite(parsed)) return 400;
+  return Math.max(0, Math.min(2000, Math.floor(parsed)));
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function ritualStatus(row: Pick<SyncRow, "moment" | "rhythm" | "presence" | "value">): RitualStatus {
   if (row.moment?.trim() && row.rhythm?.trim() && row.presence?.trim() && row.value?.trim()) {
     return "completed";
@@ -146,8 +156,10 @@ async function run(request: Request) {
 
   const selected = await selectRows(limitFromUrl(request));
   const results = [];
+  const syncDelayMs = syncDelayMsFromEnv();
 
-  for (const row of selected) {
+  for (let index = 0; index < selected.length; index += 1) {
+    const row = selected[index];
     const currentRitualStatus = ritualStatus(row);
     const accessStatus: AccessStatus = row.unlockedAt ? "active" : "no_access";
     const entries = Number(row.entries ?? 0);
@@ -178,6 +190,9 @@ async function run(request: Request) {
         source: "email_lifecycle_sync",
         contact,
       });
+      if (syncDelayMs > 0 && index < selected.length - 1) {
+        await sleep(syncDelayMs);
+      }
     }
 
     results.push({

@@ -15,6 +15,17 @@ let resend: Resend | null = null;
 let segmentCache: Map<string, string> | null = null;
 let topicCache: Map<string, string> | null = null;
 let eventCache: Set<string> | null = null;
+let contactPropertyCache: Set<string> | null = null;
+
+const CONTACT_PROPERTIES = [
+  "waitlist_id",
+  "ritual_status",
+  "ritual_intent",
+  "access_status",
+  "lifecycle_state",
+  "tester_status",
+  "last_product_event_at",
+] as const;
 
 function getResend() {
   const key = process.env.RESEND_API_KEY?.trim();
@@ -65,6 +76,14 @@ async function getEvents(client: Resend) {
   return eventCache;
 }
 
+async function getContactProperties(client: Resend) {
+  if (contactPropertyCache) return contactPropertyCache;
+  const response = await client.contactProperties.list();
+  if (response.error) throw new Error(response.error.message);
+  contactPropertyCache = new Set((response.data?.data ?? []).map((property) => property.key));
+  return contactPropertyCache;
+}
+
 async function segmentId(client: Resend, key: ResendSegmentKey) {
   const name = RESEND_SEGMENTS[key].name;
   const segments = await getSegments(client);
@@ -107,7 +126,28 @@ async function ensureEvent(client: Resend, eventName: AuroraLifecycleEventName) 
   events.add(eventName);
 }
 
+async function ensureContactProperties(client: Resend) {
+  const properties = await getContactProperties(client);
+  const missing = CONTACT_PROPERTIES.filter((key) => !properties.has(key));
+  if (!missing.length) return;
+  if (!canManageAudience()) return;
+
+  for (const key of missing) {
+    const created = await client.contactProperties.create({
+      key,
+      type: "string",
+      fallbackValue: null,
+    });
+    if (created.error && !created.error.message.toLowerCase().includes("already")) {
+      throw new Error(created.error.message);
+    }
+    properties.add(key);
+  }
+}
+
 async function upsertContact(client: Resend, contact: LifecycleContactProperties) {
+  await ensureContactProperties(client);
+
   const properties = {
     waitlist_id: cleanProperty(contact.waitlistId),
     ritual_status: cleanProperty(contact.ritualStatus),
