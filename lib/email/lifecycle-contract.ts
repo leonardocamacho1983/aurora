@@ -36,6 +36,7 @@ export const AURORA_LIFECYCLE_EVENTS = [
   "aurora.first_reflection.created",
   "aurora.returned_day2",
   "aurora.invite.shared",
+  "aurora.lifecycle.test",
 ] as const;
 
 export type AuroraLifecycleEventName = (typeof AURORA_LIFECYCLE_EVENTS)[number];
