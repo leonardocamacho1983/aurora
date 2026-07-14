@@ -54,10 +54,13 @@ function rows<T>(result: unknown): T[] {
 function isAuthorized(request: Request) {
   const url = new URL(request.url);
   const adminToken = process.env.WAITLIST_ADMIN_TOKEN?.trim();
+  const testToken = process.env.LIFECYCLE_AUTOMATION_TEST_TOKEN?.trim();
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
 
   if (adminToken && url.searchParams.get("token") === adminToken) return true;
   if (adminToken && bearer === adminToken) return true;
+  if (testToken && url.searchParams.get("token") === testToken) return true;
+  if (testToken && bearer === testToken) return true;
   return false;
 }
 
